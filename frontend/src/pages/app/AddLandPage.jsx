@@ -1,0 +1,242 @@
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { api } from "../../api/endpoints";
+import { toastError, toastSuccess } from "../../utils/toast";
+import { Button } from "../../ui/button";
+import GooglePolygonDrawMap from "../../components/maps/GooglePolygonDrawMap";
+import {
+  centroidFromLatLngPairs,
+  polygonAreaHa,
+  toGeoJsonPolygonFromLatLngPairs,
+  validateLatLngPairs,
+} from "../../utils/geometry";
+
+const RO_CENTER = [45.9432, 24.9668];
+
+export default function AddLandPage() {
+  const nav = useNavigate();
+  const [step, setStep] = useState(1); // 1=form, 2=map
+  const [name, setName] = useState("");
+  const [cropType, setCropType] = useState("Wheat");
+
+  const [polygon, setPolygon] = useState(null);
+  const [areaHa, setAreaHa] = useState(0);
+
+  const [busy, setBusy] = useState(false);
+
+  const center = useMemo(() => RO_CENTER, []);
+
+  function validateStep1() {
+    if (!name.trim()) return "Completează numele terenului.";
+    if (!cropType.trim()) return "Alege cultura.";
+    return "";
+  }
+
+  function goNext() {
+    const m = validateStep1();
+    if (m) {
+      toast.error(m);
+      return;
+    }
+    setStep(2);
+    // scroll top nice
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goBack() {
+    setStep(1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handlePolygonChange(pts) {
+    if (!pts || !pts.length) {
+      setPolygon(null);
+      setAreaHa(0);
+      return;
+    }
+    setPolygon(pts);
+    setAreaHa(polygonAreaHa(pts));
+  }
+
+  async function onSave() {
+    const m = validateStep1();
+    if (m) {
+      toast.error(m);
+      setStep(1);
+      return;
+    }
+
+    const v = validateLatLngPairs(polygon, { maxPoints: 2000 });
+    if (!v.ok) {
+      toast.error(v.message || "Desenează mai întâi poligonul (terenul) pe hartă.");
+      return;
+    }
+
+    const c = centroidFromLatLngPairs(polygon);
+    const geometry = toGeoJsonPolygonFromLatLngPairs(polygon);
+
+    const payload = {
+      name: name.trim(),
+      cropType: cropType.trim(),
+      areaHa: Number(areaHa || 0),
+      centroid: c ? { lat: c.lat, lng: c.lng } : null,
+      geometry,
+    };
+
+    setBusy(true);
+    try {
+      const created = await api.lands.create(payload);
+      const newId = created?.id || created?.landId || created?.uuid || created?.data?.id;
+      toastSuccess("Terenul a fost salvat.");
+      if (newId) nav(`/lands/${newId}`);
+      else nav("/lands");
+    } catch (e) {
+      toastError(e, "Nu pot salva terenul.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5 animate-fadeIn">
+      {/* Header */}
+      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+        <div>
+          <div className="text-2xl font-extrabold">Adaugă teren</div>
+          <div className="muted text-sm">
+            Pasul {step} din 2 • {step === 1 ? "Detalii" : "Desenează limita"}
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button onClick={() => nav("/lands")} variant="ghost">
+            Anulează
+          </Button>
+
+          {step === 1 ? (
+            <Button onClick={goNext} variant="primary">
+              Următorul: desenează pe hartă →
+            </Button>
+          ) : (
+            <>
+              <Button onClick={goBack} variant="ghost">
+                ← Înapoi
+              </Button>
+              <Button disabled={busy} onClick={onSave} variant="primary">
+                {busy ? "Se salvează..." : "Salvează terenul"}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* STEP 1: FORM */}
+      {step === 1 && (
+        <div className="grid grid-cols-1 gap-4 max-w-3xl mx-auto w-full">
+          <div className="card p-5 space-y-4">
+            <div className="text-lg font-bold">Detalii teren</div>
+
+            <div>
+              <div className="text-xs muted mb-1">Nume teren</div>
+              <input
+                className="input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="ex: Parcela A - Hoceni"
+              />
+            </div>
+
+            <div>
+              <div className="text-xs muted mb-1">Cultură</div>
+              <select
+                className="input"
+                value={cropType}
+                onChange={(e) => setCropType(e.target.value)}
+              >
+                <option>Grâu</option>
+                <option>Porumb</option>
+                <option>Floarea-soarelui</option>
+                <option>Rapiță</option>
+                <option>Orz</option>
+                <option>Cartof</option>
+                <option>Legume</option>
+                <option>Altele</option>
+              </select>
+            </div>
+
+            <div className="card-soft p-4">
+              <div className="text-sm font-semibold">Pasul următor</div>
+              <div className="mt-2 text-sm muted">
+                După ce completezi detaliile, vei desena limita terenului (poligon) pe hartă.
+              </div>
+            </div>
+
+            <Button onClick={goNext} variant="primary" fullWidth>
+              Următorul: desenează pe hartă →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2: MAP */}
+      {step === 2 && (
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
+          {/* Map */}
+          <div className="card p-3 h-[560px] md:h-[720px]">
+            <GooglePolygonDrawMap
+              center={center}
+              zoom={7}
+              value={polygon}
+              onChange={handlePolygonChange}
+              height="100%"
+            />
+          </div>
+
+          {/* Summary */}
+          <div className="card p-5 space-y-4">
+            <div className="text-lg font-bold">Sumar</div>
+
+            <div className="card-soft p-4">
+              <div className="text-xs muted">Teren</div>
+              <div className="font-semibold">{name || "-"}</div>
+
+              <div className="mt-3 text-xs muted">Cultură</div>
+              <div className="font-semibold">{cropType || "-"}</div>
+            </div>
+
+            <div className="card-soft p-4">
+              <div className="text-sm font-semibold">Limită</div>
+              <div className="mt-2 text-sm muted">
+                {polygon ? (
+                  <>
+                    Puncte: <span className="text-slate-900 font-semibold">{polygon.length}</span>
+                    <br />
+                    Suprafață:{" "}
+                    <span className="text-[hsl(var(--primary))] font-extrabold">
+                      {areaHa ? areaHa.toFixed(2) : "0.00"} ha
+                    </span>
+                  </>
+                ) : (
+                  "Încă nu este desenată. Folosește unealta de desen din hartă."
+                )}
+              </div>
+            </div>
+
+            <div className="text-xs muted leading-relaxed">
+              Sfaturi: click pentru a adăuga puncte, dublu-click pentru finalizare. Poți edita poligonul ulterior.
+            </div>
+
+            <Button disabled={busy} onClick={onSave} variant="primary" fullWidth>
+              {busy ? "Se salvează..." : "Salvează terenul"}
+            </Button>
+
+            <Button onClick={goBack} variant="ghost" fullWidth>
+              ← Înapoi la detalii
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
