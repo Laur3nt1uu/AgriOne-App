@@ -63,6 +63,69 @@ body{
 
 /* ===== Components ===== */
 @layer components {
+  .icon-chip{
+    @apply inline-flex items-center justify-center;
+    width: 40px;
+    height: 40px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(15,23,42,0.12);
+    box-shadow:
+      0 12px 26px rgba(2,6,23,0.08),
+      0 0 0 1px rgba(255,255,255,0.70) inset;
+    backdrop-filter: blur(10px);
+  }
+
+  .agri-pattern{
+    position: relative;
+    overflow: hidden;
+  }
+  .agri-pattern::before{
+    content: "";
+    position: absolute;
+    inset: -2px;
+    pointer-events: none;
+    opacity: 0.55;
+    background:
+      radial-gradient(540px 240px at 20% 15%, hsl(var(--primary-500) / 0.18), transparent 60%),
+      radial-gradient(520px 260px at 85% 10%, hsl(var(--chart-2) / 0.16), transparent 62%),
+      repeating-linear-gradient(
+        135deg,
+        hsl(var(--primary-500) / 0.06) 0px,
+        hsl(var(--primary-500) / 0.06) 10px,
+        transparent 10px,
+        transparent 24px
+      );
+    mask-image: radial-gradient(80% 70% at 30% 20%, rgba(0,0,0,1), rgba(0,0,0,0));
+  }
+  .agri-pattern::after{
+    content: "";
+    position: absolute;
+    inset: -2px;
+    pointer-events: none;
+    background: radial-gradient(520px 240px at 50% 0%, rgba(255,255,255,0.70), transparent 62%);
+    opacity: 0.55;
+  }
+
+  .weather-tint-sun{
+    background:
+      radial-gradient(700px 380px at 0% 0%, hsl(var(--warn) / 0.16), transparent 58%),
+      radial-gradient(520px 280px at 100% 0%, hsl(var(--primary-500) / 0.12), transparent 62%),
+      var(--surface);
+  }
+  .weather-tint-cloud{
+    background:
+      radial-gradient(700px 380px at 0% 0%, hsl(var(--chart-2) / 0.14), transparent 58%),
+      radial-gradient(520px 280px at 100% 0%, hsl(var(--primary-500) / 0.10), transparent 62%),
+      var(--surface);
+  }
+  .weather-tint-rain{
+    background:
+      radial-gradient(700px 380px at 0% 0%, hsl(var(--chart-2) / 0.18), transparent 58%),
+      radial-gradient(520px 280px at 100% 0%, hsl(var(--primary-500) / 0.12), transparent 62%),
+      var(--surface);
+  }
+
   .glass{
     @apply rounded-3xl border;
     background: var(--surface);
@@ -279,7 +342,16 @@ body{
   }
 }
 
+@keyframes agri-float{
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+.anim-float{ animation: agri-float 3.2s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce){
+  .anim-float{ animation: none !important; }
+
   .card,
   .card-hover,
   .card-soft,

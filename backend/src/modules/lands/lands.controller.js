@@ -17,7 +17,7 @@ const listMine = asyncHandler(async (req, res) => {
 });
 
 const getOne = asyncHandler(async (req, res) => {
-  const land = await service.getMyLandById(req.user.sub, req.params.id);
+  const land = await service.getMyLandByIdWithMeta(req.user.sub, req.params.id);
   res.json({ land });
 });
 
@@ -26,7 +26,9 @@ const update = asyncHandler(async (req, res) => {
   if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
 
   const land = await service.updateMyLand(req.user.sub, req.params.id, parsed.data);
-  res.json({ land });
+  // return enriched land for UI convenience
+  const enriched = await service.getMyLandByIdWithMeta(req.user.sub, land.id);
+  res.json({ land: enriched });
 });
 
 const remove = asyncHandler(async (req, res) => {

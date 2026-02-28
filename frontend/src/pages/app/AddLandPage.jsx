@@ -5,6 +5,8 @@ import { api } from "../../api/endpoints";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import GooglePolygonDrawMap from "../../components/maps/GooglePolygonDrawMap";
+import { Badge } from "../../ui/badge";
+import { CheckCircle2, Edit3, Map as MapIcon, Sprout } from "lucide-react";
 import {
   centroidFromLatLngPairs,
   polygonAreaHa,
@@ -101,11 +103,19 @@ export default function AddLandPage() {
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Header */}
-      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="text-2xl font-extrabold">Adaugă teren</div>
           <div className="muted text-sm">
             Pasul {step} din 2 • {step === 1 ? "Detalii" : "Desenează limita"}
+          </div>
+          <div className="mt-3 flex gap-2 flex-wrap">
+            <Badge as="div" variant={step === 1 ? "success" : "default"}>
+              <Edit3 size={14} className="text-slate-700" /> 1. Detalii
+            </Badge>
+            <Badge as="div" variant={step === 2 ? "success" : "default"}>
+              <MapIcon size={14} className="text-slate-700" /> 2. Hartă
+            </Badge>
           </div>
         </div>
 
@@ -134,7 +144,7 @@ export default function AddLandPage() {
       {/* STEP 1: FORM */}
       {step === 1 && (
         <div className="grid grid-cols-1 gap-4 max-w-3xl mx-auto w-full">
-          <div className="card p-5 space-y-4">
+          <div className="card p-5 space-y-4 agri-pattern">
             <div className="text-lg font-bold">Detalii teren</div>
 
             <div>
@@ -166,7 +176,12 @@ export default function AddLandPage() {
             </div>
 
             <div className="card-soft p-4">
-              <div className="text-sm font-semibold">Pasul următor</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold">Pasul următor</div>
+                <span className="icon-chip w-10 h-10 rounded-2xl" title="Agricultură">
+                  <Sprout size={18} className="text-slate-700" />
+                </span>
+              </div>
               <div className="mt-2 text-sm muted">
                 După ce completezi detaliile, vei desena limita terenului (poligon) pe hartă.
               </div>
@@ -194,7 +209,7 @@ export default function AddLandPage() {
           </div>
 
           {/* Summary */}
-          <div className="card p-5 space-y-4">
+          <div className="card p-5 space-y-4 agri-pattern">
             <div className="text-lg font-bold">Sumar</div>
 
             <div className="card-soft p-4">
@@ -230,6 +245,18 @@ export default function AddLandPage() {
             <Button disabled={busy} onClick={onSave} variant="primary" fullWidth>
               {busy ? "Se salvează..." : "Salvează terenul"}
             </Button>
+
+            {polygon?.length ? (
+              <div className="card-soft p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-semibold">Validare</div>
+                  <div className="muted text-xs mt-1">Poligon desenat, gata de salvare</div>
+                </div>
+                <span className="icon-chip" title="OK">
+                  <CheckCircle2 size={18} className="text-slate-700" />
+                </span>
+              </div>
+            ) : null}
 
             <Button onClick={goBack} variant="ghost" fullWidth>
               ← Înapoi la detalii

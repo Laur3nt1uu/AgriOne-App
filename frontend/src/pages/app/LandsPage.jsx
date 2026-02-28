@@ -4,6 +4,25 @@ import { api } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { Cloud, CloudRain, CloudSun, Cpu, Leaf, Ruler, Sun } from "lucide-react";
+
+function weatherKind(weather) {
+  const rain = weather?.forecast?.nextHoursRainMm;
+  const clouds = weather?.current?.cloudsPct;
+
+  if (typeof rain === "number" && rain >= 0.5) return "rain";
+  if (typeof clouds === "number" && clouds >= 75) return "cloud";
+  if (typeof clouds === "number" && clouds >= 35) return "partly";
+  return "sun";
+}
+
+function weatherVisual(weather) {
+  const kind = weatherKind(weather);
+  if (kind === "rain") return { Icon: CloudRain, label: "Ploaie" };
+  if (kind === "cloud") return { Icon: Cloud, label: "Înnorat" };
+  if (kind === "partly") return { Icon: CloudSun, label: "Nori" };
+  return { Icon: Sun, label: "Senin" };
+}
 
 function isOnline(lastAt) {
   if (!lastAt) return false;
@@ -98,7 +117,7 @@ export default function LandsPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">Terenurile mele</div>
           <div className="muted text-sm">Parcele • senzori • monitorizare</div>
@@ -137,6 +156,9 @@ export default function LandsPage() {
                 const tempC = weather?.current?.tempC;
                 const rainMm = weather?.forecast?.nextHoursRainMm;
 
+                const wx = weatherVisual(weather);
+                const WxIcon = wx.Icon;
+
                 const hasCoords =
                   (it.centroidLat != null && it.centroidLng != null) ||
                   (it.centroid?.lat != null && it.centroid?.lng != null);
@@ -145,7 +167,7 @@ export default function LandsPage() {
                   <button
                     key={it.id}
                     onClick={() => nav(`/lands/${it.id}`)}
-                    className="text-left card p-5 card-hover"
+                    className="text-left card p-5 card-hover agri-pattern"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -161,38 +183,68 @@ export default function LandsPage() {
                       </Badge>
                     </div>
 
-                    <div className="mt-4 flex gap-2 flex-wrap">
-                      <Badge>Cultură: {it.cropType || "-"}</Badge>
-                      <Badge>Suprafață: {fmtHa(it.areaHa)}</Badge>
-                      <Badge>
-                        Senzor: {it.sensorId ? it.sensorId : "Neasociat"}
-                      </Badge>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="card-soft p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="muted text-xs">Cultură</div>
+                          <Leaf size={16} className="text-slate-700" />
+                        </div>
+                        <div className="text-sm font-extrabold mt-2 truncate">{it.cropType || "—"}</div>
+                      </div>
+
+                      <div className="card-soft p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="muted text-xs">Suprafață</div>
+                          <Ruler size={16} className="text-slate-700" />
+                        </div>
+                        <div className="text-sm font-extrabold mt-2">{fmtHa(it.areaHa)}</div>
+                      </div>
+
+                      <div className="card-soft p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="muted text-xs">Senzor</div>
+                          <Cpu size={16} className="text-slate-700" />
+                        </div>
+                        <div className="text-sm font-extrabold mt-2 truncate">{it.sensorId ? it.sensorId : "Neasociat"}</div>
+                      </div>
+
+                      <div className="card-soft p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="muted text-xs">Vreme</div>
+                          <WxIcon size={16} className="text-slate-700" />
+                        </div>
+                        {!hasCoords ? (
+                          <div className="text-sm font-extrabold mt-2">Fără coordonate</div>
+                        ) : rec?.busy ? (
+                          <div className="text-sm font-extrabold mt-2">Se încarcă…</div>
+                        ) : rec?.error ? (
+                          <div className="text-sm font-extrabold mt-2">Indisponibil</div>
+                        ) : (
+                          <>
+                            <div className="text-sm font-extrabold mt-2">
+                              {tempC != null ? `${tempC}°C` : "—"}
+                            </div>
+                            <div className="muted text-xs mt-1">
+                              {rainMm != null ? `Ploaie ~${rainMm}mm` : wx.label}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     <div className="mt-3 flex gap-2 flex-wrap">
-                      {!hasCoords ? (
-                        <Badge>Vreme: fără coordonate</Badge>
-                      ) : rec?.busy ? (
+                      {rec?.busy ? (
                         <Badge>Recomandări: se încarcă…</Badge>
                       ) : rec?.error ? (
                         <Badge>Recomandări: indisponibile</Badge>
-                      ) : (
-                        <>
-                          <Badge>
-                            Vreme azi: {tempC != null ? `${tempC}°C` : "—"}
-                            {rainMm != null ? ` • ploaie ~${rainMm}mm` : ""}
+                      ) : top.length ? (
+                        top.map((a, idx) => (
+                          <Badge key={`${a.type || "A"}-${idx}`}>
+                            P{a.priority ?? "-"}: {a.title}
                           </Badge>
-
-                          {top.length ? (
-                            top.map((a, idx) => (
-                              <Badge key={`${a.type || "A"}-${idx}`}>
-                                P{a.priority ?? "-"}: {a.title}
-                              </Badge>
-                            ))
-                          ) : (
-                            <Badge>Recomandări: nimic critic</Badge>
-                          )}
-                        </>
+                        ))
+                      ) : (
+                        <Badge>Recomandări: nimic critic</Badge>
                       )}
                     </div>
 

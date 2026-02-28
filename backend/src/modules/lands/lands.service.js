@@ -1,5 +1,38 @@
 const ApiError = require("../../utils/ApiError");
-const { Land } = require("../../models");
+const { Land, Sensor } = require("../../models");
+const { Op } = require("sequelize");
+
+async function attachArduinoMeta(ownerId, lands) {
+  const arr = Array.isArray(lands) ? lands : [lands];
+  const landIds = arr.map((l) => l?.id).filter(Boolean);
+  if (!landIds.length) return arr;
+
+  const sensors = await Sensor.findAll({
+    where: { ownerId, landId: { [Op.in]: landIds } },
+    order: [["updated_at", "DESC"]],
+  });
+
+  const byLand = new Map();
+  for (const s of sensors) {
+    if (!s.landId) continue;
+    if (!byLand.has(String(s.landId))) byLand.set(String(s.landId), s);
+  }
+
+  return arr.map((l) => {
+    const sensor = byLand.get(String(l.id));
+    const json = l.toJSON ? l.toJSON() : l;
+    return {
+      ...json,
+      // backwards-compat for existing UI
+      sensorId: sensor ? sensor.sensorCode : null,
+      lastSensorAt: sensor ? sensor.lastReadingAt : null,
+
+      // new clearer fields
+      arduinoCode: sensor ? sensor.sensorCode : null,
+      arduinoName: sensor ? sensor.name : null,
+    };
+  });
+}
 
 async function createLand(ownerId, payload) {
   return Land.create({
@@ -14,16 +47,24 @@ async function createLand(ownerId, payload) {
 }
 
 async function listMyLands(ownerId) {
-  return Land.findAll({
+  const lands = await Land.findAll({
     where: { ownerId },
     order: [["created_at", "DESC"]],
   });
+
+  return attachArduinoMeta(ownerId, lands);
 }
 
 async function getMyLandById(ownerId, landId) {
   const land = await Land.findOne({ where: { id: landId, ownerId } });
   if (!land) throw new ApiError(404, "Land not found", null, "LAND_NOT_FOUND");
   return land;
+}
+
+async function getMyLandByIdWithMeta(ownerId, landId) {
+  const land = await getMyLandById(ownerId, landId);
+  const [enriched] = await attachArduinoMeta(ownerId, [land]);
+  return enriched;
 }
 
 async function updateMyLand(ownerId, landId, patch) {
@@ -49,6 +90,7 @@ module.exports = {
   createLand,
   listMyLands,
   getMyLandById,
+  getMyLandByIdWithMeta,
   updateMyLand,
   deleteMyLand,
 };

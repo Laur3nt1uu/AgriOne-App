@@ -4,6 +4,7 @@ import { api } from "../../api/endpoints";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { ArrowDownRight, ArrowUpRight, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 function money(x) {
   const n = Number(x || 0);
@@ -80,16 +81,21 @@ export default function EconomicsPage() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">Economie</div>
           <div className="muted text-sm">Tranzacții • venituri/cheltuieli • profit</div>
         </div>
-        <Button onClick={load} variant="ghost">Actualizează</Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={load} variant="ghost">Actualizează</Button>
+          <span className="icon-chip hidden sm:inline-flex" title="Economie">
+            <Wallet size={20} className="text-slate-700" />
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
-        <div className="card p-5">
+        <div className="card p-5 agri-pattern">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-sm font-bold">Tranzacții</div>
@@ -114,6 +120,13 @@ export default function EconomicsPage() {
                     <Badge variant={t.type === "REVENUE" ? "success" : "danger"}>
                       {t.type} • {money(t.amount)}
                     </Badge>
+                    <span className="icon-chip hidden sm:inline-flex" title={t.type === "REVENUE" ? "Venit" : "Cheltuială"}>
+                      {t.type === "REVENUE" ? (
+                        <ArrowUpRight size={18} className="text-slate-700" />
+                      ) : (
+                        <ArrowDownRight size={18} className="text-slate-700" />
+                      )}
+                    </span>
                     <Button variant="ghost" onClick={() => onDelete(t.id)}>Șterge</Button>
                   </div>
                 </div>
@@ -123,26 +136,35 @@ export default function EconomicsPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="card p-5">
+          <div className="card p-5 agri-pattern">
             <div className="text-sm font-bold">Rezumat</div>
             <div className="mt-3 grid grid-cols-1 gap-3">
-              <div className="card-soft p-4">
-                <div className="muted text-xs">Venituri</div>
-                <div className="text-2xl font-extrabold mt-1">{money(s.revenue)}</div>
+              <div className="card-soft p-4 agri-pattern">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="muted text-xs">Venituri</div>
+                  <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingUp size={18} className="text-slate-700" /></span>
+                </div>
+                <div className="text-2xl font-extrabold mt-2">{money(s.revenue)}</div>
               </div>
-              <div className="card-soft p-4">
-                <div className="muted text-xs">Cheltuieli</div>
-                <div className="text-2xl font-extrabold mt-1">{money(s.expenses)}</div>
+              <div className="card-soft p-4 agri-pattern">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="muted text-xs">Cheltuieli</div>
+                  <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingDown size={18} className="text-slate-700" /></span>
+                </div>
+                <div className="text-2xl font-extrabold mt-2">{money(s.expenses)}</div>
               </div>
-              <div className="card-soft p-4">
-                <div className="muted text-xs">Profit</div>
-                <div className="text-2xl font-extrabold mt-1">{money(s.profit)}</div>
+              <div className="card-soft p-4 agri-pattern">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="muted text-xs">Profit</div>
+                  <span className="icon-chip w-10 h-10 rounded-2xl"><ReceiptText size={18} className="text-slate-700" /></span>
+                </div>
+                <div className="text-2xl font-extrabold mt-2">{money(s.profit)}</div>
                 <div className="muted text-xs mt-2">pregătit pentru demo (licență)</div>
               </div>
             </div>
           </div>
 
-          <div className="card p-5 space-y-4">
+          <div className="card p-5 space-y-4 agri-pattern">
             <div className="text-sm font-bold">Adaugă tranzacție</div>
 
             <div className="flex gap-2">

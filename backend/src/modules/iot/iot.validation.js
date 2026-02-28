@@ -33,4 +33,23 @@ const ingestSchema = z.object({
   recordedAt: z.string().datetime({ message: "Data/ora este invalidă." }).optional(), // ISO
 });
 
-module.exports = { ingestSchema };
+const pairBoardSchema = z.object({
+  landId: z.string().uuid("ID-ul terenului este invalid."),
+  boardCode: z
+    .string()
+    .min(3, "Codul plăcii Arduino trebuie să aibă cel puțin 3 caractere.")
+    .max(80, "Codul plăcii Arduino este prea lung."),
+  name: z.string().max(255, "Numele este prea lung.").optional(),
+});
+
+const unpairBoardSchema = z
+  .object({
+    landId: z.string().uuid("ID-ul terenului este invalid.").optional(),
+    boardCode: z.string().min(3).max(80).optional(),
+  })
+  .refine((v) => !!(v.landId || v.boardCode), {
+    message: "Trimite landId sau boardCode.",
+    path: ["landId"],
+  });
+
+module.exports = { ingestSchema, pairBoardSchema, unpairBoardSchema };

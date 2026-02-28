@@ -3,6 +3,7 @@ import { api } from "../../../api/endpoints";
 import { toastError, toastSuccess } from "../../../utils/toast";
 import { Button } from "../../../ui/button";
 import { Badge } from "../../../ui/badge";
+import { RefreshCcw, Users } from "lucide-react";
 
 export default function UsersManagementPage() {
   const [users, setUsers] = useState([]);
@@ -47,12 +48,19 @@ export default function UsersManagementPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">Administrare utilizatori</div>
           <div className="muted text-sm">Gestionează utilizatorii platformei</div>
         </div>
-        <Button onClick={load} variant="ghost">Actualizează</Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={load} variant="ghost">
+            <RefreshCcw size={16} /> Actualizează
+          </Button>
+          <span className="icon-chip hidden sm:inline-flex" title="Utilizatori">
+            <Users size={20} className="text-slate-700" />
+          </span>
+        </div>
       </div>
 
       {busy && <div className="card p-6 muted">Se încarcă...</div>}
@@ -62,7 +70,7 @@ export default function UsersManagementPage() {
       )}
 
       {!busy && users.length > 0 && (
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden agri-pattern">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

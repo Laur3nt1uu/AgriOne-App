@@ -1,4 +1,8 @@
-require("dotenv").config();
+const path = require("path");
+
+require("dotenv").config({
+  path: process.env.DOTENV_PATH || path.resolve(__dirname, "../../.env"),
+});
 
 function required(name) {
   const v = process.env[name];

@@ -1,7 +1,8 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const ApiError = require("../../utils/ApiError");
 const env = require("../../config/env");
-const { ingestSchema } = require("./iot.validation");
+const requireAuth = require("../../middlewares/auth.middleware");
+const { ingestSchema, pairBoardSchema, unpairBoardSchema } = require("./iot.validation");
 const service = require("./iot.service");
 
 const ingest = asyncHandler(async (req, res) => {
@@ -15,4 +16,26 @@ const ingest = asyncHandler(async (req, res) => {
   res.status(201).json(result);
 });
 
-module.exports = { ingest };
+const pair = [
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = pairBoardSchema.safeParse(req.body);
+    if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
+
+    const board = await service.pairBoard(req.user.sub, parsed.data);
+    res.json({ board });
+  }),
+];
+
+const unpair = [
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = unpairBoardSchema.safeParse(req.body);
+    if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
+
+    const board = await service.unpairBoard(req.user.sub, parsed.data);
+    res.json({ board });
+  }),
+];
+
+module.exports = { ingest, pair, unpair };

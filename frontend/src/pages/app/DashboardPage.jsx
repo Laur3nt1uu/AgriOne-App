@@ -3,6 +3,50 @@ import { api, pick } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import {
+  BellRing,
+  Cloud,
+  CloudRain,
+  CloudSun,
+  Cpu,
+  Droplets,
+  Leaf,
+  MapPin,
+  Sun,
+  Thermometer,
+  TrendingUp,
+  Wind,
+} from "lucide-react";
+
+function clamp01(x) {
+  const n = Number(x);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(1, n));
+}
+
+function weatherKind(weather) {
+  const rain = weather?.forecast?.nextHoursRainMm;
+  const clouds = weather?.current?.cloudsPct;
+
+  if (typeof rain === "number" && rain >= 0.5) return "rain";
+  if (typeof clouds === "number" && clouds >= 75) return "cloud";
+  if (typeof clouds === "number" && clouds >= 35) return "partly";
+  return "sun";
+}
+
+function weatherVisual(weather) {
+  const kind = weatherKind(weather);
+  if (kind === "rain") {
+    return { Icon: CloudRain, tintClass: "weather-tint-rain", label: "Ploaie posibilă" };
+  }
+  if (kind === "cloud") {
+    return { Icon: Cloud, tintClass: "weather-tint-cloud", label: "Înnorat" };
+  }
+  if (kind === "partly") {
+    return { Icon: CloudSun, tintClass: "weather-tint-cloud", label: "Parțial noros" };
+  }
+  return { Icon: Sun, tintClass: "weather-tint-sun", label: "Senin" };
+}
 
 export default function DashboardPage() {
   const [overview, setOverview] = useState(null);
@@ -232,13 +276,13 @@ export default function DashboardPage() {
     })();
   }, [globalRec]);
 
-  const cards = [
-    { label: "Total terenuri", value: pick(overview, ["totalLands","lands","countLands","landsCount"], "—") },
-    { label: "Senzori activi", value: pick(overview, ["activeSensors","sensorsOnline"], "—") },
-    { label: "Temp. medie (24h)", value: pick(overview, ["avgTemp","avgTemperature","avgTemperature24h"], "—") },
-    { label: "Profit total", value: pick(overview, ["totalProfit","profit","profitTotal"], "—") },
-    { label: "Alerte (7 zile)", value: pick(overview, ["activeAlerts","alertsActive","recentAlerts"], "—") },
-    { label: "Umid. medie (24h)", value: pick(overview, ["avgHumidity","avgHum","avgHumidity24h"], "—") },
+  const kpiCards = [
+    { label: "Total terenuri", value: pick(overview, ["totalLands","lands","countLands","landsCount"], "—"), Icon: Leaf },
+    { label: "Senzori activi", value: pick(overview, ["activeSensors","sensorsOnline"], "—"), Icon: Cpu },
+    { label: "Temp. medie (24h)", value: pick(overview, ["avgTemp","avgTemperature","avgTemperature24h"], "—"), Icon: Thermometer },
+    { label: "Umid. medie (24h)", value: pick(overview, ["avgHumidity","avgHum","avgHumidity24h"], "—"), Icon: Droplets },
+    { label: "Profit total", value: pick(overview, ["totalProfit","profit","profitTotal"], "—"), Icon: TrendingUp },
+    { label: "Alerte (7 zile)", value: pick(overview, ["activeAlerts","alertsActive","recentAlerts"], "—"), Icon: BellRing },
   ];
 
   const roDate = useMemo(
@@ -252,6 +296,21 @@ export default function DashboardPage() {
 
   const globalWeather = globalRec?.inputs?.weather || null;
   const globalActions = Array.isArray(globalRec?.actions) ? globalRec.actions : [];
+
+  const landWeatherVisual = useMemo(() => weatherVisual(weather), [weather]);
+  const globalWeatherVisual = useMemo(() => weatherVisual(globalWeather), [globalWeather]);
+
+  const landTempNorm = useMemo(() => {
+    const t = weather?.current?.tempC;
+    if (typeof t !== "number") return 0;
+    // scale -10..40C
+    return clamp01((t + 10) / 50);
+  }, [weather]);
+  const landHumNorm = useMemo(() => {
+    const h = weather?.current?.humidityPct;
+    if (typeof h !== "number") return 0;
+    return clamp01(h / 100);
+  }, [weather]);
 
   const globalLocationLabel = useMemo(() => {
     const loc = globalRec?.location;
@@ -274,14 +333,18 @@ export default function DashboardPage() {
     return "Locație: implicită (România)";
   }, [globalRec]);
 
+  const LandWeatherIcon = landWeatherVisual.Icon;
+  const GlobalWeatherIcon = globalWeatherVisual.Icon;
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">Dashboard</div>
           <div className="muted text-sm mt-1 capitalize">{roDate} • {roTime}</div>
           {globalLocationLabel ? (
-            <div className="muted text-xs mt-2">
+            <div className="muted text-xs mt-2 flex items-center gap-2">
+              <MapPin size={14} className="text-slate-700" />
               {globalLocationLabel}
               {globalPlace && (!String(globalLocationLabel).includes(globalPlace)) ? ` • ${globalPlace}` : ""}
             </div>
@@ -304,11 +367,21 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {cards.map((c) => (
-              <div key={c.label} className="card p-5 card-hover">
-                <div className="muted text-sm">{c.label}</div>
-                <div className="text-3xl font-extrabold mt-2">{String(c.value)}</div>
-                <div className="text-xs muted mt-1">Actualizat din backend</div>
+            {kpiCards.map(({ label, value, Icon }) => (
+              <div key={label} className="card p-5 card-hover agri-pattern">
+                <div className="relative flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="muted text-sm">{label}</div>
+                    <div className="text-3xl font-extrabold mt-2 truncate">{String(value)}</div>
+                    <div className="text-xs muted mt-1">Actualizat din backend</div>
+                  </div>
+                  <span className="icon-chip">
+                    <Icon size={20} className="text-slate-700" />
+                  </span>
+                </div>
+                <div className="relative mt-4 h-2 rounded-full bg-slate-900/5 overflow-hidden">
+                  <div className="h-full w-1/2 bg-gradient-to-r from-[hsl(var(--primary-500)/0.35)] to-transparent" />
+                </div>
               </div>
             ))}
           </div>
@@ -317,17 +390,41 @@ export default function DashboardPage() {
             <div className="text-sm font-bold">Acțiuni rapide</div>
             <div className="muted text-sm">Folosește meniul pentru navigare</div>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="card-soft p-4">Terenuri → gestionează parcele</div>
-              <div className="card-soft p-4">Senzori → istoric citiri</div>
-              <div className="card-soft p-4">Economie → venituri/cheltuieli</div>
+              <div className="card-soft p-4 flex items-center gap-3">
+                <span className="icon-chip w-10 h-10 rounded-2xl">
+                  <Leaf size={18} className="text-slate-700" />
+                </span>
+                <div>
+                  <div className="text-sm font-bold">Terenuri</div>
+                  <div className="muted text-xs">Gestionează parcele și hartă</div>
+                </div>
+              </div>
+              <div className="card-soft p-4 flex items-center gap-3">
+                <span className="icon-chip w-10 h-10 rounded-2xl">
+                  <Cpu size={18} className="text-slate-700" />
+                </span>
+                <div>
+                  <div className="text-sm font-bold">Senzori</div>
+                  <div className="muted text-xs">Istoric citiri și status</div>
+                </div>
+              </div>
+              <div className="card-soft p-4 flex items-center gap-3">
+                <span className="icon-chip w-10 h-10 rounded-2xl">
+                  <TrendingUp size={18} className="text-slate-700" />
+                </span>
+                <div>
+                  <div className="text-sm font-bold">Economie</div>
+                  <div className="muted text-xs">Venituri / cheltuieli</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="card p-5">
+          <div className={`card p-6 agri-pattern ${landWeatherVisual.tintClass}`}>
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <div className="text-sm font-bold">Vreme (teren)</div>
                 <div className="muted text-sm mt-1">
                   {weatherLand ? `Teren: ${weatherLand.name}` : "Nu există terenuri cu coordonate."}
@@ -362,33 +459,78 @@ export default function DashboardPage() {
             ) : !weather?.current ? (
               <div className="muted mt-4">Vreme indisponibilă momentan.</div>
             ) : (
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Temperatură</div>
-                  <div className="text-2xl font-extrabold mt-1">{Number(weather.current.tempC).toFixed(1)}°C</div>
-                  <div className="muted text-xs mt-2">Umiditate {weather.current.humidityPct ?? "—"}%</div>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="muted text-xs">Acum</div>
+                      <div className="text-3xl font-extrabold mt-1">{Number(weather.current.tempC).toFixed(1)}°C</div>
+                      <div className="muted text-xs mt-1">
+                        {landWeatherVisual.label}
+                        {weather.current.description ? ` • ${weather.current.description}` : ""}
+                      </div>
+                    </div>
+                    <span className="icon-chip anim-float">
+                      <LandWeatherIcon size={22} className="text-slate-700" />
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs muted">
+                        <Thermometer size={14} className="text-slate-700" /> Temperatură
+                      </div>
+                      <div className="mt-2 progress">
+                        <div className="progress-bar" style={{ width: `${Math.round(landTempNorm * 100)}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 text-xs muted">
+                        <Droplets size={14} className="text-slate-700" /> Umiditate
+                      </div>
+                      <div className="mt-2 progress">
+                        <div className="progress-bar" style={{ width: `${Math.round(landHumNorm * 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Vânt / nori</div>
-                  <div className="text-2xl font-extrabold mt-1">{weather.current.windMs != null ? `${Number(weather.current.windMs).toFixed(1)} m/s` : "—"}</div>
-                  <div className="muted text-xs mt-2">Nebulozitate {weather.current.cloudsPct ?? "—"}%</div>
+
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs muted">
+                        <Wind size={14} className="text-slate-700" /> Vânt
+                      </div>
+                      <div className="text-2xl font-extrabold mt-2">
+                        {weather.current.windMs != null ? `${Math.round(Number(weather.current.windMs) * 3.6)} km/h` : "—"}
+                      </div>
+                      <div className="muted text-xs mt-1">(≈ {weather.current.windMs != null ? `${Number(weather.current.windMs).toFixed(1)} m/s` : "—"})</div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 text-xs muted">
+                        <CloudSun size={14} className="text-slate-700" /> Nori
+                      </div>
+                      <div className="text-2xl font-extrabold mt-2">{weather.current.cloudsPct ?? "—"}%</div>
+                      <div className="muted text-xs mt-1">Nebulozitate</div>
+                    </div>
+                  </div>
+
+                  {weather?.forecast ? (
+                    <div className="mt-4 flex gap-2 flex-wrap">
+                      {weather.forecast.nextHoursMinTempC != null ? (
+                        <Badge>Min ~12h: {Number(weather.forecast.nextHoursMinTempC).toFixed(1)}°C</Badge>
+                      ) : null}
+                      {weather.forecast.nextHoursRainMm != null ? (
+                        <Badge>Ploaie ~12h: {Number(weather.forecast.nextHoursRainMm).toFixed(1)} mm</Badge>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             )}
-
-            {weather?.forecast ? (
-              <div className="mt-4 flex gap-2 flex-wrap">
-                {weather.forecast.nextHoursMinTempC != null ? (
-                  <Badge>Min. ~12h: {Number(weather.forecast.nextHoursMinTempC).toFixed(1)}°C</Badge>
-                ) : null}
-                {weather.forecast.nextHoursRainMm != null ? (
-                  <Badge>Ploaie ~12h: {Number(weather.forecast.nextHoursRainMm).toFixed(1)} mm</Badge>
-                ) : null}
-              </div>
-            ) : null}
           </div>
 
-          <div className="card p-5">
+          <div className={`card p-6 agri-pattern ${globalWeatherVisual.tintClass}`}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-bold">Meteo (global) • recomandări azi</div>
@@ -409,18 +551,23 @@ export default function DashboardPage() {
               <div className="mt-4 muted">Vreme indisponibilă momentan.</div>
             ) : (
               <>
-                <div className="mt-4 flex gap-2 flex-wrap">
-                  <Badge>Temp: {globalWeather.current.tempC ?? "—"}°C</Badge>
-                  <Badge>Umid: {globalWeather.current.humidityPct ?? "—"}%</Badge>
-                  <Badge>
-                    Vânt: {globalWeather.current.windMs != null ? `${Math.round(Number(globalWeather.current.windMs) * 3.6)} km/h` : "—"}
-                  </Badge>
-                  {globalWeather?.forecast?.nextHoursRainMm != null ? (
-                    <Badge>Ploaie ~12h: {Number(globalWeather.forecast.nextHoursRainMm).toFixed(1)} mm</Badge>
-                  ) : null}
-                  {globalWeather?.forecast?.nextHoursMinTempC != null ? (
-                    <Badge>Min. ~12h: {Number(globalWeather.forecast.nextHoursMinTempC).toFixed(1)}°C</Badge>
-                  ) : null}
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge>Temp: {globalWeather.current.tempC ?? "—"}°C</Badge>
+                    <Badge>Umid: {globalWeather.current.humidityPct ?? "—"}%</Badge>
+                    <Badge>
+                      Vânt: {globalWeather.current.windMs != null ? `${Math.round(Number(globalWeather.current.windMs) * 3.6)} km/h` : "—"}
+                    </Badge>
+                    {globalWeather?.forecast?.nextHoursRainMm != null ? (
+                      <Badge>Ploaie ~12h: {Number(globalWeather.forecast.nextHoursRainMm).toFixed(1)} mm</Badge>
+                    ) : null}
+                    {globalWeather?.forecast?.nextHoursMinTempC != null ? (
+                      <Badge>Min. ~12h: {Number(globalWeather.forecast.nextHoursMinTempC).toFixed(1)}°C</Badge>
+                    ) : null}
+                  </div>
+                  <span className="icon-chip anim-float hidden sm:inline-flex">
+                    <GlobalWeatherIcon size={20} className="text-slate-700" />
+                  </span>
                 </div>
 
                 {globalActions.length ? (

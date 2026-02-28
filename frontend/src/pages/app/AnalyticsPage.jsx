@@ -3,6 +3,7 @@ import { api, pick } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { Activity, BarChart3, Cpu, Leaf, Thermometer, TrendingUp } from "lucide-react";
 
 function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
@@ -54,12 +55,17 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">Analize</div>
           <div className="muted text-sm">Scor sănătate • recomandări • overview</div>
         </div>
-        <Button onClick={load} variant="ghost">Actualizează</Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={load} variant="ghost">Actualizează</Button>
+          <span className="icon-chip hidden sm:inline-flex" title="Analize">
+            <BarChart3 size={20} className="text-slate-700" />
+          </span>
+        </div>
       </div>
       {busy ? (
         <div className="card p-6 muted">Se încarcă…</div>
@@ -75,13 +81,18 @@ export default function AnalyticsPage() {
               {health.map((h) => {
                 const score = clamp(Number(h.score || 0), 0, 100);
                 return (
-                  <div key={h.landId} className={`card-soft p-4 border ${scoreColor(score)}`}>
+                  <div key={h.landId} className={`card-soft p-4 border ${scoreColor(score)} agri-pattern card-hover`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-extrabold truncate">{h.landName}</div>
                         <div className="muted text-sm">{h.label || "—"}</div>
                       </div>
-                      <Badge>Scor: {score}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge>Scor: {score}</Badge>
+                        <span className="icon-chip hidden sm:inline-flex" title="Health score">
+                          <Activity size={18} className="text-slate-700" />
+                        </span>
+                      </div>
                     </div>
 
                     <div className="mt-3">
@@ -112,21 +123,33 @@ export default function AnalyticsPage() {
             <div className="card p-5">
               <div className="text-sm font-bold">Overview</div>
               <div className="mt-3 grid grid-cols-2 gap-3">
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Total terenuri</div>
-                  <div className="text-2xl font-extrabold mt-1">{overview.totalLands}</div>
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="muted text-xs">Total terenuri</div>
+                    <span className="icon-chip w-10 h-10 rounded-2xl"><Leaf size={18} className="text-slate-700" /></span>
+                  </div>
+                  <div className="text-2xl font-extrabold mt-2">{overview.totalLands}</div>
                 </div>
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Senzori activi</div>
-                  <div className="text-2xl font-extrabold mt-1">{overview.activeSensors}</div>
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="muted text-xs">Senzori activi</div>
+                    <span className="icon-chip w-10 h-10 rounded-2xl"><Cpu size={18} className="text-slate-700" /></span>
+                  </div>
+                  <div className="text-2xl font-extrabold mt-2">{overview.activeSensors}</div>
                 </div>
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Temp. medie</div>
-                  <div className="text-2xl font-extrabold mt-1">{Number(overview.avgTemp || 0).toFixed(1)}°C</div>
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="muted text-xs">Temp. medie</div>
+                    <span className="icon-chip w-10 h-10 rounded-2xl"><Thermometer size={18} className="text-slate-700" /></span>
+                  </div>
+                  <div className="text-2xl font-extrabold mt-2">{Number(overview.avgTemp || 0).toFixed(1)}°C</div>
                 </div>
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Profit total</div>
-                  <div className="text-2xl font-extrabold mt-1">{Number(overview.totalProfit || 0).toFixed(0)} RON</div>
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="muted text-xs">Profit total</div>
+                    <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingUp size={18} className="text-slate-700" /></span>
+                  </div>
+                  <div className="text-2xl font-extrabold mt-2">{Number(overview.totalProfit || 0).toFixed(0)} RON</div>
                 </div>
               </div>
             </div>

@@ -39,7 +39,7 @@ export default function AuthVideoLayout({ title, subtitle, children, footer }) {
       <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/25 to-white/45" />
 
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4 animate-fadeIn">
-        <div className="w-full max-w-md glass rounded-3xl p-6">
+        <div className="w-full max-w-md glass rounded-3xl p-7 agri-pattern">
           <div className="flex items-center gap-3">
             <img src={logo} alt="AgriOne" className="w-14 h-14 rounded-2xl" />
             <div>

@@ -28,6 +28,7 @@ export const getErrorMessage = (err, fallback = "A apărut o eroare.") => {
   if (status === 409) {
     if (code === "AUTH_EMAIL_ALREADY_REGISTERED" || /email/i.test(msg)) return "Acest email este deja înregistrat.";
     if (code === "SENSOR_CODE_EXISTS" || /sensor code already exists/i.test(msg)) return "Acest cod de senzor este deja folosit.";
+    if (code === "BOARD_CODE_EXISTS" || /board code already owned/i.test(msg)) return "Acest cod de Arduino este deja folosit.";
     return "Există deja o înregistrare cu aceste date.";
   }
   if (status === 401) {
@@ -54,6 +55,7 @@ export const getErrorMessage = (err, fallback = "A apărut o eroare.") => {
     if (code === "LAND_NOT_FOUND") return "Terenul nu a fost găsit.";
     if (code === "SENSOR_NOT_FOUND") return "Senzorul nu a fost găsit.";
     if (code === "SENSOR_NOT_REGISTERED") return "Senzorul nu este înregistrat.";
+    if (code === "BOARD_NOT_FOUND") return "Placa Arduino nu a fost găsită.";
     if (code === "TRANSACTION_NOT_FOUND") return "Tranzacția nu a fost găsită.";
     if (code === "USER_NOT_FOUND") return "Utilizatorul nu a fost găsit.";
     return "Resursa nu a fost găsită.";
@@ -92,6 +94,12 @@ export const api = {
     list: () => apiClient.get("/api/sensors").then(r => r.data?.sensors || r.data?.items || r.data),
     // pairing: sensorCode + landId
     pair: (data) => apiClient.post("/api/sensors/pair", data).then(r => r.data?.sensor || r.data),
+  },
+
+  iot: {
+    // pairing: boardCode + landId (Arduino Uno)
+    pairBoard: (data) => apiClient.post("/api/iot/pair", data).then((r) => r.data?.board || r.data),
+    unpairBoard: (data) => apiClient.post("/api/iot/unpair", data).then((r) => r.data?.board || r.data),
   },
 
   readings: {

@@ -3,6 +3,7 @@ import { authStore } from "../../auth/auth.store";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { LogOut, Settings, Shield, User as UserIcon } from "lucide-react";
 
 export default function ProfilePage() {
   const nav = useNavigate();
@@ -17,7 +18,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="card p-5">
+      <div className="card p-6 agri-pattern">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-[hsl(var(--primary)/0.10)] border border-[hsl(var(--primary)/0.18)] flex items-center justify-center">
             <span className="text-slate-900 font-extrabold text-2xl">
@@ -33,10 +34,21 @@ export default function ProfilePage() {
               </Badge>
             )}
           </div>
+
+          <div className="ml-auto hidden sm:flex items-center gap-2">
+            <span className="icon-chip" title="Profil">
+              <UserIcon size={20} className="text-slate-700" />
+            </span>
+            {user?.role === "ADMIN" ? (
+              <span className="icon-chip" title="Admin">
+                <Shield size={20} className="text-slate-700" />
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
 
-      <div className="card p-5">
+      <div className="card p-5 agri-pattern">
         <div className="text-xl font-bold">Preferințe</div>
         <div className="mt-4 card-soft p-4 flex items-center justify-between">
           <div>
@@ -45,11 +57,21 @@ export default function ProfilePage() {
           </div>
           <Badge as="div" variant="success">ON</Badge>
         </div>
+
+        <div className="mt-3 card-soft p-4 flex items-center justify-between">
+          <div>
+            <div className="font-semibold">Setări cont</div>
+            <div className="text-sm muted">În dezvoltare</div>
+          </div>
+          <span className="icon-chip" title="Setări">
+            <Settings size={18} className="text-slate-700" />
+          </span>
+        </div>
       </div>
 
-      <div className="card p-5">
+      <div className="card p-5 agri-pattern">
         <Button onClick={logout} variant="ghost" fullWidth className="rounded-2xl py-3">
-          Deconectare
+          <LogOut size={18} /> Deconectare
         </Button>
       </div>
     </div>

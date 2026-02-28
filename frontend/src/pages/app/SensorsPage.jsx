@@ -5,6 +5,13 @@ import { toastError } from "../../utils/toast";
 import ReadingsChart from "../../components/charts/ReadingsChart";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { Clock, Cpu, Droplets, Thermometer } from "lucide-react";
+
+function clamp01(x) {
+  const n = Number(x);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(1, n));
+}
 
 function isOnline(lastAt) {
   if (!lastAt) return false;
@@ -93,6 +100,7 @@ export default function SensorsPage() {
     return {
       tNow: temps[temps.length-1],
       hNow: hums[hums.length-1],
+      lastTs: series[series.length-1]?.ts,
       tAvg: avg(temps),
       hAvg: avg(hums),
       tMax: Math.max(...temps),
@@ -102,9 +110,27 @@ export default function SensorsPage() {
     };
   }, [series]);
 
+  const tempNorm = useMemo(() => {
+    if (!stats) return 0;
+    // scale -10..40C
+    return clamp01((Number(stats.tNow) + 10) / 50);
+  }, [stats]);
+  const humNorm = useMemo(() => {
+    if (!stats) return 0;
+    return clamp01(Number(stats.hNow) / 100);
+  }, [stats]);
+
+  const lastLabel = useMemo(() => {
+    const ts = stats?.lastTs;
+    if (!ts) return null;
+    const t = new Date(ts);
+    if (Number.isNaN(t.getTime())) return null;
+    return t.toLocaleString("ro-RO", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  }, [stats]);
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">Senzori</div>
           <div className="muted text-sm">
@@ -154,8 +180,23 @@ export default function SensorsPage() {
                       <Badge>Cultură: {selectedLand.cropType}</Badge>
                     ) : null}
                   </div>
-                  <div className="muted text-sm">
-                    Interval: <span className="text-slate-900 font-semibold">{range}</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="card-soft p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="muted text-xs">Interval</div>
+                        <Cpu size={16} className="text-slate-700" />
+                      </div>
+                      <div className="text-sm font-extrabold mt-2">{range}</div>
+                      <div className="muted text-xs mt-1">Grafic + statistici</div>
+                    </div>
+                    <div className="card-soft p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="muted text-xs">Ultima citire</div>
+                        <Clock size={16} className="text-slate-700" />
+                      </div>
+                      <div className="text-sm font-extrabold mt-2">{lastLabel || "—"}</div>
+                      <div className="muted text-xs mt-1">Timp local</div>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -168,15 +209,32 @@ export default function SensorsPage() {
               {!stats ? (
                 <div className="muted mt-2">Nu există date.</div>
               ) : (
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  <div className="card-soft p-4">
-                    <div className="muted text-xs">Temperatură acum</div>
-                    <div className="text-2xl font-extrabold mt-1">{stats.tNow.toFixed(1)}°C</div>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="card-soft p-4 agri-pattern">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="muted text-xs">Temperatură</div>
+                      <span className="icon-chip w-10 h-10 rounded-2xl">
+                        <Thermometer size={18} className="text-slate-700" />
+                      </span>
+                    </div>
+                    <div className="text-3xl font-extrabold mt-2">{stats.tNow.toFixed(1)}°C</div>
+                    <div className="mt-3 progress">
+                      <div className="progress-bar" style={{ width: `${Math.round(tempNorm * 100)}%` }} />
+                    </div>
                     <div className="muted text-xs mt-2">medie {stats.tAvg.toFixed(1)} • min {stats.tMin.toFixed(1)} • max {stats.tMax.toFixed(1)}</div>
                   </div>
-                  <div className="card-soft p-4">
-                    <div className="muted text-xs">Umiditate acum</div>
-                    <div className="text-2xl font-extrabold mt-1">{stats.hNow.toFixed(0)}%</div>
+
+                  <div className="card-soft p-4 agri-pattern">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="muted text-xs">Umiditate</div>
+                      <span className="icon-chip w-10 h-10 rounded-2xl">
+                        <Droplets size={18} className="text-slate-700" />
+                      </span>
+                    </div>
+                    <div className="text-3xl font-extrabold mt-2">{stats.hNow.toFixed(0)}%</div>
+                    <div className="mt-3 progress">
+                      <div className="progress-bar" style={{ width: `${Math.round(humNorm * 100)}%` }} />
+                    </div>
                     <div className="muted text-xs mt-2">medie {stats.hAvg.toFixed(0)} • min {stats.hMin.toFixed(0)} • max {stats.hMax.toFixed(0)}</div>
                   </div>
                 </div>

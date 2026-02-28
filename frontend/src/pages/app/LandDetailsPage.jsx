@@ -5,6 +5,7 @@ import { toastError, toastSuccess } from "../../utils/toast";
 import GooglePolygonViewMap from "../../components/maps/GooglePolygonViewMap";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { Cloud, CloudRain, CloudSun, Droplets, Sun, Thermometer, Wind } from "lucide-react";
 
 
 function isOnline(lastAt) {
@@ -12,6 +13,30 @@ function isOnline(lastAt) {
   const t = new Date(lastAt).getTime();
   if (Number.isNaN(t)) return false;
   return Date.now() - t < 15 * 60 * 1000;
+}
+
+function clamp01(x) {
+  const n = Number(x);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(1, n));
+}
+
+function weatherKind(weather) {
+  const rain = weather?.forecast?.nextHoursRainMm;
+  const clouds = weather?.current?.cloudsPct;
+
+  if (typeof rain === "number" && rain >= 0.5) return "rain";
+  if (typeof clouds === "number" && clouds >= 75) return "cloud";
+  if (typeof clouds === "number" && clouds >= 35) return "partly";
+  return "sun";
+}
+
+function weatherVisual(weather) {
+  const kind = weatherKind(weather);
+  if (kind === "rain") return { Icon: CloudRain, tintClass: "weather-tint-rain", label: "Ploaie" };
+  if (kind === "cloud") return { Icon: Cloud, tintClass: "weather-tint-cloud", label: "Înnorat" };
+  if (kind === "partly") return { Icon: CloudSun, tintClass: "weather-tint-cloud", label: "Parțial noros" };
+  return { Icon: Sun, tintClass: "weather-tint-sun", label: "Senin" };
 }
 
 export default function LandDetailsPage() {
@@ -177,19 +202,19 @@ export default function LandDetailsPage() {
     e?.preventDefault?.();
     const code = pairCode.trim();
     if (!code) {
-      toastError(null, "Completează codul senzorului.");
+      toastError(null, "Completează codul plăcii Arduino.");
       return;
     }
 
     setPairing(true);
     try {
-      await api.sensors.pair({ sensorCode: code, landId: id });
-      toastSuccess("Senzor asociat cu succes.");
+      await api.iot.pairBoard({ boardCode: code, landId: id });
+      toastSuccess("Placă Arduino asociată cu succes.");
       setPairOpen(false);
       setPairCode("");
       await load();
     } catch (e2) {
-      toastError(e2, "Nu pot asocia senzorul.");
+      toastError(e2, "Nu pot asocia placa Arduino.");
     } finally {
       setPairing(false);
     }
@@ -237,6 +262,19 @@ export default function LandDetailsPage() {
     }
   }
 
+  const wx = useMemo(() => weatherVisual(weather), [weather]);
+  const WxIcon = wx.Icon;
+  const tempNorm = useMemo(() => {
+    const t = weather?.current?.tempC;
+    if (typeof t !== "number") return 0;
+    return clamp01((t + 10) / 50);
+  }, [weather]);
+  const humNorm = useMemo(() => {
+    const h = weather?.current?.humidityPct;
+    if (typeof h !== "number") return 0;
+    return clamp01(h / 100);
+  }, [weather]);
+
   if (busy) return <div className="card p-6 muted">Se încarcă…</div>;
   if (!land)
     return (
@@ -268,7 +306,7 @@ export default function LandDetailsPage() {
           </Button>
 
           <Button onClick={openPair} variant="ghost">
-            Asociază senzor
+            Asociază Arduino
           </Button>
 
           <Button onClick={() => nav(`/sensors?landId=${land.id}`)} variant="primary">
@@ -297,7 +335,7 @@ export default function LandDetailsPage() {
           <span className={`dot ${online ? "dot-online" : "dot-offline"}`} />
           {online ? "Online" : "Offline"}
         </Badge>
-        <Badge>Senzor: {land.sensorId || "Neasociat"}</Badge>
+        <Badge>Arduino: {land.arduinoCode || land.sensorId || "Neasociat"}</Badge>
         <Badge>
           Centroid: {land.centroid?.lat?.toFixed?.(4) || land.centroidLat?.toFixed?.(4) || "-"},{" "}
           {land.centroid?.lng?.toFixed?.(4) || land.centroidLng?.toFixed?.(4) || "-"}
@@ -317,8 +355,8 @@ export default function LandDetailsPage() {
           <div className="relative w-full max-w-md card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-lg font-extrabold">Asociază senzor</div>
-                <div className="muted text-sm mt-1">Introdu codul de pe senzor pentru a-l asocia cu acest teren.</div>
+                <div className="text-lg font-extrabold">Asociază placă Arduino</div>
+                <div className="muted text-sm mt-1">Introdu codul plăcii (Arduino Uno) pentru a o asocia cu acest teren.</div>
               </div>
               <Button type="button" variant="ghost" onClick={() => setPairOpen(false)} disabled={pairing} title="Închide">
                 ✕
@@ -327,12 +365,12 @@ export default function LandDetailsPage() {
 
             <form className="mt-4 space-y-4" onSubmit={submitPair}>
               <div>
-                <div className="muted text-xs mb-1">Cod senzor</div>
+                <div className="muted text-xs mb-1">Cod Arduino</div>
                 <input
                   className="input"
                   value={pairCode}
                   onChange={(e) => setPairCode(e.target.value)}
-                  placeholder="ex: AGRI-123456"
+                  placeholder="ex: UNO-123456 / AGRI-UNO-01"
                   autoFocus
                   disabled={pairing}
                 />
@@ -343,7 +381,7 @@ export default function LandDetailsPage() {
                   Renunță
                 </Button>
                 <Button type="submit" variant="primary" disabled={pairing}>
-                  {pairing ? "Se asociază..." : "Asociază"}
+                  {pairing ? "Se asociază..." : "Asociază Arduino"}
                 </Button>
               </div>
             </form>
@@ -439,7 +477,7 @@ export default function LandDetailsPage() {
             </div>
           </div>
 
-          <div className="card p-5">
+          <div className={`card p-6 agri-pattern ${wx.tintClass}`}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-bold">Vreme</div>
@@ -450,6 +488,11 @@ export default function LandDetailsPage() {
                   <div className="muted text-xs mt-2">Locație: {weatherPlace}</div>
                 ) : null}
               </div>
+              {weather?.current ? (
+                <span className="icon-chip anim-float hidden sm:inline-flex" title={wx.label}>
+                  <WxIcon size={20} className="text-slate-700" />
+                </span>
+              ) : null}
               <Button
                 variant="ghost"
                 onClick={() => loadWeather(false)}
@@ -467,34 +510,49 @@ export default function LandDetailsPage() {
             ) : !weather?.current ? (
               <div className="mt-4 muted">Vreme indisponibilă momentan.</div>
             ) : (
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Temperatură</div>
-                  <div className="text-2xl font-extrabold mt-1">
-                    {weather.current.tempC ?? "—"}°C
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="muted text-xs">Temperatură</div>
+                    <Thermometer size={16} className="text-slate-700" />
+                  </div>
+                  <div className="text-3xl font-extrabold mt-2">{weather.current.tempC ?? "—"}°C</div>
+                  <div className="mt-3 progress">
+                    <div className="progress-bar" style={{ width: `${Math.round(tempNorm * 100)}%` }} />
                   </div>
                   {weather.current.description ? (
-                    <div className="muted text-xs mt-1">{weather.current.description}</div>
-                  ) : null}
+                    <div className="muted text-xs mt-2">{weather.current.description}</div>
+                  ) : (
+                    <div className="muted text-xs mt-2">{wx.label}</div>
+                  )}
                 </div>
 
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Umiditate</div>
-                  <div className="text-2xl font-extrabold mt-1">
-                    {weather.current.humidityPct ?? "—"}%
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="muted text-xs">Umiditate</div>
+                    <Droplets size={16} className="text-slate-700" />
                   </div>
+                  <div className="text-3xl font-extrabold mt-2">{weather.current.humidityPct ?? "—"}%</div>
+                  <div className="mt-3 progress">
+                    <div className="progress-bar" style={{ width: `${Math.round(humNorm * 100)}%` }} />
+                  </div>
+                  <div className="muted text-xs mt-2">Aer (RH)</div>
                 </div>
 
-                <div className="card-soft p-4">
-                  <div className="muted text-xs">Vânt</div>
-                  <div className="text-2xl font-extrabold mt-1">
+                <div className="card-soft p-4 agri-pattern">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="muted text-xs">Vânt</div>
+                    <Wind size={16} className="text-slate-700" />
+                  </div>
+                  <div className="text-3xl font-extrabold mt-2">
                     {weather.current.windMs != null ? `${(Number(weather.current.windMs) * 3.6).toFixed(0)} km/h` : "—"}
                   </div>
+                  <div className="muted text-xs mt-2">Derivă / evaporare</div>
                 </div>
 
-                <div className="card-soft p-4">
+                <div className="card-soft p-4 agri-pattern">
                   <div className="muted text-xs">Prognoză (urm. ore)</div>
-                  <div className="text-sm font-bold mt-1">
+                  <div className="text-sm font-bold mt-2">
                     Min: {weather?.forecast?.nextHoursMinTempC != null ? `${weather.forecast.nextHoursMinTempC}°C` : "—"}
                   </div>
                   <div className="muted text-xs mt-1">
