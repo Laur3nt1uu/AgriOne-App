@@ -1,11 +1,14 @@
 import { NavLink } from "react-router-dom";
+import { prefetchByPath } from "../../router/chunks";
 
 const Tab = ({ to, label }) => (
   <NavLink
     to={to}
+    onMouseEnter={() => prefetchByPath(to)}
+    onFocus={() => prefetchByPath(to)}
     className={({ isActive }) =>
       `flex-1 text-center py-3 rounded-2xl mx-1 transition border
-       ${isActive ? "bg-[hsl(var(--primary)/0.10)] border-[hsl(var(--primary)/0.20)] text-slate-900" : "border-transparent text-slate-700 hover:bg-slate-900/5"}`
+       ${isActive ? "bg-primary/10 border-primary/25 text-foreground" : "border-transparent text-muted-foreground hover:bg-foreground/5"}`
     }
   >
     {label}

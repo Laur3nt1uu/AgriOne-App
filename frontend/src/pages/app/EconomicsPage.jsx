@@ -89,7 +89,7 @@ export default function EconomicsPage() {
         <div className="flex items-center gap-2">
           <Button onClick={load} variant="ghost">Actualizează</Button>
           <span className="icon-chip hidden sm:inline-flex" title="Economie">
-            <Wallet size={20} className="text-slate-700" />
+            <Wallet size={20} className="text-muted-foreground" />
           </span>
         </div>
       </div>
@@ -122,9 +122,9 @@ export default function EconomicsPage() {
                     </Badge>
                     <span className="icon-chip hidden sm:inline-flex" title={t.type === "REVENUE" ? "Venit" : "Cheltuială"}>
                       {t.type === "REVENUE" ? (
-                        <ArrowUpRight size={18} className="text-slate-700" />
+                        <ArrowUpRight size={18} className="text-muted-foreground" />
                       ) : (
-                        <ArrowDownRight size={18} className="text-slate-700" />
+                        <ArrowDownRight size={18} className="text-muted-foreground" />
                       )}
                     </span>
                     <Button variant="ghost" onClick={() => onDelete(t.id)}>Șterge</Button>
@@ -142,21 +142,21 @@ export default function EconomicsPage() {
               <div className="card-soft p-4 agri-pattern">
                 <div className="flex items-center justify-between gap-3">
                   <div className="muted text-xs">Venituri</div>
-                  <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingUp size={18} className="text-slate-700" /></span>
+                  <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingUp size={18} className="text-muted-foreground" /></span>
                 </div>
                 <div className="text-2xl font-extrabold mt-2">{money(s.revenue)}</div>
               </div>
               <div className="card-soft p-4 agri-pattern">
                 <div className="flex items-center justify-between gap-3">
                   <div className="muted text-xs">Cheltuieli</div>
-                  <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingDown size={18} className="text-slate-700" /></span>
+                  <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingDown size={18} className="text-muted-foreground" /></span>
                 </div>
                 <div className="text-2xl font-extrabold mt-2">{money(s.expenses)}</div>
               </div>
               <div className="card-soft p-4 agri-pattern">
                 <div className="flex items-center justify-between gap-3">
                   <div className="muted text-xs">Profit</div>
-                  <span className="icon-chip w-10 h-10 rounded-2xl"><ReceiptText size={18} className="text-slate-700" /></span>
+                  <span className="icon-chip w-10 h-10 rounded-2xl"><ReceiptText size={18} className="text-muted-foreground" /></span>
                 </div>
                 <div className="text-2xl font-extrabold mt-2">{money(s.profit)}</div>
                 <div className="muted text-xs mt-2">pregătit pentru demo (licență)</div>

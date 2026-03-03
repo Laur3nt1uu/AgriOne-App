@@ -58,7 +58,7 @@ export default function UsersManagementPage() {
             <RefreshCcw size={16} /> Actualizează
           </Button>
           <span className="icon-chip hidden sm:inline-flex" title="Utilizatori">
-            <Users size={20} className="text-slate-700" />
+            <Users size={20} className="text-muted-foreground" />
           </span>
         </div>
       </div>
@@ -74,16 +74,16 @@ export default function UsersManagementPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-900/10">
-                  <th className="text-left p-4 text-slate-700 font-medium">Email</th>
-                  <th className="text-left p-4 text-slate-700 font-medium">Rol</th>
-                  <th className="text-left p-4 text-slate-700 font-medium">Creat</th>
-                  <th className="text-right p-4 text-slate-700 font-medium">Acțiuni</th>
+                <tr className="border-b border-border/10">
+                  <th className="text-left p-4 text-muted-foreground font-medium">Email</th>
+                  <th className="text-left p-4 text-muted-foreground font-medium">Rol</th>
+                  <th className="text-left p-4 text-muted-foreground font-medium">Creat</th>
+                  <th className="text-right p-4 text-muted-foreground font-medium">Acțiuni</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b border-slate-900/5 hover:bg-slate-900/5">
+                  <tr key={u.id} className="border-b border-border/10 hover:bg-muted/30">
                     <td className="p-4">{u.email}</td>
                     <td className="p-4">
                       <Badge variant={u.role === "ADMIN" ? "success" : "default"}>{u.role}</Badge>
@@ -96,7 +96,7 @@ export default function UsersManagementPage() {
                         <Button onClick={() => toggleRole(u)} variant="ghost" className="text-xs">
                           Schimbă rol
                         </Button>
-                        <Button onClick={() => deleteUser(u.id)} variant="ghost" className="text-xs text-red-400">
+                        <Button onClick={() => deleteUser(u.id)} variant="ghost" className="text-xs text-destructive">
                           Șterge
                         </Button>
                       </div>

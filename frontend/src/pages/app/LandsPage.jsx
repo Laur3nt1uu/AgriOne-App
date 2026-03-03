@@ -187,7 +187,7 @@ export default function LandsPage() {
                       <div className="card-soft p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div className="muted text-xs">Cultură</div>
-                          <Leaf size={16} className="text-slate-700" />
+                          <Leaf size={16} className="text-muted-foreground" />
                         </div>
                         <div className="text-sm font-extrabold mt-2 truncate">{it.cropType || "—"}</div>
                       </div>
@@ -195,7 +195,7 @@ export default function LandsPage() {
                       <div className="card-soft p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div className="muted text-xs">Suprafață</div>
-                          <Ruler size={16} className="text-slate-700" />
+                          <Ruler size={16} className="text-muted-foreground" />
                         </div>
                         <div className="text-sm font-extrabold mt-2">{fmtHa(it.areaHa)}</div>
                       </div>
@@ -203,7 +203,7 @@ export default function LandsPage() {
                       <div className="card-soft p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div className="muted text-xs">Senzor</div>
-                          <Cpu size={16} className="text-slate-700" />
+                          <Cpu size={16} className="text-muted-foreground" />
                         </div>
                         <div className="text-sm font-extrabold mt-2 truncate">{it.sensorId ? it.sensorId : "Neasociat"}</div>
                       </div>
@@ -211,7 +211,7 @@ export default function LandsPage() {
                       <div className="card-soft p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div className="muted text-xs">Vreme</div>
-                          <WxIcon size={16} className="text-slate-700" />
+                          <WxIcon size={16} className="text-muted-foreground" />
                         </div>
                         {!hasCoords ? (
                           <div className="text-sm font-extrabold mt-2">Fără coordonate</div>

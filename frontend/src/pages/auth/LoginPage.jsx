@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion as Motion } from "framer-motion";
+import { Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
 import { api } from "../../api/endpoints";
 import { authStore } from "../../auth/auth.store";
-import { toastError } from "../../utils/toast";
+import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
-import AuthVideoLayout from "./AuthVideoLayout";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
+import AuthNexusLayout from "./AuthNexusLayout";
 
 export default function LoginPage() {
   const nav = useNavigate();
@@ -19,10 +23,13 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   async function onSubmit(e) {
     e.preventDefault();
+    setError("");
     setBusy(true);
     try {
       const data = await api.auth.login({ email, password });
@@ -34,49 +41,112 @@ export default function LoginPage() {
       if (!token) throw new Error("Login response missing token.");
 
       authStore.setAuth({ token, user });
+      toastSuccess("Welcome back!");
       nav(redirectTo, { replace: true });
     } catch (e2) {
-      toastError(e2, "Autentificare eșuată.");
+      setError("Invalid credentials. Please try again.");
+      toastError(e2, "Login failed.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <AuthVideoLayout
-      title="Bine ai revenit"
-      subtitle="Autentifică-te în AgriOne"
+    <AuthNexusLayout
+      title="Welcome Back"
+      subtitle="Sign in to manage your farms"
       footer={
-        <div className="space-y-2 text-sm muted">
+        <div className="space-y-2">
           <div>
-            <Link className="text-[hsl(var(--primary))] hover:opacity-90 font-semibold" to="/forgot-password">
-              Ai uitat parola?
+            <Link
+              className="text-primary hover:underline font-medium transition-all hover:text-primary/80"
+              to="/forgot-password"
+            >
+              Forgot password?
             </Link>
           </div>
           <div>
-            Nu ai cont?{" "}
-            <Link className="text-[hsl(var(--primary))] hover:opacity-90 font-semibold" to="/register">
-              Creează cont
+            <span className="text-muted-foreground">Don't have an account? </span>
+            <Link
+              to="/register"
+              className="text-primary hover:underline font-medium transition-all hover:text-primary/80"
+            >
+              Sign up
             </Link>
           </div>
         </div>
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <div className="text-xs muted mb-1">Email</div>
-          <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
+        {error ? (
+          <Motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+          >
+            {error}
+          </Motion.div>
+        ) : null}
 
-        <div>
-          <div className="text-xs muted mb-1">Parolă</div>
-          <input type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
+        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
+          <Label htmlFor="email">Email</Label>
+          <div className="relative mt-1.5">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="pl-10 transition-all focus:border-primary/50 focus:shadow-lg focus:shadow-primary/10"
+              required
+              autoComplete="email"
+            />
+          </div>
+        </Motion.div>
 
-        <Button type="submit" disabled={busy} variant="primary" className="rounded-2xl py-3">
-          {busy ? "Se autentifică..." : "Autentificare"}
-        </Button>
+        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.22 }}>
+          <Label htmlFor="password">Password</Label>
+          <div className="relative mt-1.5">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-10 pr-10 transition-all focus:border-primary/50 focus:shadow-lg focus:shadow-primary/10"
+              required
+              autoComplete="current-password"
+            />
+            <Motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </Motion.button>
+          </div>
+        </Motion.div>
+
+        <Motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.28 }}>
+          <Button type="submit" className="w-full" disabled={busy}>
+            {busy ? (
+              <Motion.span animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                Signing in...
+              </Motion.span>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Sign In
+              </>
+            )}
+          </Button>
+        </Motion.div>
       </form>
-    </AuthVideoLayout>
+    </AuthNexusLayout>
   );
 }

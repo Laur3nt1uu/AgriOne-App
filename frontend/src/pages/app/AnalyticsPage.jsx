@@ -9,9 +9,9 @@ function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
 function scoreColor(score){
   // doar returnăm clase (no hard colors in charts, dar aici e ok)
-  if (score >= 80) return "border-[hsl(var(--primary)/0.25)]";
-  if (score >= 55) return "border-[hsl(var(--warn)/0.35)]";
-  return "border-[hsl(var(--danger)/0.35)]";
+  if (score >= 80) return "border-primary/25";
+  if (score >= 55) return "border-warn/35";
+  return "border-destructive/35";
 }
 
 function scoreVariant(score){
@@ -63,7 +63,7 @@ export default function AnalyticsPage() {
         <div className="flex items-center gap-2">
           <Button onClick={load} variant="ghost">Actualizează</Button>
           <span className="icon-chip hidden sm:inline-flex" title="Analize">
-            <BarChart3 size={20} className="text-slate-700" />
+            <BarChart3 size={20} className="text-muted-foreground" />
           </span>
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function AnalyticsPage() {
                       <div className="flex items-center gap-2">
                         <Badge>Scor: {score}</Badge>
                         <span className="icon-chip hidden sm:inline-flex" title="Health score">
-                          <Activity size={18} className="text-slate-700" />
+                          <Activity size={18} className="text-muted-foreground" />
                         </span>
                       </div>
                     </div>
@@ -126,28 +126,28 @@ export default function AnalyticsPage() {
                 <div className="card-soft p-4 agri-pattern">
                   <div className="flex items-center justify-between gap-3">
                     <div className="muted text-xs">Total terenuri</div>
-                    <span className="icon-chip w-10 h-10 rounded-2xl"><Leaf size={18} className="text-slate-700" /></span>
+                    <span className="icon-chip w-10 h-10 rounded-2xl"><Leaf size={18} className="text-muted-foreground" /></span>
                   </div>
                   <div className="text-2xl font-extrabold mt-2">{overview.totalLands}</div>
                 </div>
                 <div className="card-soft p-4 agri-pattern">
                   <div className="flex items-center justify-between gap-3">
                     <div className="muted text-xs">Senzori activi</div>
-                    <span className="icon-chip w-10 h-10 rounded-2xl"><Cpu size={18} className="text-slate-700" /></span>
+                    <span className="icon-chip w-10 h-10 rounded-2xl"><Cpu size={18} className="text-muted-foreground" /></span>
                   </div>
                   <div className="text-2xl font-extrabold mt-2">{overview.activeSensors}</div>
                 </div>
                 <div className="card-soft p-4 agri-pattern">
                   <div className="flex items-center justify-between gap-3">
                     <div className="muted text-xs">Temp. medie</div>
-                    <span className="icon-chip w-10 h-10 rounded-2xl"><Thermometer size={18} className="text-slate-700" /></span>
+                    <span className="icon-chip w-10 h-10 rounded-2xl"><Thermometer size={18} className="text-muted-foreground" /></span>
                   </div>
                   <div className="text-2xl font-extrabold mt-2">{Number(overview.avgTemp || 0).toFixed(1)}°C</div>
                 </div>
                 <div className="card-soft p-4 agri-pattern">
                   <div className="flex items-center justify-between gap-3">
                     <div className="muted text-xs">Profit total</div>
-                    <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingUp size={18} className="text-slate-700" /></span>
+                    <span className="icon-chip w-10 h-10 rounded-2xl"><TrendingUp size={18} className="text-muted-foreground" /></span>
                   </div>
                   <div className="text-2xl font-extrabold mt-2">{Number(overview.totalProfit || 0).toFixed(0)} RON</div>
                 </div>

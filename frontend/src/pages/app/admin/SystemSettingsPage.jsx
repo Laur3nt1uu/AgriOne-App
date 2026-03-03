@@ -51,7 +51,7 @@ export default function SystemSettingsPage() {
             <RefreshCcw size={16} /> Actualizează
           </Button>
           <span className="icon-chip hidden sm:inline-flex" title="Sistem">
-            <Database size={20} className="text-slate-700" />
+            <Database size={20} className="text-muted-foreground" />
           </span>
         </div>
       </div>
@@ -61,21 +61,21 @@ export default function SystemSettingsPage() {
           <div className="card p-5 agri-pattern">
             <div className="flex items-center justify-between gap-3">
               <div className="muted text-sm">Total utilizatori</div>
-              <span className="icon-chip w-10 h-10 rounded-2xl"><Users size={18} className="text-slate-700" /></span>
+              <span className="icon-chip w-10 h-10 rounded-2xl"><Users size={18} className="text-muted-foreground" /></span>
             </div>
             <div className="text-3xl font-extrabold mt-2">{stats?.totalUsers || 0}</div>
           </div>
           <div className="card p-5 agri-pattern">
             <div className="flex items-center justify-between gap-3">
               <div className="muted text-sm">Total terenuri</div>
-              <span className="icon-chip w-10 h-10 rounded-2xl"><Leaf size={18} className="text-slate-700" /></span>
+              <span className="icon-chip w-10 h-10 rounded-2xl"><Leaf size={18} className="text-muted-foreground" /></span>
             </div>
             <div className="text-3xl font-extrabold mt-2">{stats?.totalLands || 0}</div>
           </div>
           <div className="card p-5 agri-pattern">
             <div className="flex items-center justify-between gap-3">
               <div className="muted text-sm">Total senzori</div>
-              <span className="icon-chip w-10 h-10 rounded-2xl"><Cpu size={18} className="text-slate-700" /></span>
+              <span className="icon-chip w-10 h-10 rounded-2xl"><Cpu size={18} className="text-muted-foreground" /></span>
             </div>
             <div className="text-3xl font-extrabold mt-2">{stats?.totalSensors || 0}</div>
           </div>
@@ -85,7 +85,7 @@ export default function SystemSettingsPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="font-bold text-lg">Baza de date</div>
             <span className="icon-chip w-10 h-10 rounded-2xl" title="Backup">
-              <Download size={18} className="text-slate-700" />
+              <Download size={18} className="text-muted-foreground" />
             </span>
           </div>
           <div className="muted text-sm">Exportă un backup SQL pentru siguranță.</div>

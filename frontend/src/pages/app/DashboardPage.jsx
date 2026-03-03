@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, pick } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
-import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
+import { Card } from "../../ui/card";
 import {
   BellRing,
+  CheckCircle2,
   Cloud,
   CloudRain,
   CloudSun,
@@ -12,9 +16,11 @@ import {
   Droplets,
   Leaf,
   MapPin,
+  ShieldAlert,
   Sun,
   Thermometer,
   TrendingUp,
+  TriangleAlert,
   Wind,
 } from "lucide-react";
 
@@ -37,20 +43,23 @@ function weatherKind(weather) {
 function weatherVisual(weather) {
   const kind = weatherKind(weather);
   if (kind === "rain") {
-    return { Icon: CloudRain, tintClass: "weather-tint-rain", label: "Ploaie posibilă" };
+    return { Icon: CloudRain, accentClass: "text-primary", label: "Ploaie posibilă" };
   }
   if (kind === "cloud") {
-    return { Icon: Cloud, tintClass: "weather-tint-cloud", label: "Înnorat" };
+    return { Icon: Cloud, accentClass: "text-muted-foreground", label: "Înnorat" };
   }
   if (kind === "partly") {
-    return { Icon: CloudSun, tintClass: "weather-tint-cloud", label: "Parțial noros" };
+    return { Icon: CloudSun, accentClass: "text-primary", label: "Parțial noros" };
   }
-  return { Icon: Sun, tintClass: "weather-tint-sun", label: "Senin" };
+  return { Icon: Sun, accentClass: "text-warn", label: "Senin" };
 }
 
 export default function DashboardPage() {
   const [overview, setOverview] = useState(null);
   const [now, setNow] = useState(() => new Date());
+
+  const [recentAlerts, setRecentAlerts] = useState([]);
+  const [recentAlertsBusy, setRecentAlertsBusy] = useState(false);
 
   const [weatherLand, setWeatherLand] = useState(null);
   const [weather, setWeather] = useState(null);
@@ -75,6 +84,20 @@ export default function DashboardPage() {
         toastError(e, "Nu pot încărca dashboard-ul.");
       }
     })();
+  }, []);
+
+  const loadRecentAlerts = useCallback(async (silent = true) => {
+    setRecentAlertsBusy(true);
+    try {
+      const data = await api.alerts.list({ limit: 6 });
+      const arr = Array.isArray(data) ? data : (data?.items || data?.alerts || []);
+      setRecentAlerts(arr);
+    } catch (e) {
+      setRecentAlerts([]);
+      if (!silent) toastError(e, "Nu pot încărca alertele recente.");
+    } finally {
+      setRecentAlertsBusy(false);
+    }
   }, []);
 
   const loadGlobalRec = useCallback(async (silent = true, coords = null) => {
@@ -228,6 +251,10 @@ export default function DashboardPage() {
   }, [loadGlobalRec]);
 
   useEffect(() => {
+    loadRecentAlerts(true);
+  }, [loadRecentAlerts]);
+
+  useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -337,99 +364,169 @@ export default function DashboardPage() {
   const GlobalWeatherIcon = globalWeatherVisual.Icon;
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-        <div>
-          <div className="page-title">Dashboard</div>
-          <div className="muted text-sm mt-1 capitalize">{roDate} • {roTime}</div>
-          {globalLocationLabel ? (
-            <div className="muted text-xs mt-2 flex items-center gap-2">
-              <MapPin size={14} className="text-slate-700" />
-              {globalLocationLabel}
-              {globalPlace && (!String(globalLocationLabel).includes(globalPlace)) ? ` • ${globalPlace}` : ""}
-            </div>
-          ) : null}
-        </div>
+    <div className="space-y-6">
+      <Card className="relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-warn/10" />
+        <div className="relative flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <div className="text-xl font-semibold tracking-tight">Dashboard</div>
+            <div className="text-muted-foreground text-sm mt-1 capitalize">{roDate} • {roTime}</div>
+            {globalLocationLabel ? (
+              <div className="text-muted-foreground text-xs mt-2 flex items-center gap-2">
+                <MapPin size={14} className="text-muted-foreground" />
+                <span className="truncate">
+                  {globalLocationLabel}
+                  {globalPlace && (!String(globalLocationLabel).includes(globalPlace)) ? ` • ${globalPlace}` : ""}
+                </span>
+              </div>
+            ) : null}
+          </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="ghost" onClick={() => loadGlobalRec(false)} disabled={globalBusy}>
-            Actualizează
-          </Button>
-          <Button variant="ghost" onClick={useDeviceLocation} disabled={globalBusy} title="Folosește coordonatele dispozitivului">
-            Locația mea
-          </Button>
-          <Button variant="ghost" onClick={openPreferences} disabled={globalBusy} title="Setează locația globală salvată">
-            Setează
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="secondary" onClick={() => loadGlobalRec(false)} disabled={globalBusy}>
+              Actualizează
+            </Button>
+            <Button
+              variant="outline"
+              onClick={useDeviceLocation}
+              disabled={globalBusy}
+              title="Folosește coordonatele dispozitivului"
+            >
+              Locația mea
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={openPreferences}
+              disabled={globalBusy}
+              title="Setează locația globală salvată"
+            >
+              Setează
+            </Button>
+          </div>
         </div>
-      </div>
+      </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {kpiCards.map(({ label, value, Icon }) => (
-              <div key={label} className="card p-5 card-hover agri-pattern">
+              <Card key={label} className="relative overflow-hidden p-5 group">
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="muted text-sm">{label}</div>
-                    <div className="text-3xl font-extrabold mt-2 truncate">{String(value)}</div>
-                    <div className="text-xs muted mt-1">Actualizat din backend</div>
+                    <div className="text-muted-foreground text-sm">{label}</div>
+                    <div className="text-3xl font-semibold mt-2 truncate">{String(value)}</div>
+                    <div className="text-muted-foreground text-xs mt-1">Actualizat din backend</div>
                   </div>
-                  <span className="icon-chip">
-                    <Icon size={20} className="text-slate-700" />
-                  </span>
+                  <div className="h-10 w-10 shrink-0 rounded-xl border border-border/15 bg-background/50 grid place-items-center">
+                    <Icon size={18} className="text-muted-foreground" />
+                  </div>
                 </div>
-                <div className="relative mt-4 h-2 rounded-full bg-slate-900/5 overflow-hidden">
-                  <div className="h-full w-1/2 bg-gradient-to-r from-[hsl(var(--primary-500)/0.35)] to-transparent" />
+                <div className="relative mt-4 h-2 rounded-full bg-border/25 overflow-hidden">
+                  <div className="h-full w-1/2 bg-gradient-to-r from-primary/40 to-transparent" />
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
 
-          <div className="card p-5">
-            <div className="text-sm font-bold">Acțiuni rapide</div>
-            <div className="muted text-sm">Folosește meniul pentru navigare</div>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="card-soft p-4 flex items-center gap-3">
-                <span className="icon-chip w-10 h-10 rounded-2xl">
-                  <Leaf size={18} className="text-slate-700" />
-                </span>
-                <div>
-                  <div className="text-sm font-bold">Terenuri</div>
-                  <div className="muted text-xs">Gestionează parcele și hartă</div>
-                </div>
+          <Card className="p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold">Acțiuni rapide</div>
+                <div className="text-muted-foreground text-sm">Folosește meniul pentru navigare</div>
               </div>
-              <div className="card-soft p-4 flex items-center gap-3">
-                <span className="icon-chip w-10 h-10 rounded-2xl">
-                  <Cpu size={18} className="text-slate-700" />
-                </span>
-                <div>
-                  <div className="text-sm font-bold">Senzori</div>
-                  <div className="muted text-xs">Istoric citiri și status</div>
-                </div>
-              </div>
-              <div className="card-soft p-4 flex items-center gap-3">
-                <span className="icon-chip w-10 h-10 rounded-2xl">
-                  <TrendingUp size={18} className="text-slate-700" />
-                </span>
-                <div>
-                  <div className="text-sm font-bold">Economie</div>
-                  <div className="muted text-xs">Venituri / cheltuieli</div>
-                </div>
+              <div className="h-9 w-9 rounded-xl border border-border/15 bg-background/50 grid place-items-center">
+                <TrendingUp size={18} className="text-muted-foreground" />
               </div>
             </div>
-          </div>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[{ title: "Terenuri", desc: "Gestionează parcele și hartă", Icon: Leaf }, { title: "Senzori", desc: "Istoric citiri și status", Icon: Cpu }, { title: "Economie", desc: "Venituri / cheltuieli", Icon: TrendingUp }].map(({ title, desc, Icon }) => (
+                <div key={title} className="rounded-xl border border-border/15 bg-background/40 p-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl border border-border/15 bg-background/60 grid place-items-center">
+                    <Icon size={18} className="text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold truncate">{title}</div>
+                    <div className="text-muted-foreground text-xs truncate">{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold">Alerte recente</div>
+                <div className="text-muted-foreground text-sm">Ultimele alerte generate de reguli.</div>
+              </div>
+              <Button variant="ghost" onClick={() => loadRecentAlerts(false)} disabled={recentAlertsBusy}>
+                Actualizează
+              </Button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {recentAlertsBusy ? (
+                <div className="text-muted-foreground text-sm">Se încarcă…</div>
+              ) : recentAlerts.length ? (
+                recentAlerts.slice(0, 6).map((a) => {
+                  const id = pick(a, ["id", "uuid"], "");
+                  const sev = (pick(a, ["severity", "level"], "WARNING") || "WARNING").toUpperCase();
+                  const title = pick(a, ["title", "message"], "Alert");
+                  const landName = pick(a, ["landName", "land"], "");
+                  const isAck = !!pick(a, ["acknowledged", "isAcknowledged"], false);
+                  const ts = pick(a, ["createdAt", "ts"], "");
+                  const when = ts ? new Date(ts).toLocaleString("ro-RO") : "";
+
+                  const badgeVariant = sev === "CRITICAL" ? "danger" : "warn";
+                  const SevIcon = sev === "CRITICAL" ? ShieldAlert : TriangleAlert;
+                  const borderClass = sev === "CRITICAL" ? "border-destructive/25" : "border-warn/25";
+
+                  return (
+                    <div
+                      key={id || `${title}-${when}`}
+                      className={`rounded-xl border ${borderClass} bg-background/40 p-4 flex items-start justify-between gap-3`}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant={badgeVariant}>{sev}</Badge>
+                          {landName ? <Badge>{landName}</Badge> : null}
+                          {isAck ? (
+                            <Badge variant="success">
+                              <CheckCircle2 size={14} className="text-primary" /> Confirmată
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <div className="mt-2 font-semibold truncate">{title}</div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-muted-foreground text-xs whitespace-nowrap">{when}</div>
+                        <div className="h-9 w-9 rounded-xl border border-border/15 bg-background/60 hidden sm:grid place-items-center">
+                          <SevIcon size={18} className="text-muted-foreground" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-muted-foreground text-sm">Nu există alerte.</div>
+              )}
+            </div>
+          </Card>
         </div>
 
         <div className="space-y-4">
-          <div className={`card p-6 agri-pattern ${landWeatherVisual.tintClass}`}>
+          <Card className="relative overflow-hidden p-6">
+            <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-sm font-bold">Vreme (teren)</div>
-                <div className="muted text-sm mt-1">
+                <div className="text-sm font-semibold">Vreme (teren)</div>
+                <div className="text-muted-foreground text-sm mt-1">
                   {weatherLand ? `Teren: ${weatherLand.name}` : "Nu există terenuri cu coordonate."}
                 </div>
-                {weatherPlace ? <div className="muted text-xs mt-2">Locație: {weatherPlace}</div> : null}
+                {weatherPlace ? <div className="text-muted-foreground text-xs mt-2">Locație: {weatherPlace}</div> : null}
               </div>
               <Button
                 variant="ghost"
@@ -453,65 +550,71 @@ export default function DashboardPage() {
             </div>
 
             {!weatherLand ? (
-              <div className="mt-4 muted text-sm">
+              <div className="mt-4 text-muted-foreground text-sm">
                 Adaugă un teren cu delimitare (centroid) pentru meteo local.
               </div>
             ) : !weather?.current ? (
-              <div className="muted mt-4">Vreme indisponibilă momentan.</div>
+              <div className="text-muted-foreground mt-4">Vreme indisponibilă momentan.</div>
             ) : (
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="card-soft p-4 agri-pattern">
+                <div className="rounded-xl border border-border/15 bg-background/40 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className="muted text-xs">Acum</div>
-                      <div className="text-3xl font-extrabold mt-1">{Number(weather.current.tempC).toFixed(1)}°C</div>
-                      <div className="muted text-xs mt-1">
+                      <div className="text-muted-foreground text-xs">Acum</div>
+                      <div className="text-3xl font-semibold mt-1">{Number(weather.current.tempC).toFixed(1)}°C</div>
+                      <div className="text-muted-foreground text-xs mt-1">
                         {landWeatherVisual.label}
                         {weather.current.description ? ` • ${weather.current.description}` : ""}
                       </div>
                     </div>
-                    <span className="icon-chip anim-float">
-                      <LandWeatherIcon size={22} className="text-slate-700" />
-                    </span>
+                    <div className="h-10 w-10 rounded-xl border border-border/15 bg-background/60 grid place-items-center">
+                      <LandWeatherIcon size={22} className={landWeatherVisual.accentClass} />
+                    </div>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div>
-                      <div className="flex items-center gap-2 text-xs muted">
-                        <Thermometer size={14} className="text-slate-700" /> Temperatură
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Thermometer size={14} className="text-muted-foreground" /> Temperatură
                       </div>
-                      <div className="mt-2 progress">
-                        <div className="progress-bar" style={{ width: `${Math.round(landTempNorm * 100)}%` }} />
+                      <div className="mt-2 h-2 rounded-full bg-border/25 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary/40 to-transparent"
+                          style={{ width: `${Math.round(landTempNorm * 100)}%` }}
+                        />
                       </div>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 text-xs muted">
-                        <Droplets size={14} className="text-slate-700" /> Umiditate
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Droplets size={14} className="text-muted-foreground" /> Umiditate
                       </div>
-                      <div className="mt-2 progress">
-                        <div className="progress-bar" style={{ width: `${Math.round(landHumNorm * 100)}%` }} />
+                      <div className="mt-2 h-2 rounded-full bg-border/25 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary/40 to-transparent"
+                          style={{ width: `${Math.round(landHumNorm * 100)}%` }}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="card-soft p-4 agri-pattern">
+                <div className="rounded-xl border border-border/15 bg-background/40 p-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <div className="flex items-center gap-2 text-xs muted">
-                        <Wind size={14} className="text-slate-700" /> Vânt
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Wind size={14} className="text-muted-foreground" /> Vânt
                       </div>
-                      <div className="text-2xl font-extrabold mt-2">
+                      <div className="text-2xl font-semibold mt-2">
                         {weather.current.windMs != null ? `${Math.round(Number(weather.current.windMs) * 3.6)} km/h` : "—"}
                       </div>
-                      <div className="muted text-xs mt-1">(≈ {weather.current.windMs != null ? `${Number(weather.current.windMs).toFixed(1)} m/s` : "—"})</div>
+                      <div className="text-muted-foreground text-xs mt-1">(≈ {weather.current.windMs != null ? `${Number(weather.current.windMs).toFixed(1)} m/s` : "—"})</div>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 text-xs muted">
-                        <CloudSun size={14} className="text-slate-700" /> Nori
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <CloudSun size={14} className="text-muted-foreground" /> Nori
                       </div>
-                      <div className="text-2xl font-extrabold mt-2">{weather.current.cloudsPct ?? "—"}%</div>
-                      <div className="muted text-xs mt-1">Nebulozitate</div>
+                      <div className="text-2xl font-semibold mt-2">{weather.current.cloudsPct ?? "—"}%</div>
+                      <div className="text-muted-foreground text-xs mt-1">Nebulozitate</div>
                     </div>
                   </div>
 
@@ -528,16 +631,17 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-          </div>
+          </Card>
 
-          <div className={`card p-6 agri-pattern ${globalWeatherVisual.tintClass}`}>
+          <Card className="relative overflow-hidden p-6">
+            <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-sm font-bold">Meteo (global) • recomandări azi</div>
-                <div className="muted text-sm mt-1">Rezumat rapid pe baza vremii (independent de senzor).</div>
-                {globalLocationLabel ? <div className="muted text-xs mt-2">{globalLocationLabel}</div> : null}
+                <div className="text-sm font-semibold">Meteo (global) • recomandări azi</div>
+                <div className="text-muted-foreground text-sm mt-1">Rezumat rapid pe baza vremii (independent de senzor).</div>
+                {globalLocationLabel ? <div className="text-muted-foreground text-xs mt-2">{globalLocationLabel}</div> : null}
                 {globalPlace && (!globalLocationLabel || !String(globalLocationLabel).includes(globalPlace)) ? (
-                  <div className="muted text-xs mt-1">Locație: {globalPlace}</div>
+                  <div className="text-muted-foreground text-xs mt-1">Locație: {globalPlace}</div>
                 ) : null}
               </div>
               <Button variant="ghost" onClick={() => loadGlobalRec(false)} disabled={globalBusy}>
@@ -546,9 +650,9 @@ export default function DashboardPage() {
             </div>
 
             {globalBusy ? (
-              <div className="mt-4 muted">Se încarcă…</div>
+              <div className="mt-4 text-muted-foreground">Se încarcă…</div>
             ) : !globalWeather?.current ? (
-              <div className="mt-4 muted">Vreme indisponibilă momentan.</div>
+              <div className="mt-4 text-muted-foreground">Vreme indisponibilă momentan.</div>
             ) : (
               <>
                 <div className="mt-4 flex items-center justify-between gap-3">
@@ -565,9 +669,9 @@ export default function DashboardPage() {
                       <Badge>Min. ~12h: {Number(globalWeather.forecast.nextHoursMinTempC).toFixed(1)}°C</Badge>
                     ) : null}
                   </div>
-                  <span className="icon-chip anim-float hidden sm:inline-flex">
-                    <GlobalWeatherIcon size={20} className="text-slate-700" />
-                  </span>
+                  <div className="h-10 w-10 rounded-xl border border-border/15 bg-background/60 hidden sm:grid place-items-center">
+                    <GlobalWeatherIcon size={20} className={globalWeatherVisual.accentClass} />
+                  </div>
                 </div>
 
                 {globalActions.length ? (
@@ -581,7 +685,7 @@ export default function DashboardPage() {
                 ) : null}
               </>
             )}
-          </div>
+          </Card>
         </div>
       </div>
 
@@ -594,23 +698,23 @@ export default function DashboardPage() {
             if (e.target === e.currentTarget) setPrefOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card p-5">
+          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Card className="relative w-full max-w-md p-6 gap-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-lg font-extrabold">Locație globală</div>
-                <div className="muted text-sm mt-1">Salvată în cont și folosită pentru meteo/recomandări globale.</div>
+                <div className="text-lg font-semibold">Locație globală</div>
+                <div className="text-muted-foreground text-sm mt-1">Salvată în cont și folosită pentru meteo/recomandări globale.</div>
               </div>
               <Button type="button" variant="ghost" onClick={() => setPrefOpen(false)} disabled={prefSaving} title="Închide">
                 ✕
               </Button>
             </div>
 
-            <div className="mt-4 space-y-4">
-              <div>
-                <div className="muted text-xs mb-1">Nume (opțional)</div>
-                <input
-                  className="input"
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="prefName">Nume (opțional)</Label>
+                <Input
+                  id="prefName"
                   value={prefName}
                   onChange={(e) => setPrefName(e.target.value)}
                   placeholder="ex: Iași / Ferma bunicilor"
@@ -618,21 +722,21 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="muted text-xs mb-1">Latitudine</div>
-                  <input
-                    className="input"
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="prefLat">Latitudine</Label>
+                  <Input
+                    id="prefLat"
                     value={prefLat}
                     onChange={(e) => setPrefLat(e.target.value)}
                     placeholder="ex: 47.158"
                     disabled={prefSaving}
                   />
                 </div>
-                <div>
-                  <div className="muted text-xs mb-1">Longitudine</div>
-                  <input
-                    className="input"
+                <div className="space-y-2">
+                  <Label htmlFor="prefLng">Longitudine</Label>
+                  <Input
+                    id="prefLng"
                     value={prefLng}
                     onChange={(e) => setPrefLng(e.target.value)}
                     placeholder="ex: 27.601"
@@ -655,7 +759,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       ) : null}
     </div>

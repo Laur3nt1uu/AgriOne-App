@@ -33,7 +33,7 @@ export default function AlertsPage() {
             <Badge as="div">Total: {alerts.length}</Badge>
             <Button onClick={load} variant="ghost">Actualizează</Button>
             <span className="icon-chip hidden sm:inline-flex" title="Alerte">
-              <BellRing size={20} className="text-slate-700" />
+              <BellRing size={20} className="text-muted-foreground" />
             </span>
           </div>
         </div>
@@ -47,10 +47,11 @@ export default function AlertsPage() {
             const isAck = !!pick(a, ["acknowledged","isAcknowledged"], false);
 
             const border = sev === "CRITICAL"
-              ? "border-[hsl(var(--danger)/0.25)]"
-              : "border-[hsl(var(--warn)/0.25)]";
+              ? "border-destructive/25"
+              : "border-warn/25";
             const badgeVariant = sev === "CRITICAL" ? "danger" : "warn";
             const SevIcon = sev === "CRITICAL" ? ShieldAlert : TriangleAlert;
+            const iconColor = sev === "CRITICAL" ? "text-destructive" : "text-warn";
 
             return (
               <div key={id || title} className={`card-soft p-4 border ${border} card-hover agri-pattern`}>
@@ -61,7 +62,7 @@ export default function AlertsPage() {
                       {landName ? <Badge>{landName}</Badge> : null}
                       {isAck ? (
                         <Badge>
-                          <CheckCircle2 size={14} className="text-slate-700" /> Confirmată
+                          <CheckCircle2 size={14} className="text-muted-foreground" /> Confirmată
                         </Badge>
                       ) : null}
                     </div>
@@ -72,7 +73,7 @@ export default function AlertsPage() {
                       {pick(a, ["createdAt","ts"], "") ? new Date(pick(a, ["createdAt","ts"])).toLocaleString() : ""}
                     </div>
                     <span className="icon-chip hidden sm:inline-flex" title={sev}>
-                      <SevIcon size={18} className="text-slate-700" />
+                      <SevIcon size={18} className={iconColor} />
                     </span>
                   </div>
                 </div>

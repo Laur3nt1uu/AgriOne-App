@@ -321,7 +321,7 @@ export default function LandDetailsPage() {
             onClick={openDelete}
             variant="ghost"
             disabled={deleting}
-            className="text-[hsl(var(--danger))] border-[hsl(var(--danger)/0.28)] hover:bg-[hsl(var(--danger)/0.08)]"
+            className="border border-destructive/25 text-destructive hover:bg-destructive/10"
             title="Șterge terenul"
           >
             {deleting ? "Se șterge..." : "Șterge"}
@@ -351,7 +351,7 @@ export default function LandDetailsPage() {
             if (e.target === e.currentTarget) setPairOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
           <div className="relative w-full max-w-md card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -398,7 +398,7 @@ export default function LandDetailsPage() {
             if (e.target === e.currentTarget && !deleting) setDeleteOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
           <div className="relative w-full max-w-md card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -432,7 +432,7 @@ export default function LandDetailsPage() {
                 variant="ghost"
                 onClick={onDeleteLand}
                 disabled={deleting}
-                className="text-[hsl(var(--danger))] border-[hsl(var(--danger)/0.28)] hover:bg-[hsl(var(--danger)/0.08)]"
+                className="border border-destructive/25 text-destructive hover:bg-destructive/10"
               >
                 {deleting ? "Se șterge..." : "Da, șterge"}
               </Button>
@@ -490,7 +490,7 @@ export default function LandDetailsPage() {
               </div>
               {weather?.current ? (
                 <span className="icon-chip anim-float hidden sm:inline-flex" title={wx.label}>
-                  <WxIcon size={20} className="text-slate-700" />
+                  <WxIcon size={20} className="text-muted-foreground" />
                 </span>
               ) : null}
               <Button
@@ -514,7 +514,7 @@ export default function LandDetailsPage() {
                 <div className="card-soft p-4 agri-pattern">
                   <div className="flex items-center justify-between gap-3">
                     <div className="muted text-xs">Temperatură</div>
-                    <Thermometer size={16} className="text-slate-700" />
+                    <Thermometer size={16} className="text-muted-foreground" />
                   </div>
                   <div className="text-3xl font-extrabold mt-2">{weather.current.tempC ?? "—"}°C</div>
                   <div className="mt-3 progress">
@@ -530,7 +530,7 @@ export default function LandDetailsPage() {
                 <div className="card-soft p-4 agri-pattern">
                   <div className="flex items-center justify-between gap-3">
                     <div className="muted text-xs">Umiditate</div>
-                    <Droplets size={16} className="text-slate-700" />
+                    <Droplets size={16} className="text-muted-foreground" />
                   </div>
                   <div className="text-3xl font-extrabold mt-2">{weather.current.humidityPct ?? "—"}%</div>
                   <div className="mt-3 progress">
@@ -542,7 +542,7 @@ export default function LandDetailsPage() {
                 <div className="card-soft p-4 agri-pattern">
                   <div className="flex items-center justify-between gap-3">
                     <div className="muted text-xs">Vânt</div>
-                    <Wind size={16} className="text-slate-700" />
+                    <Wind size={16} className="text-muted-foreground" />
                   </div>
                   <div className="text-3xl font-extrabold mt-2">
                     {weather.current.windMs != null ? `${(Number(weather.current.windMs) * 3.6).toFixed(0)} km/h` : "—"}

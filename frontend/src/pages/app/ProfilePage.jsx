@@ -20,8 +20,8 @@ export default function ProfilePage() {
     <div className="space-y-5 animate-fadeIn">
       <div className="card p-6 agri-pattern">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[hsl(var(--primary)/0.10)] border border-[hsl(var(--primary)/0.18)] flex items-center justify-center">
-            <span className="text-slate-900 font-extrabold text-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center">
+            <span className="text-foreground font-extrabold text-2xl">
               {(user?.email || "U")[0].toUpperCase()}
             </span>
           </div>
@@ -37,11 +37,11 @@ export default function ProfilePage() {
 
           <div className="ml-auto hidden sm:flex items-center gap-2">
             <span className="icon-chip" title="Profil">
-              <UserIcon size={20} className="text-slate-700" />
+              <UserIcon size={20} className="text-muted-foreground" />
             </span>
             {user?.role === "ADMIN" ? (
               <span className="icon-chip" title="Admin">
-                <Shield size={20} className="text-slate-700" />
+                <Shield size={20} className="text-muted-foreground" />
               </span>
             ) : null}
           </div>
@@ -64,7 +64,7 @@ export default function ProfilePage() {
             <div className="text-sm muted">În dezvoltare</div>
           </div>
           <span className="icon-chip" title="Setări">
-            <Settings size={18} className="text-slate-700" />
+            <Settings size={18} className="text-muted-foreground" />
           </span>
         </div>
       </div>

@@ -12,10 +12,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       toastOptions={{
         duration: 4000,
         style: {
-          background: "rgba(255, 255, 255, 0.92)",
-          color: "rgba(15, 23, 42, 0.92)",
-          border: "1px solid rgba(15, 23, 42, 0.12)",
-          boxShadow: "0 16px 40px rgba(2, 6, 23, 0.12)",
+          background: "rgb(var(--card) / 0.92)",
+          color: "rgb(var(--foreground) / 0.92)",
+          border: "1px solid rgb(var(--border) / 0.12)",
+          boxShadow: "0 16px 40px rgb(var(--foreground) / 0.10)",
         },
       }}
     />

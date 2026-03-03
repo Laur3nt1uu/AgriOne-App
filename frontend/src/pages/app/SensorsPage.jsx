@@ -184,7 +184,7 @@ export default function SensorsPage() {
                     <div className="card-soft p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="muted text-xs">Interval</div>
-                        <Cpu size={16} className="text-slate-700" />
+                        <Cpu size={16} className="text-muted-foreground" />
                       </div>
                       <div className="text-sm font-extrabold mt-2">{range}</div>
                       <div className="muted text-xs mt-1">Grafic + statistici</div>
@@ -192,7 +192,7 @@ export default function SensorsPage() {
                     <div className="card-soft p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="muted text-xs">Ultima citire</div>
-                        <Clock size={16} className="text-slate-700" />
+                        <Clock size={16} className="text-muted-foreground" />
                       </div>
                       <div className="text-sm font-extrabold mt-2">{lastLabel || "—"}</div>
                       <div className="muted text-xs mt-1">Timp local</div>
@@ -214,7 +214,7 @@ export default function SensorsPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="muted text-xs">Temperatură</div>
                       <span className="icon-chip w-10 h-10 rounded-2xl">
-                        <Thermometer size={18} className="text-slate-700" />
+                        <Thermometer size={18} className="text-muted-foreground" />
                       </span>
                     </div>
                     <div className="text-3xl font-extrabold mt-2">{stats.tNow.toFixed(1)}°C</div>
@@ -228,7 +228,7 @@ export default function SensorsPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="muted text-xs">Umiditate</div>
                       <span className="icon-chip w-10 h-10 rounded-2xl">
-                        <Droplets size={18} className="text-slate-700" />
+                        <Droplets size={18} className="text-muted-foreground" />
                       </span>
                     </div>
                     <div className="text-3xl font-extrabold mt-2">{stats.hNow.toFixed(0)}%</div>

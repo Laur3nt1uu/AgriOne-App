@@ -111,10 +111,10 @@ export default function AddLandPage() {
           </div>
           <div className="mt-3 flex gap-2 flex-wrap">
             <Badge as="div" variant={step === 1 ? "success" : "default"}>
-              <Edit3 size={14} className="text-slate-700" /> 1. Detalii
+              <Edit3 size={14} className="text-muted-foreground" /> 1. Detalii
             </Badge>
             <Badge as="div" variant={step === 2 ? "success" : "default"}>
-              <MapIcon size={14} className="text-slate-700" /> 2. Hartă
+              <MapIcon size={14} className="text-muted-foreground" /> 2. Hartă
             </Badge>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function AddLandPage() {
               <div className="flex items-center justify-between gap-3">
                 <div className="text-sm font-semibold">Pasul următor</div>
                 <span className="icon-chip w-10 h-10 rounded-2xl" title="Agricultură">
-                  <Sprout size={18} className="text-slate-700" />
+                  <Sprout size={18} className="text-muted-foreground" />
                 </span>
               </div>
               <div className="mt-2 text-sm muted">
@@ -225,10 +225,10 @@ export default function AddLandPage() {
               <div className="mt-2 text-sm muted">
                 {polygon ? (
                   <>
-                    Puncte: <span className="text-slate-900 font-semibold">{polygon.length}</span>
+                    Puncte: <span className="text-foreground font-semibold">{polygon.length}</span>
                     <br />
                     Suprafață:{" "}
-                    <span className="text-[hsl(var(--primary))] font-extrabold">
+                    <span className="text-primary font-extrabold">
                       {areaHa ? areaHa.toFixed(2) : "0.00"} ha
                     </span>
                   </>
@@ -253,7 +253,7 @@ export default function AddLandPage() {
                   <div className="muted text-xs mt-1">Poligon desenat, gata de salvare</div>
                 </div>
                 <span className="icon-chip" title="OK">
-                  <CheckCircle2 size={18} className="text-slate-700" />
+                  <CheckCircle2 size={18} className="text-muted-foreground" />
                 </span>
               </div>
             ) : null}

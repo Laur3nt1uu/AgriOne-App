@@ -18,6 +18,9 @@ async function safeFetchJson(url, init = undefined) {
 const _revCache = new Map();
 const REV_TTL_MS = 12 * 60 * 60 * 1000;
 
+const _wxCache = new Map();
+const WX_TTL_MS = 5 * 60 * 1000;
+
 function cacheGet(key) {
   const it = _revCache.get(key);
   if (!it) return null;
@@ -41,6 +44,31 @@ function cacheSet(key, val) {
       }
     }
     if (oldestKey) _revCache.delete(oldestKey);
+  }
+}
+
+function wxCacheGet(key) {
+  const it = _wxCache.get(key);
+  if (!it) return null;
+  if (Date.now() - it.ts > WX_TTL_MS) {
+    _wxCache.delete(key);
+    return null;
+  }
+  return it.val;
+}
+
+function wxCacheSet(key, val) {
+  _wxCache.set(key, { ts: Date.now(), val });
+  if (_wxCache.size > 300) {
+    let oldestKey = null;
+    let oldestTs = Infinity;
+    for (const [k, v] of _wxCache.entries()) {
+      if (v.ts < oldestTs) {
+        oldestTs = v.ts;
+        oldestKey = k;
+      }
+    }
+    if (oldestKey) _wxCache.delete(oldestKey);
   }
 }
 
@@ -206,10 +234,17 @@ async function getBundleFromOpenMeteo(lat, lng) {
 
 async function getWeatherBundle(lat, lng) {
   if (lat == null || lng == null) return null;
+  if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return null;
+
+  const key = `${Number(lat).toFixed(3)},${Number(lng).toFixed(3)}`;
+  const cached = wxCacheGet(key);
+  if (cached) return cached;
 
   // Default: if OpenWeather isn't configured, fallback to Open-Meteo (no API key required)
   if (!env.OPENWEATHER_API_KEY) {
-    return await getBundleFromOpenMeteo(lat, lng);
+    const out = await getBundleFromOpenMeteo(lat, lng);
+    if (out) wxCacheSet(key, out);
+    return out;
   }
 
   const [current, forecast] = await Promise.all([
@@ -220,10 +255,15 @@ async function getWeatherBundle(lat, lng) {
   // If OpenWeather is configured but fails (invalid key/network), don't return empty bundle.
   if (!current && !forecast) {
     const fallback = await getBundleFromOpenMeteo(lat, lng);
-    if (fallback) return fallback;
+    if (fallback) {
+      wxCacheSet(key, fallback);
+      return fallback;
+    }
   }
 
-  return { current, forecast };
+  const out = { current, forecast };
+  wxCacheSet(key, out);
+  return out;
 }
 
 module.exports = { getWeatherBundle, reverseGeocode };

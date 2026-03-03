@@ -25,7 +25,7 @@ export default function Topbar() {
   const initial = (user?.email || "U")[0]?.toUpperCase?.() || "U";
 
   return (
-    <div className="sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-slate-900/10">
+    <div className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-border/15">
       <div className="px-4 md:px-8 py-4 flex items-center justify-between">
         <div>
           <div className="text-xl md:text-2xl font-extrabold">{title}</div>
@@ -40,16 +40,16 @@ export default function Topbar() {
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <button
-                className="h-10 inline-flex items-center gap-2 rounded-2xl bg-white/75 border border-slate-900/10 px-3 hover:bg-white/90 transition"
+                className="h-10 inline-flex items-center gap-2 rounded-2xl bg-card/50 border border-border/15 px-3 hover:bg-card/60 transition"
                 aria-label="User menu"
               >
-                <span className="w-7 h-7 rounded-xl bg-[hsl(var(--primary-500)/0.12)] border border-[hsl(var(--primary-500)/0.20)] flex items-center justify-center">
-                  <span className="text-slate-900 font-extrabold text-sm">{initial}</span>
+                <span className="w-7 h-7 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center">
+                  <span className="text-foreground font-extrabold text-sm">{initial}</span>
                 </span>
-                <span className="hidden sm:block text-sm font-semibold text-slate-900/90 max-w-[160px] truncate">
+                <span className="hidden sm:block text-sm font-semibold text-foreground/90 max-w-[160px] truncate">
                   {user?.email || "Cont"}
                 </span>
-                <ChevronDown size={16} className="text-slate-600" />
+                <ChevronDown size={16} className="text-muted-foreground" />
               </button>
             </DropdownMenu.Trigger>
 
@@ -64,13 +64,13 @@ export default function Topbar() {
                   <div className="text-sm font-extrabold truncate">{user?.email || "—"}</div>
                 </div>
 
-                <div className="my-2 border-t border-slate-900/10" />
+                <div className="my-2 border-t border-border/10" />
 
                 <DropdownMenu.Item
                   onSelect={() => nav("/profile")}
-                  className="px-3 py-2 rounded-2xl cursor-pointer outline-none hover:bg-slate-900/5 data-[highlighted]:bg-slate-900/5 flex items-center gap-2"
+                  className="px-3 py-2 rounded-2xl cursor-pointer outline-none hover:bg-foreground/5 data-[highlighted]:bg-foreground/5 flex items-center gap-2"
                 >
-                  <UserIcon size={16} className="text-slate-700" />
+                  <UserIcon size={16} className="text-muted-foreground" />
                   <span className="text-sm font-semibold">Profil</span>
                 </DropdownMenu.Item>
 
@@ -79,9 +79,9 @@ export default function Topbar() {
                     authStore.logout();
                     nav("/login", { replace: true });
                   }}
-                  className="px-3 py-2 rounded-2xl cursor-pointer outline-none hover:bg-slate-900/5 data-[highlighted]:bg-slate-900/5 flex items-center gap-2"
+                  className="px-3 py-2 rounded-2xl cursor-pointer outline-none hover:bg-foreground/5 data-[highlighted]:bg-foreground/5 flex items-center gap-2"
                 >
-                  <LogOut size={16} className="text-slate-700" />
+                  <LogOut size={16} className="text-muted-foreground" />
                   <span className="text-sm font-semibold">Logout</span>
                 </DropdownMenu.Item>
               </DropdownMenu.Content>

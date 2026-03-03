@@ -1,17 +1,20 @@
 import { NavLink } from "react-router-dom";
 import { authStore } from "../../auth/auth.store";
 import logo from "../../assets/agrione.png";
+import { prefetchByPath } from "../../router/chunks";
 
 const Item = ({ to, label }) => (
   <NavLink
     to={to}
+    onMouseEnter={() => prefetchByPath(to)}
+    onFocus={() => prefetchByPath(to)}
     className={({ isActive }) =>
       `flex items-center gap-3 px-4 py-3 rounded-2xl transition
-       ${isActive ? "bg-[hsl(var(--primary)/0.10)] border border-[hsl(var(--primary)/0.20)]" : "hover:bg-slate-900/5 border border-transparent"}
+       ${isActive ? "bg-primary/10 border border-primary/25" : "hover:bg-foreground/5 border border-transparent"}
       `
     }
   >
-    <span className="text-slate-900/90 font-medium">{label}</span>
+    <span className="text-foreground/90 font-medium">{label}</span>
   </NavLink>
 );
 
@@ -40,20 +43,20 @@ export default function Sidebar() {
           
           {isAdmin && (
             <>
-              <div className="my-3 border-t border-slate-900/10"></div>
+              <div className="my-3 border-t border-border/10"></div>
               <div className="px-4 py-2 text-xs muted font-semibold uppercase">Admin</div>
               <Item to="/admin/users" label="Utilizatori" />
               <Item to="/admin/settings" label="Setări sistem" />
             </>
           )}
           
-          <div className="my-3 border-t border-slate-900/10"></div>
+          <div className="my-3 border-t border-border/10"></div>
           <Item to="/profile" label="Profil" />
         </nav>
 
         <div className="mt-6 card-soft p-4">
           <div className="text-xs muted">Versiune</div>
-          <div className="font-semibold text-[hsl(var(--primary))]">v1.0.0</div>
+          <div className="font-semibold text-primary">v1.0.0</div>
         </div>
       </div>
     </aside>

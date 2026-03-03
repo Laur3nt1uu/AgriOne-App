@@ -26,11 +26,11 @@ export default function LoadingScreen({ onComplete }) {
       }`}
       style={{
         background:
-          "radial-gradient(900px 520px at 30% 20%, hsl(var(--primary-500) / 0.18), transparent 60%)," +
-          "radial-gradient(720px 460px at 80% 10%, hsl(var(--chart-2) / 0.12), transparent 62%)," +
-          "radial-gradient(760px 520px at 10% 90%, hsl(var(--chart-3) / 0.10), transparent 64%)," +
-          "linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.0) 50%)," +
-          "var(--bg)",
+          "radial-gradient(900px 520px at 30% 20%, rgb(var(--primary) / 0.14), transparent 60%)," +
+          "radial-gradient(720px 460px at 80% 10%, rgb(var(--accent) / 0.10), transparent 62%)," +
+          "radial-gradient(760px 520px at 10% 90%, rgb(var(--warn) / 0.10), transparent 64%)," +
+          "linear-gradient(180deg, rgb(var(--background) / 0.75), rgb(var(--background) / 0.0) 50%)," +
+          "rgb(var(--background) / 1)",
       }}
     >
       <div className="flex flex-col items-center gap-6 animate-pulse">
@@ -38,12 +38,12 @@ export default function LoadingScreen({ onComplete }) {
           src={logo}
           alt="AgriOne"
           className="w-32 h-32 rounded-3xl shadow-2xl"
-          style={{ boxShadow: "0 24px 70px hsl(var(--primary-500) / 0.22)" }}
+          style={{ boxShadow: "0 24px 70px rgb(var(--primary) / 0.22)" }}
         />
-        <div className="text-4xl font-extrabold text-slate-900 tracking-wide">
+        <div className="text-4xl font-extrabold text-foreground tracking-wide">
           AgriOne
         </div>
-        <div className="text-sm text-slate-700">Agricultură inteligentă</div>
+        <div className="text-sm text-muted-foreground">Agricultură inteligentă</div>
       </div>
     </div>
   );
