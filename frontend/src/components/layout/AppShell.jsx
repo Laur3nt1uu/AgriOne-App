@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import MobileNav from "./MobileNav";
 import NexusAtmosphere from "./NexusAtmosphere";
+import { ConfirmProvider } from "../confirm/ConfirmProvider";
 
 export default function AppShell() {
   const loc = useLocation();
@@ -45,26 +46,28 @@ export default function AppShell() {
     : { duration: 0.12, ease: [0.22, 1, 0.36, 1] };
 
   return (
-    <div className="min-h-screen text-foreground relative">
-      <NexusAtmosphere className="-z-10" />
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 min-w-0">
-          <Topbar />
-          <main className="p-4 md:p-8 pb-24 md:pb-8">
-            <Motion.div
-              key={loc.pathname}
-              style={{ willChange: "opacity" }}
-              initial={initial}
-              animate={animate}
-              transition={transition}
-            >
-              <Outlet />
-            </Motion.div>
-          </main>
+    <ConfirmProvider>
+      <div className="min-h-screen text-foreground relative">
+        <NexusAtmosphere className="-z-10" />
+        <div className="flex">
+          <Sidebar />
+          <div className="flex-1 min-w-0">
+            <Topbar />
+            <main className="p-4 md:p-8 pb-24 md:pb-8">
+              <Motion.div
+                key={loc.pathname}
+                style={{ willChange: "opacity" }}
+                initial={initial}
+                animate={animate}
+                transition={transition}
+              >
+                <Outlet />
+              </Motion.div>
+            </main>
+          </div>
         </div>
+        <MobileNav />
       </div>
-      <MobileNav />
-    </div>
+    </ConfirmProvider>
   );
 }

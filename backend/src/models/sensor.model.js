@@ -12,6 +12,19 @@ module.exports = (sequelize) =>
       sensorCode: { type: DataTypes.STRING(80), allowNull: false, unique: true, field: "sensor_code" },
       name: { type: DataTypes.STRING(255), allowNull: true },
 
+      calibrationTempOffsetC: {
+        type: DataTypes.DOUBLE,
+        allowNull: false,
+        defaultValue: 0,
+        field: "calibration_temp_offset_c",
+      },
+      calibrationHumidityOffsetPct: {
+        type: DataTypes.DOUBLE,
+        allowNull: false,
+        defaultValue: 0,
+        field: "calibration_humidity_offset_pct",
+      },
+
       lastReadingAt: { type: DataTypes.DATE, allowNull: true, field: "last_reading_at" },
     },
     {

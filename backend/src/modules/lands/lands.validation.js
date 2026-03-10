@@ -26,6 +26,9 @@ const geoJsonPolygon = z.object({
 });
 
 const createLandSchema = z.object({
+  // Admin-only: create a land on behalf of another user.
+  // For regular users this is ignored by controller.
+  ownerId: z.string().uuid("Owner invalid.").optional(),
   name: z
     .string()
     .min(2, "Numele trebuie să aibă cel puțin 2 caractere.")

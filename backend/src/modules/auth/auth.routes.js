@@ -11,5 +11,6 @@ router.post("/reset-password", c.resetPassword);
 router.get("/me", requireAuth, c.me);
 router.get("/preferences", requireAuth, c.getPreferences);
 router.put("/preferences", requireAuth, c.updatePreferences);
+router.put("/password", requireAuth, c.changePassword);
 
 module.exports = router;

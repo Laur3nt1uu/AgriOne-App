@@ -5,9 +5,17 @@ const service = require("./analytics.service");
 const overview = [
   requireAuth,
   asyncHandler(async (req, res) => {
-    const data = await service.overview(req.user.sub);
+    const data = await service.overview(req.user);
     res.json(data);
   }),
 ];
 
-module.exports = { overview };
+const health = [
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const data = await service.health(req.user);
+    res.json(data);
+  }),
+];
+
+module.exports = { overview, health };

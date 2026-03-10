@@ -1,5 +1,5 @@
 const ApiError = require("../../utils/ApiError");
-const { Sensor, Land } = require("../../models");
+const { Sensor, Land, User } = require("../../models");
 
 function isOnline(lastReadingAt, minutes = 15) {
   if (!lastReadingAt) return false;
@@ -26,20 +26,53 @@ async function listMySensors(ownerId) {
   }));
 }
 
-async function pairSensor(ownerId, { sensorCode, landId }) {
-  const sensor = await Sensor.findOne({ where: { sensorCode, ownerId } });
+async function listSensorsForActor(actor) {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  if (!isAdmin) return listMySensors(ownerId);
+
+  const sensors = await Sensor.findAll({
+    include: [
+      { model: User, attributes: ["id", "email", "username", "role"] },
+      { model: Land, attributes: ["id", "name"], required: false },
+    ],
+    order: [["created_at", "DESC"]],
+  });
+
+  return sensors.map((s) => ({
+    ...s.toJSON(),
+    online: isOnline(s.lastReadingAt),
+    owner: s.User ? { id: s.User.id, email: s.User.email, username: s.User.username, role: s.User.role } : undefined,
+    land: s.Land ? { id: s.Land.id, name: s.Land.name } : undefined,
+  }));
+}
+
+async function pairSensor(actor, { sensorCode, landId }) {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  const sensor = await Sensor.findOne({ where: isAdmin ? { sensorCode } : { sensorCode, ownerId } });
   if (!sensor) throw new ApiError(404, "Sensor not found", null, "SENSOR_NOT_FOUND");
 
-  const land = await Land.findOne({ where: { id: landId, ownerId } });
+  const land = await Land.findOne({ where: isAdmin ? { id: landId } : { id: landId, ownerId } });
   if (!land) throw new ApiError(404, "Land not found", null, "LAND_NOT_FOUND");
+
+  // Keep invariants: sensor ownership follows land ownership when admin pairs.
+  if (isAdmin && String(sensor.ownerId) !== String(land.ownerId)) {
+    sensor.ownerId = land.ownerId;
+  }
 
   sensor.landId = landId;
   await sensor.save();
   return sensor;
 }
 
-async function unpairSensor(ownerId, sensorCode) {
-  const sensor = await Sensor.findOne({ where: { sensorCode, ownerId } });
+async function unpairSensor(actor, sensorCode) {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  const sensor = await Sensor.findOne({ where: isAdmin ? { sensorCode } : { sensorCode, ownerId } });
   if (!sensor) throw new ApiError(404, "Sensor not found", null, "SENSOR_NOT_FOUND");
 
   sensor.landId = null;
@@ -47,4 +80,25 @@ async function unpairSensor(ownerId, sensorCode) {
   return sensor;
 }
 
-module.exports = { createSensor, listMySensors, pairSensor, unpairSensor };
+async function updateCalibration(actor, sensorCode, { tempOffsetC, humidityOffsetPct }) {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  const sensor = await Sensor.findOne({ where: isAdmin ? { sensorCode } : { sensorCode, ownerId } });
+  if (!sensor) throw new ApiError(404, "Sensor not found", null, "SENSOR_NOT_FOUND");
+
+  sensor.calibrationTempOffsetC = Number(tempOffsetC);
+  sensor.calibrationHumidityOffsetPct = Number(humidityOffsetPct);
+  await sensor.save();
+
+  return sensor;
+}
+
+module.exports = {
+  createSensor,
+  listMySensors,
+  listSensorsForActor,
+  pairSensor,
+  unpairSensor,
+  updateCalibration,
+};

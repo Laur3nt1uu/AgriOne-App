@@ -4,6 +4,7 @@ import { toastError } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { Activity, BarChart3, Cpu, Leaf, Thermometer, TrendingUp } from "lucide-react";
+import { authStore } from "../../auth/auth.store";
 
 function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
@@ -21,6 +22,9 @@ function scoreVariant(score){
 }
 
 export default function AnalyticsPage() {
+  const user = authStore.getUser();
+  const isAdmin = user?.role === "ADMIN";
+
   const [busy, setBusy] = useState(true);
   const [overview, setOverview] = useState(null);
   const [health, setHealth] = useState([]);
@@ -29,7 +33,7 @@ export default function AnalyticsPage() {
     setBusy(true);
     try {
       const o = await api.analytics.overview().catch(() => null);
-      const h = null;
+      const h = await api.analytics.health().catch(() => null);
 
       // fallback demo dacă backend încă nu returnează
       const normalized = o
@@ -41,9 +45,7 @@ export default function AnalyticsPage() {
           }
         : null;
       setOverview(normalized || { totalLands: 1, activeSensors: 0, avgTemp: 22.4, totalProfit: 0 });
-      setHealth(Array.isArray(h) ? h : (h?.items || [
-        { landId: 1, landName: "Parcela A", score: 76, label: "Bun", reasons: ["Temperatură stabilă", "Umiditate ok"] },
-      ]));
+      setHealth(Array.isArray(h) ? h : (h?.items || []));
     } catch (e) {
       toastError(e, "Nu pot încărca analytics.");
     } finally {
@@ -58,7 +60,9 @@ export default function AnalyticsPage() {
       <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">Analize</div>
-          <div className="muted text-sm">Scor sănătate • recomandări • overview</div>
+          <div className="muted text-sm">
+            {isAdmin ? "Statistici globale" : "Statistici personale"} • scor sănătate • recomandări
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={load} variant="ghost">Actualizează</Button>
@@ -80,12 +84,18 @@ export default function AnalyticsPage() {
             <div className="mt-4 space-y-3">
               {health.map((h) => {
                 const score = clamp(Number(h.score || 0), 0, 100);
+                const ownerLabel = isAdmin
+                  ? h?.owner?.username || (h?.owner?.email ? String(h.owner.email).split("@")[0] : "") || h?.owner?.email || ""
+                  : "";
                 return (
                   <div key={h.landId} className={`card-soft p-4 border ${scoreColor(score)} agri-pattern card-hover`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-extrabold truncate">{h.landName}</div>
-                        <div className="muted text-sm">{h.label || "—"}</div>
+                        <div className="muted text-sm">
+                          {h.label || "—"}
+                          {isAdmin && ownerLabel ? ` • ${ownerLabel}` : ""}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge>Scor: {score}</Badge>
@@ -116,6 +126,10 @@ export default function AnalyticsPage() {
                   </div>
                 );
               })}
+
+              {!health.length ? (
+                <div className="muted mt-3">Nu există încă suficiente date pentru scor (citiri/alerte).</div>
+              ) : null}
             </div>
           </div>
 

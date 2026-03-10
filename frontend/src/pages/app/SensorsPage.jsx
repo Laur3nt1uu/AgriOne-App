@@ -6,6 +6,7 @@ import ReadingsChart from "../../components/charts/ReadingsChart";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { Clock, Cpu, Droplets, Thermometer } from "lucide-react";
+import { authStore } from "../../auth/auth.store";
 
 function clamp01(x) {
   const n = Number(x);
@@ -49,6 +50,9 @@ export default function SensorsPage() {
   const [params] = useSearchParams();
   const landId = params.get("landId");
 
+  const user = authStore.getUser();
+  const isAdmin = user?.role === "ADMIN";
+
   const [lands, setLands] = useState([]);
   const [busy, setBusy] = useState(true);
 
@@ -88,6 +92,12 @@ export default function SensorsPage() {
     () => lands.find((x) => String(x.id) === String(landId)),
     [lands, landId]
   );
+
+  const selectedLandOwnerLabel = useMemo(() => {
+    if (!isAdmin) return "";
+    const owner = selectedLand?.owner;
+    return owner?.username || (owner?.email ? String(owner.email).split("@")[0] : "") || owner?.email || "";
+  }, [isAdmin, selectedLand]);
 
   const online = isOnline(selectedLand?.lastSensorAt);
 
@@ -132,9 +142,13 @@ export default function SensorsPage() {
     <div className="space-y-6 animate-fadeIn">
       <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
-          <div className="page-title">Senzori</div>
+          <div className="page-title">{isAdmin ? "Senzori (admin)" : "Senzori"}</div>
           <div className="muted text-sm">
-            {selectedLand ? `Teren: ${selectedLand.name}` : "Deschide din detaliile terenului → Istoric"}
+            {selectedLand
+              ? `Teren: ${selectedLand.name}${selectedLandOwnerLabel ? ` • ${selectedLandOwnerLabel}` : ""}`
+              : isAdmin
+                ? "Deschide din Terenuri → detalii → Vezi istoricul (orice utilizator)"
+                : "Deschide din detaliile terenului → Istoric"}
           </div>
         </div>
 

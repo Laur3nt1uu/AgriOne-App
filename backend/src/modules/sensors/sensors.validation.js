@@ -27,4 +27,17 @@ const unpairSchema = z.object({
     .max(80, "Codul senzorului este prea lung."),
 });
 
-module.exports = { createSensorSchema, pairSchema, unpairSchema };
+const calibrationSchema = z.object({
+  tempOffsetC: z
+    .number({ invalid_type_error: "Offset temperatura invalid." })
+    .finite("Offset temperatura invalid.")
+    .min(-20, "Offset temperatura prea mic.")
+    .max(20, "Offset temperatura prea mare."),
+  humidityOffsetPct: z
+    .number({ invalid_type_error: "Offset umiditate invalid." })
+    .finite("Offset umiditate invalid.")
+    .min(-50, "Offset umiditate prea mic.")
+    .max(50, "Offset umiditate prea mare."),
+});
+
+module.exports = { createSensorSchema, pairSchema, unpairSchema, calibrationSchema };

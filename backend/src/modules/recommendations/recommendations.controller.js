@@ -6,7 +6,7 @@ const service = require("./recommendations.service");
 const byLand = [
   requireAuth,
   asyncHandler(async (req, res) => {
-    const data = await service.recommendationsForLand(req.user.sub, req.params.landId);
+    const data = await service.recommendationsForLand(req.user, req.params.landId);
     res.json(data);
   }),
 ];

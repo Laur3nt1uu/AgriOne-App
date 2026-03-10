@@ -2,11 +2,16 @@ const ApiError = require("../../utils/ApiError");
 const { Op } = require("sequelize");
 const { Land, Sensor, Reading } = require("../../models");
 
-async function listReadingsByLand(ownerId, landId, range = "24h") {
-  const land = await Land.findOne({ where: { id: landId, ownerId } });
+async function listReadingsByLand(actor, landId, range = "24h") {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  const land = await Land.findOne({ where: isAdmin ? { id: landId } : { id: landId, ownerId } });
   if (!land) throw new ApiError(404, "Land not found", null, "LAND_NOT_FOUND");
 
-  const sensors = await Sensor.findAll({ where: { ownerId, landId } });
+  const effectiveOwnerId = land.ownerId;
+
+  const sensors = await Sensor.findAll({ where: { ownerId: effectiveOwnerId, landId } });
   if (!sensors.length) {
     return { landId, sensorCode: null, range, items: [] };
   }
@@ -17,6 +22,9 @@ async function listReadingsByLand(ownerId, landId, range = "24h") {
     return tb - ta;
   });
   const sensor = sensors[0];
+
+  const tempOffset = Number(sensor.calibrationTempOffsetC || 0);
+  const humOffset = Number(sensor.calibrationHumidityOffsetPct || 0);
 
   const since =
     range === "7d"
@@ -37,8 +45,8 @@ async function listReadingsByLand(ownerId, landId, range = "24h") {
     range,
     items: readings.map((r) => ({
       recordedAt: r.recordedAt,
-      temperatureC: r.temperatureC,
-      humidityPct: r.humidityPct,
+      temperatureC: Number(r.temperatureC) + tempOffset,
+      humidityPct: Number(r.humidityPct) + humOffset,
     })),
   };
 }

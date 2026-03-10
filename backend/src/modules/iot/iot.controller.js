@@ -22,7 +22,7 @@ const pair = [
     const parsed = pairBoardSchema.safeParse(req.body);
     if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
 
-    const board = await service.pairBoard(req.user.sub, parsed.data);
+    const board = await service.pairBoard(req.user, parsed.data);
     res.json({ board });
   }),
 ];
@@ -33,7 +33,7 @@ const unpair = [
     const parsed = unpairBoardSchema.safeParse(req.body);
     if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
 
-    const board = await service.unpairBoard(req.user.sub, parsed.data);
+    const board = await service.unpairBoard(req.user, parsed.data);
     res.json({ board });
   }),
 ];

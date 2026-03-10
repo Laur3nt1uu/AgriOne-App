@@ -6,4 +6,6 @@ router.get("/rules", c.getRules);
 
 router.get("/", c.listAlerts);
 
+router.delete("/:id", ...c.remove);
+
 module.exports = router;

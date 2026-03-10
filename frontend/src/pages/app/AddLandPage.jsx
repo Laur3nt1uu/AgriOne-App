@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { api } from "../../api/endpoints";
 import { toastError, toastSuccess } from "../../utils/toast";
@@ -7,6 +7,7 @@ import { Button } from "../../ui/button";
 import GooglePolygonDrawMap from "../../components/maps/GooglePolygonDrawMap";
 import { Badge } from "../../ui/badge";
 import { CheckCircle2, Edit3, Map as MapIcon, Sprout } from "lucide-react";
+import { authStore } from "../../auth/auth.store";
 import {
   centroidFromLatLngPairs,
   polygonAreaHa,
@@ -18,6 +19,15 @@ const RO_CENTER = [45.9432, 24.9668];
 
 export default function AddLandPage() {
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const user = authStore.getUser();
+  const isAdmin = user?.role === "ADMIN";
+
+  const ownerIdFromUrl = params.get("ownerId") || "";
+
+  const [users, setUsers] = useState([]);
+  const [ownerSearch, setOwnerSearch] = useState("");
+  const [ownerId, setOwnerId] = useState("");
   const [step, setStep] = useState(1); // 1=form, 2=map
   const [name, setName] = useState("");
   const [cropType, setCropType] = useState("Wheat");
@@ -28,6 +38,46 @@ export default function AddLandPage() {
   const [busy, setBusy] = useState(false);
 
   const center = useMemo(() => RO_CENTER, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    (async () => {
+      try {
+        const data = await api.admin.listUsers();
+        const arr = Array.isArray(data) ? data : (data?.users || []);
+        const displayName = (u) => {
+          const username = u?.username ? String(u.username) : "";
+          if (username) return username;
+          const email = u?.email ? String(u.email) : "";
+          return email ? email.split("@")[0] : "";
+        };
+        const sorted = arr
+          .slice()
+          .sort((a, b) => displayName(a).localeCompare(displayName(b)) || String(a.email || "").localeCompare(String(b.email || "")));
+        setUsers(sorted);
+
+        if (ownerIdFromUrl) {
+          const exists = sorted.some((u) => String(u.id) === String(ownerIdFromUrl));
+          if (exists) setOwnerId(String(ownerIdFromUrl));
+        }
+      } catch {
+        setUsers([]);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
+
+  const filteredUsers = useMemo(() => {
+    if (!isAdmin) return [];
+    const q = ownerSearch.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) => {
+      const email = String(u.email || "").toLowerCase();
+      const username = String(u.username || "").toLowerCase();
+      const emailPrefix = email ? email.split("@")[0] : "";
+      return email.includes(q) || username.includes(q) || emailPrefix.includes(q);
+    });
+  }, [isAdmin, ownerSearch, users]);
 
   function validateStep1() {
     if (!name.trim()) return "Completează numele terenului.";
@@ -86,6 +136,8 @@ export default function AddLandPage() {
       geometry,
     };
 
+    if (isAdmin && ownerId) payload.ownerId = ownerId;
+
     setBusy(true);
     try {
       const created = await api.lands.create(payload);
@@ -109,6 +161,9 @@ export default function AddLandPage() {
           <div className="muted text-sm">
             Pasul {step} din 2 • {step === 1 ? "Detalii" : "Desenează limita"}
           </div>
+          {isAdmin ? (
+            <div className="muted text-xs mt-1">Notă: poți crea terenul fie pe contul tău ADMIN, fie pentru un utilizator selectat.</div>
+          ) : null}
           <div className="mt-3 flex gap-2 flex-wrap">
             <Badge as="div" variant={step === 1 ? "success" : "default"}>
               <Edit3 size={14} className="text-muted-foreground" /> 1. Detalii
@@ -146,6 +201,48 @@ export default function AddLandPage() {
         <div className="grid grid-cols-1 gap-4 max-w-3xl mx-auto w-full">
           <div className="card p-5 space-y-4 agri-pattern">
             <div className="text-lg font-bold">Detalii teren</div>
+
+            {isAdmin ? (
+              <div className="card-soft p-4 space-y-3">
+                <div>
+                  <div className="text-sm font-bold">Owner (utilizator)</div>
+                  <div className="muted text-sm mt-1">Alege utilizatorul pentru care creezi terenul.</div>
+                </div>
+
+                <div>
+                  <div className="text-xs muted mb-1">Caută după username sau email</div>
+                  <input
+                    className="input"
+                    value={ownerSearch}
+                    onChange={(e) => setOwnerSearch(e.target.value)}
+                    placeholder="ex: ion.popescu sau ion.popescu@..."
+                  />
+                </div>
+
+                <div>
+                  <div className="text-xs muted mb-1">Selectează utilizator</div>
+                  <select
+                    className="input"
+                    value={ownerId}
+                    onChange={(e) => setOwnerId(e.target.value)}
+                  >
+                    <option value="">— alege utilizator —</option>
+                    {filteredUsers.slice(0, 200).map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {(u.username || (u.email ? String(u.email).split("@")[0] : ""))} ({u.role}){u.email ? ` • ${u.email}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {users.length > 200 ? (
+                    <div className="muted text-xs mt-1">Se afișează primele 200 rezultate (filtrează după username/email).</div>
+                  ) : null}
+                </div>
+
+                {!ownerId ? (
+                  <div className="muted text-xs">Notă: dacă nu alegi owner, terenul se creează pe contul admin.</div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div>
               <div className="text-xs muted mb-1">Nume teren</div>

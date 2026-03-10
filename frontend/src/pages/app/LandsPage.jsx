@@ -5,6 +5,7 @@ import { toastError } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { Cloud, CloudRain, CloudSun, Cpu, Leaf, Ruler, Sun } from "lucide-react";
+import { authStore } from "../../auth/auth.store";
 
 function weatherKind(weather) {
   const rain = weather?.forecast?.nextHoursRainMm;
@@ -40,6 +41,9 @@ export default function LandsPage() {
   const nav = useNavigate();
   const [items, setItems] = useState([]);
   const [busy, setBusy] = useState(true);
+
+  const user = authStore.getUser();
+  const isAdmin = user?.role === "ADMIN";
 
   const [recByLand, setRecByLand] = useState({});
 
@@ -119,8 +123,8 @@ export default function LandsPage() {
     <div className="space-y-6 animate-fadeIn">
       <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
-          <div className="page-title">Terenurile mele</div>
-          <div className="muted text-sm">Parcele • senzori • monitorizare</div>
+          <div className="page-title">{isAdmin ? "Toate terenurile" : "Terenurile mele"}</div>
+          <div className="muted text-sm">{isAdmin ? "Administrare globală" : "Monitorizare personală"} • parcele • senzori</div>
         </div>
         <div className="flex gap-2">
           <Button onClick={load} variant="ghost">Actualizează</Button>
@@ -136,10 +140,14 @@ export default function LandsPage() {
             <div className="card p-6 muted">Se încarcă…</div>
           ) : items.length === 0 ? (
             <div className="card p-8 text-center">
-              <div className="text-xl font-extrabold">Nu ai încă terenuri</div>
-              <div className="muted mt-2">Creează primul teren și desenează limita pe hartă.</div>
+              <div className="text-xl font-extrabold">{isAdmin ? "Nu există terenuri" : "Nu ai încă terenuri"}</div>
+              <div className="muted mt-2">
+                {isAdmin
+                  ? "Încă nu sunt terenuri în sistem. Când utilizatorii adaugă parcele, vor apărea aici."
+                  : "Creează primul teren și desenează limita pe hartă."}
+              </div>
               <Button onClick={() => nav("/lands/new")} variant="primary" className="mt-5">
-                Creează primul teren
+                {isAdmin ? "Adaugă teren" : "Creează primul teren"}
               </Button>
             </div>
           ) : (
@@ -163,6 +171,10 @@ export default function LandsPage() {
                   (it.centroidLat != null && it.centroidLng != null) ||
                   (it.centroid?.lat != null && it.centroid?.lng != null);
 
+                const ownerLabel = isAdmin
+                  ? it?.owner?.username || (it?.owner?.email ? String(it.owner.email).split("@")[0] : "") || it?.owner?.email || ""
+                  : "";
+
                 return (
                   <button
                     key={it.id}
@@ -174,6 +186,7 @@ export default function LandsPage() {
                         <div className="text-lg font-extrabold truncate">{it.name}</div>
                         <div className="muted text-sm mt-1">
                           {it.cropType || "—"} • {fmtHa(it.areaHa)}
+                          {isAdmin && ownerLabel ? ` • ${ownerLabel}` : ""}
                         </div>
                       </div>
 
@@ -292,7 +305,9 @@ export default function LandsPage() {
           <div className="card p-5">
             <div className="text-sm font-bold">Hint</div>
             <div className="muted text-sm mt-2">
-              Deschide un teren pentru hartă, limită, senzor și istoric. Recomandările se bazează pe vreme + context.
+              {isAdmin
+                ? "Deschide un teren pentru detalii (hartă, senzor, istoric). Ca ADMIN vezi și owner-ul fiecărui teren."
+                : "Deschide un teren pentru hartă, limită, senzor și istoric. Recomandările se bazează pe vreme + context."}
             </div>
           </div>
         </div>

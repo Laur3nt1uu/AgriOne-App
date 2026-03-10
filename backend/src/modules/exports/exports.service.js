@@ -2,9 +2,14 @@ const ApiError = require("../../utils/ApiError");
 const { Op } = require("sequelize");
 const { Land, Sensor, Reading, AlertRule, Alert, Transaction } = require("../../models");
 
-async function getLandReportData(ownerId, landId) {
-  const land = await Land.findOne({ where: { id: landId, ownerId } });
+async function getLandReportData(actor, landId) {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  const land = await Land.findOne({ where: isAdmin ? { id: landId } : { id: landId, ownerId } });
   if (!land) throw new ApiError(404, "Land not found", null, "LAND_NOT_FOUND");
+
+  const effectiveOwnerId = land.ownerId;
 
   const safe = async (fn, fallback) => {
     try {
@@ -15,9 +20,9 @@ async function getLandReportData(ownerId, landId) {
     }
   };
 
-  const rule = await safe(() => AlertRule.findOne({ where: { ownerId, landId } }), null);
+  const rule = await safe(() => AlertRule.findOne({ where: { ownerId: effectiveOwnerId, landId } }), null);
 
-  const sensors = await safe(() => Sensor.findAll({ where: { ownerId, landId } }), []);
+  const sensors = await safe(() => Sensor.findAll({ where: { ownerId: effectiveOwnerId, landId } }), []);
   sensors.sort((a, b) => {
     const ta = a.lastReadingAt ? new Date(a.lastReadingAt).getTime() : 0;
     const tb = b.lastReadingAt ? new Date(b.lastReadingAt).getTime() : 0;
@@ -38,13 +43,13 @@ async function getLandReportData(ownerId, landId) {
     : [];
 
   const alerts = await safe(() => Alert.findAll({
-    where: { ownerId, landId },
+    where: { ownerId: effectiveOwnerId, landId },
     order: [["created_at", "DESC"]],
     limit: 10,
   }), []);
 
   const transactions = await safe(() => Transaction.findAll({
-    where: { ownerId, landId },
+    where: { ownerId: effectiveOwnerId, landId },
     order: [["occurred_at", "DESC"]],
     limit: 15,
   }), []);
@@ -75,11 +80,16 @@ async function getLandReportData(ownerId, landId) {
   };
 }
 
-async function getReadingsCsv(ownerId, landId, range = "24h") {
-  const land = await Land.findOne({ where: { id: landId, ownerId } });
+async function getReadingsCsv(actor, landId, range = "24h") {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  const land = await Land.findOne({ where: isAdmin ? { id: landId } : { id: landId, ownerId } });
   if (!land) throw new ApiError(404, "Land not found", null, "LAND_NOT_FOUND");
 
-  const sensors = await Sensor.findAll({ where: { ownerId, landId } });
+  const effectiveOwnerId = land.ownerId;
+
+  const sensors = await Sensor.findAll({ where: { ownerId: effectiveOwnerId, landId } });
   if (!sensors.length) return { land, csv: "recordedAt,temperatureC,humidityPct,sensorCode\n" };
 
   sensors.sort((a, b) => {

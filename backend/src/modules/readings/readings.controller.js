@@ -6,7 +6,7 @@ const listByLand = [
   requireAuth,
   asyncHandler(async (req, res) => {
     const range = req.query.range || "24h";
-    const data = await service.listReadingsByLand(req.user.sub, req.params.landId, range);
+    const data = await service.listReadingsByLand(req.user, req.params.landId, range);
     res.json(data);
   }),
 ];

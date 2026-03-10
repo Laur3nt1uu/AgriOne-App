@@ -267,11 +267,16 @@ async function pickCoordsForOwner(ownerId) {
   };
 }
 
-async function getLatestForLand(ownerId, landId) {
-  const land = await Land.findOne({ where: { id: landId, ownerId } });
+async function getLatestForLand(actor, landId) {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  const land = await Land.findOne({ where: isAdmin ? { id: landId } : { id: landId, ownerId } });
   if (!land) throw new ApiError(404, "Land not found", null, "LAND_NOT_FOUND");
 
-  const sensors = await Sensor.findAll({ where: { ownerId, landId } });
+  const effectiveOwnerId = land.ownerId;
+
+  const sensors = await Sensor.findAll({ where: { ownerId: effectiveOwnerId, landId } });
   sensors.sort((a, b) => {
     const ta = a.lastReadingAt ? new Date(a.lastReadingAt).getTime() : 0;
     const tb = b.lastReadingAt ? new Date(b.lastReadingAt).getTime() : 0;
@@ -292,14 +297,14 @@ async function getLatestForLand(ownerId, landId) {
   }
 
   const rule = await AlertRule.findOne({
-    where: { ownerId, landId, enabled: true },
+    where: { ownerId: effectiveOwnerId, landId, enabled: true },
   });
 
   return { land, sensor, latest, online, rule };
 }
 
-async function recommendationsForLand(ownerId, landId) {
-  const { land, sensor, latest, online, rule } = await getLatestForLand(ownerId, landId);
+async function recommendationsForLand(actor, landId) {
+  const { land, sensor, latest, online, rule } = await getLatestForLand(actor, landId);
 
   // weather: folosim centroid dacă există
   const lat = land.centroidLat;

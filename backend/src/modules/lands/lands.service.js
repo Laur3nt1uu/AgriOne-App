@@ -8,7 +8,9 @@ async function attachArduinoMeta(ownerId, lands) {
   if (!landIds.length) return arr;
 
   const sensors = await Sensor.findAll({
-    where: { ownerId, landId: { [Op.in]: landIds } },
+    where: ownerId
+      ? { ownerId, landId: { [Op.in]: landIds } }
+      : { landId: { [Op.in]: landIds } },
     order: [["updated_at", "DESC"]],
   });
 
@@ -30,6 +32,10 @@ async function attachArduinoMeta(ownerId, lands) {
       // new clearer fields
       arduinoCode: sensor ? sensor.sensorCode : null,
       arduinoName: sensor ? sensor.name : null,
+
+      // calibration (used by UI for sensor calibration)
+      arduinoCalibrationTempOffsetC: sensor ? sensor.calibrationTempOffsetC : 0,
+      arduinoCalibrationHumidityOffsetPct: sensor ? sensor.calibrationHumidityOffsetPct : 0,
     };
   });
 }
@@ -87,6 +93,7 @@ async function deleteMyLand(ownerId, landId) {
 }
 
 module.exports = {
+  attachArduinoMeta,
   createLand,
   listMyLands,
   getMyLandById,

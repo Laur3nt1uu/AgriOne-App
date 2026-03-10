@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
-import { Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, Sparkles, User } from "lucide-react";
 import { api } from "../../api/endpoints";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
@@ -11,6 +11,7 @@ import AuthNexusLayout from "./AuthNexusLayout";
 
 export default function RegisterPage() {
   const nav = useNavigate();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,7 +37,13 @@ export default function RegisterPage() {
 
     setBusy(true);
     try {
-      await api.auth.register({ email, password, role: "USER" });
+      const payload = {
+        email,
+        password,
+        role: "USER",
+        username: username.trim() || undefined,
+      };
+      await api.auth.register(payload);
       toastSuccess("Account created. You can sign in now.");
       nav("/login", { replace: true });
     } catch (e2) {
@@ -70,6 +77,23 @@ export default function RegisterPage() {
             {error}
           </Motion.div>
         ) : null}
+
+        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+          <Label htmlFor="username">Username (optional)</Label>
+          <div className="relative mt-1.5">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              id="username"
+              type="text"
+              placeholder="ex: ion.popescu"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="pl-10 transition-all focus:border-primary/50 focus:shadow-lg focus:shadow-primary/10"
+              autoComplete="username"
+            />
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">Litere/cifre, ., _, - (3–30 caractere).</div>
+        </Motion.div>
 
         <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
           <Label htmlFor="email">Email</Label>

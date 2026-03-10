@@ -4,8 +4,12 @@ import { toastError, toastSuccess } from "../../../utils/toast";
 import { Button } from "../../../ui/button";
 import { Badge } from "../../../ui/badge";
 import { RefreshCcw, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useConfirm } from "../../../components/confirm/ConfirmProvider";
 
 export default function UsersManagementPage() {
+  const nav = useNavigate();
+  const confirm = useConfirm();
   const [users, setUsers] = useState([]);
   const [busy, setBusy] = useState(true);
 
@@ -24,7 +28,14 @@ export default function UsersManagementPage() {
   useEffect(() => { load(); }, []);
 
   async function deleteUser(id) {
-    if (!confirm("Ștergi acest utilizator?")) return;
+    const ok = await confirm({
+      title: "Ștergere utilizator",
+      message: "Ștergi acest utilizator?",
+      confirmText: "Șterge",
+      cancelText: "Renunță",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await api.admin.deleteUser(id);
       toastSuccess("Utilizator șters.");
@@ -36,7 +47,14 @@ export default function UsersManagementPage() {
 
   async function toggleRole(user) {
     const newRole = user.role === "ADMIN" ? "USER" : "ADMIN";
-    if (!confirm(`Schimbi rolul la ${newRole}?`)) return;
+    const ok = await confirm({
+      title: "Schimbare rol",
+      message: `Schimbi rolul la ${newRole}?`,
+      confirmText: "Schimbă",
+      cancelText: "Renunță",
+      destructive: false,
+    });
+    if (!ok) return;
     try {
       await api.admin.updateUser(user.id, { role: newRole });
       toastSuccess("Rol actualizat.");
@@ -75,7 +93,7 @@ export default function UsersManagementPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border/10">
-                  <th className="text-left p-4 text-muted-foreground font-medium">Email</th>
+                  <th className="text-left p-4 text-muted-foreground font-medium">Username</th>
                   <th className="text-left p-4 text-muted-foreground font-medium">Rol</th>
                   <th className="text-left p-4 text-muted-foreground font-medium">Creat</th>
                   <th className="text-right p-4 text-muted-foreground font-medium">Acțiuni</th>
@@ -84,15 +102,21 @@ export default function UsersManagementPage() {
               <tbody>
                 {users.map((u) => (
                   <tr key={u.id} className="border-b border-border/10 hover:bg-muted/30">
-                    <td className="p-4">{u.email}</td>
+                    <td className="p-4">
+                      <div className="font-semibold">{u.username || (u.email ? String(u.email).split("@")[0] : "—")}</div>
+                      <div className="muted text-xs">{u.email || "—"}</div>
+                    </td>
                     <td className="p-4">
                       <Badge variant={u.role === "ADMIN" ? "success" : "default"}>{u.role}</Badge>
                     </td>
                     <td className="p-4 muted text-sm">
-                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
+                      {(u.createdAt || u.created_at) ? new Date(u.createdAt || u.created_at).toLocaleDateString() : "—"}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex gap-2 justify-end">
+                        <Button onClick={() => nav(`/lands/new?ownerId=${encodeURIComponent(u.id)}`)} variant="ghost" className="text-xs">
+                          Adaugă teren
+                        </Button>
                         <Button onClick={() => toggleRole(u)} variant="ghost" className="text-xs">
                           Schimbă rol
                         </Button>

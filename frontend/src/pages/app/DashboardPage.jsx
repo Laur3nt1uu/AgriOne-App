@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, pick } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
+import { authStore } from "../../auth/auth.store";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Card } from "../../ui/card";
+import { useNavigate } from "react-router-dom";
 import {
   BellRing,
   CheckCircle2,
@@ -55,8 +57,14 @@ function weatherVisual(weather) {
 }
 
 export default function DashboardPage() {
+  const nav = useNavigate();
+  const user = authStore.getUser();
+  const isAdmin = user?.role === "ADMIN";
+
   const [overview, setOverview] = useState(null);
   const [now, setNow] = useState(() => new Date());
+
+  const [adminStats, setAdminStats] = useState(null);
 
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [recentAlertsBusy, setRecentAlertsBusy] = useState(false);
@@ -85,6 +93,18 @@ export default function DashboardPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    (async () => {
+      try {
+        const s = await api.admin.getStats();
+        setAdminStats(s || null);
+      } catch {
+        setAdminStats(null);
+      }
+    })();
+  }, [isAdmin]);
 
   const loadRecentAlerts = useCallback(async (silent = true) => {
     setRecentAlertsBusy(true);
@@ -408,6 +428,45 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
         <div className="space-y-4">
+          {isAdmin ? (
+            <Card className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold">Admin dashboard</div>
+                  <div className="text-muted-foreground text-sm">Acțiuni și statistici globale.</div>
+                </div>
+                <Badge variant="success">ADMIN</Badge>
+              </div>
+
+              <div className="mt-3 text-muted-foreground text-xs">
+                Fluxuri rapide: <span className="font-medium">Adaugă teren</span> (Utilizatori → Adaugă teren) • <span className="font-medium">Pair senzor</span> (Setări sistem → Asociere)
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl border border-border/15 bg-background/40 p-4">
+                  <div className="text-muted-foreground text-xs">Utilizatori</div>
+                  <div className="text-2xl font-semibold mt-2">{adminStats?.totalUsers ?? "—"}</div>
+                </div>
+                <div className="rounded-xl border border-border/15 bg-background/40 p-4">
+                  <div className="text-muted-foreground text-xs">Terenuri</div>
+                  <div className="text-2xl font-semibold mt-2">{adminStats?.totalLands ?? "—"}</div>
+                </div>
+                <div className="rounded-xl border border-border/15 bg-background/40 p-4">
+                  <div className="text-muted-foreground text-xs">Senzori</div>
+                  <div className="text-2xl font-semibold mt-2">{adminStats?.totalSensors ?? "—"}</div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-2 flex-wrap">
+                <Button variant="primary" onClick={() => nav("/admin/users")}>Utilizatori</Button>
+                <Button variant="secondary" onClick={() => nav("/admin/settings")}>Setări sistem</Button>
+                <Button variant="ghost" onClick={() => nav("/admin/users")}>Adaugă teren pentru utilizator</Button>
+                <Button variant="ghost" onClick={() => nav("/admin/settings")}>Asociază senzor</Button>
+                <Button variant="ghost" onClick={() => nav("/lands")}>Toate terenurile</Button>
+              </div>
+            </Card>
+          ) : null}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {kpiCards.map(({ label, value, Icon }) => (
               <Card key={label} className="relative overflow-hidden p-5 group">

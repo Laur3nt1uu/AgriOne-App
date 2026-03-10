@@ -27,6 +27,7 @@ export const getErrorMessage = (err, fallback = "A apărut o eroare.") => {
 
   if (status === 409) {
     if (code === "AUTH_EMAIL_ALREADY_REGISTERED" || /email/i.test(msg)) return "Acest email este deja înregistrat.";
+    if (code === "AUTH_USERNAME_TAKEN" || /username/i.test(msg)) return "Acest username este deja folosit.";
     if (code === "SENSOR_CODE_EXISTS" || /sensor code already exists/i.test(msg)) return "Acest cod de senzor este deja folosit.";
     if (code === "BOARD_CODE_EXISTS" || /board code already owned/i.test(msg)) return "Acest cod de Arduino este deja folosit.";
     return "Există deja o înregistrare cu aceste date.";
@@ -53,6 +54,7 @@ export const getErrorMessage = (err, fallback = "A apărut o eroare.") => {
   if (status === 403) return "Nu ai permisiune pentru această acțiune.";
   if (status === 404) {
     if (code === "LAND_NOT_FOUND") return "Terenul nu a fost găsit.";
+    if (code === "ALERT_NOT_FOUND") return "Alerta nu a fost găsită.";
     if (code === "SENSOR_NOT_FOUND") return "Senzorul nu a fost găsit.";
     if (code === "SENSOR_NOT_REGISTERED") return "Senzorul nu este înregistrat.";
     if (code === "BOARD_NOT_FOUND") return "Placa Arduino nu a fost găsită.";
@@ -78,6 +80,7 @@ export const api = {
     me: () => apiClient.get("/api/auth/me").then(r => r.data),
     getPreferences: () => apiClient.get("/api/auth/preferences").then((r) => r.data?.preferences || r.data),
     updatePreferences: (data) => apiClient.put("/api/auth/preferences", data).then((r) => r.data?.preferences || r.data),
+    changePassword: (data) => apiClient.put("/api/auth/password", data).then((r) => r.data),
     forgotPassword: (data) => apiClient.post("/api/auth/forgot-password", data).then(r => r.data),
     resetPassword: (data) => apiClient.post("/api/auth/reset-password", data).then(r => r.data),
   },
@@ -94,6 +97,9 @@ export const api = {
     list: () => apiClient.get("/api/sensors").then(r => r.data?.sensors || r.data?.items || r.data),
     // pairing: sensorCode + landId
     pair: (data) => apiClient.post("/api/sensors/pair", data).then(r => r.data?.sensor || r.data),
+    unpair: (data) => apiClient.post("/api/sensors/unpair", data).then(r => r.data?.sensor || r.data),
+    calibrate: (sensorCode, data) =>
+      apiClient.put(`/api/sensors/${encodeURIComponent(sensorCode)}/calibration`, data).then(r => r.data?.sensor || r.data),
   },
 
   iot: {
@@ -121,6 +127,7 @@ export const api = {
 
   alerts: {
     list: (params) => apiClient.get("/api/alerts", { params }).then(r => r.data?.alerts || r.data?.items || r.data),
+    remove: (id) => apiClient.delete(`/api/alerts/${id}`).then(() => true),
   },
 
   exports: {

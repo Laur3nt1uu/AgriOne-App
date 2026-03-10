@@ -7,6 +7,7 @@ const {
   forgotPasswordSchema,
   resetPasswordSchema,
   updatePreferencesSchema,
+  changePasswordSchema,
 } = require("./auth.validation");
 const authService = require("./auth.service");
 const { User } = require("../../models");
@@ -14,7 +15,7 @@ const { User } = require("../../models");
 const register = asyncHandler(async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
-  const result = await authService.register(parsed.data.email, parsed.data.password, parsed.data.role);
+  const result = await authService.register(parsed.data.email, parsed.data.password, parsed.data.role, parsed.data.username);
   res.status(201).json(result);
 });
 
@@ -58,13 +59,14 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 const me = asyncHandler(async (req, res) => {
   const user = await User.findByPk(req.user.sub, {
-    attributes: ["id", "email", "role", "globalLocationName", "globalLocationLat", "globalLocationLng"],
+    attributes: ["id", "email", "username", "role", "globalLocationName", "globalLocationLat", "globalLocationLng"],
   });
   if (!user) throw new ApiError(404, "User not found", null, "AUTH_USER_NOT_FOUND");
   res.json({
     user: {
       id: user.id,
       email: user.email,
+      username: user.username,
       role: user.role,
       globalLocation: user.globalLocationLat != null && user.globalLocationLng != null
         ? {
@@ -133,6 +135,14 @@ const updatePreferences = asyncHandler(async (req, res) => {
   });
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+  const parsed = changePasswordSchema.safeParse(req.body);
+  if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
+
+  const result = await authService.changePassword(req.user.sub, parsed.data.currentPassword, parsed.data.newPassword);
+  res.json(result);
+});
+
 module.exports = {
   register,
   login,
@@ -143,4 +153,5 @@ module.exports = {
   resetPassword,
   getPreferences,
   updatePreferences,
+  changePassword,
 };

@@ -5,6 +5,8 @@ import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { ArrowDownRight, ArrowUpRight, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { authStore } from "../../auth/auth.store";
+import { useConfirm } from "../../components/confirm/ConfirmProvider";
 
 function money(x) {
   const n = Number(x || 0);
@@ -12,8 +14,13 @@ function money(x) {
 }
 
 export default function EconomicsPage() {
+  const user = authStore.getUser();
+  const isAdmin = user?.role === "ADMIN";
+
+  const confirm = useConfirm();
+
   const [items, setItems] = useState([]);
-  const [summary, setSummary] = useState({ revenue: 0, expenses: 0, profit: 0 });
+  const [summary, setSummary] = useState({ revenue: 0, expenses: 0, profit: 0, count: 0 });
   const [busy, setBusy] = useState(true);
 
   const [type, setType] = useState("EXPENSE");
@@ -24,7 +31,14 @@ export default function EconomicsPage() {
     setBusy(true);
     try {
       const s = await api.economics.summary().catch(() => null);
-      if (s) setSummary(s);
+      if (s) {
+        setSummary({
+          revenue: Number(s.revenue || 0),
+          expenses: Number((s.expenses ?? s.expense) || 0),
+          profit: Number(s.profit || 0),
+          count: Number(s.count || 0),
+        });
+      }
 
       const data = await api.economics.list();
       const arr = Array.isArray(data) ? data : (data?.items || []);
@@ -67,7 +81,14 @@ export default function EconomicsPage() {
   }
 
   async function onDelete(id) {
-    if (!confirm("Ștergi această tranzacție?")) return;
+    const ok = await confirm({
+      title: "Ștergere tranzacție",
+      message: isAdmin ? "Ștergi această tranzacție? (ADMIN)" : "Ștergi această tranzacție?",
+      confirmText: "Șterge",
+      cancelText: "Renunță",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await api.economics.remove(id);
       toastSuccess("Tranzacția a fost ștearsă.");
@@ -84,7 +105,9 @@ export default function EconomicsPage() {
       <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">Economie</div>
-          <div className="muted text-sm">Tranzacții • venituri/cheltuieli • profit</div>
+          <div className="muted text-sm">
+            {isAdmin ? "Tranzacții globale (toți utilizatorii)" : "Tranzacțiile tale"} • venituri/cheltuieli • profit
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={load} variant="ghost">Actualizează</Button>
@@ -114,7 +137,19 @@ export default function EconomicsPage() {
                 <div key={t.id} className="list-row flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{t.description}</div>
-                    <div className="muted text-xs">{new Date(t.createdAt || Date.now()).toLocaleString()}</div>
+                    <div className="muted text-xs">
+                      {new Date(t.occurredAt || t.createdAt || t.created_at || Date.now()).toLocaleString()}
+                      {isAdmin ? (
+                        <>
+                          {t?.owner ? (() => {
+                            const owner = t.owner;
+                            const ownerLabel = owner?.username || (owner?.email ? String(owner.email).split("@")[0] : "") || owner?.email || "";
+                            return ownerLabel ? ` • ${ownerLabel}` : "";
+                          })() : ""}
+                          {t?.land?.name ? ` • ${t.land.name}` : ""}
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={t.type === "REVENUE" ? "success" : "danger"}>
@@ -159,45 +194,56 @@ export default function EconomicsPage() {
                   <span className="icon-chip w-10 h-10 rounded-2xl"><ReceiptText size={18} className="text-muted-foreground" /></span>
                 </div>
                 <div className="text-2xl font-extrabold mt-2">{money(s.profit)}</div>
-                <div className="muted text-xs mt-2">pregătit pentru demo (licență)</div>
+                <div className="muted text-xs mt-2">
+                  {isAdmin ? `Total tranzacții: ${Number(summary.count || items.length)}` : "pregătit pentru demo (licență)"}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="card p-5 space-y-4 agri-pattern">
-            <div className="text-sm font-bold">Adaugă tranzacție</div>
+          {isAdmin ? (
+            <div className="card p-5 space-y-3 agri-pattern">
+              <div className="text-sm font-bold">Mod admin</div>
+              <div className="muted text-sm">
+                Aici vezi economia globală. Adăugarea tranzacțiilor rămâne o acțiune din conturile utilizatorilor (per fermă/teren).
+              </div>
+            </div>
+          ) : (
+            <div className="card p-5 space-y-4 agri-pattern">
+              <div className="text-sm font-bold">Adaugă tranzacție</div>
 
-            <div className="flex gap-2">
-              <Button
-                variant="tab"
-                className={`flex-1 ${type === "EXPENSE" ? "is-active" : ""}`}
-                onClick={() => setType("EXPENSE")}
-              >
-                Cheltuială
+              <div className="flex gap-2">
+                <Button
+                  variant="tab"
+                  className={`flex-1 ${type === "EXPENSE" ? "is-active" : ""}`}
+                  onClick={() => setType("EXPENSE")}
+                >
+                  Cheltuială
+                </Button>
+                <Button
+                  variant="tab"
+                  className={`flex-1 ${type === "REVENUE" ? "is-active" : ""}`}
+                  onClick={() => setType("REVENUE")}
+                >
+                  Venit
+                </Button>
+              </div>
+
+              <div>
+                <div className="muted text-xs mb-1">Descriere</div>
+                <input className="input" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="ex: Motorină, Semințe, Muncă..." />
+              </div>
+
+              <div>
+                <div className="muted text-xs mb-1">Sumă (RON)</div>
+                <input className="input" value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="ex: 250" />
+              </div>
+
+              <Button onClick={onAdd} variant="primary" fullWidth>
+                Adaugă
               </Button>
-              <Button
-                variant="tab"
-                className={`flex-1 ${type === "REVENUE" ? "is-active" : ""}`}
-                onClick={() => setType("REVENUE")}
-              >
-                Venit
-              </Button>
             </div>
-
-            <div>
-              <div className="muted text-xs mb-1">Descriere</div>
-              <input className="input" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="ex: Motorină, Semințe, Muncă..." />
-            </div>
-
-            <div>
-              <div className="muted text-xs mb-1">Sumă (RON)</div>
-              <input className="input" value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="ex: 250" />
-            </div>
-
-            <Button onClick={onAdd} variant="primary" fullWidth>
-              Adaugă
-            </Button>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -27,6 +27,21 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function normalizeUsername(username) {
+  const raw = String(username || "").trim();
+  if (!raw) return "";
+  // keep it simple: store as-is but lowercased for consistency
+  return raw.toLowerCase();
+}
+
+function usernameFromEmail(email) {
+  const normalized = normalizeEmail(email);
+  const base = normalized.split("@")[0] || "user";
+  // keep allowed chars only
+  const cleaned = base.replace(/[^a-z0-9._-]/gi, "");
+  return normalizeUsername(cleaned || "user");
+}
+
 async function findUserByEmail(email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
@@ -35,13 +50,50 @@ async function findUserByEmail(email) {
   });
 }
 
-async function register(email, password, role = "USER") {
+async function findUserByUsername(username) {
+  const normalized = normalizeUsername(username);
+  if (!normalized) return null;
+  return User.findOne({
+    where: sequelize.where(sequelize.fn("lower", sequelize.col("username")), normalized),
+  });
+}
+
+async function ensureUniqueUsername(desired, maxAttempts = 6) {
+  const base = normalizeUsername(desired);
+  if (!base) return "";
+
+  // First try exact
+  const existing = await findUserByUsername(base);
+  if (!existing) return base;
+
+  // Try with short random suffix
+  for (let i = 0; i < maxAttempts; i++) {
+    const suffix = crypto.randomBytes(2).toString("hex");
+    const candidate = String(base).slice(0, 42) + "_" + suffix;
+    // eslint-disable-next-line no-await-in-loop
+    const hit = await findUserByUsername(candidate);
+    if (!hit) return candidate;
+  }
+
+  // last resort: long random
+  return "user_" + crypto.randomBytes(4).toString("hex");
+}
+
+async function register(email, password, role = "USER", username = undefined) {
   const normalized = normalizeEmail(email);
   const existing = await findUserByEmail(normalized);
   if (existing) throw new ApiError(409, "Email already registered", null, "AUTH_EMAIL_ALREADY_REGISTERED");
 
+  const requestedUsername = username != null ? normalizeUsername(username) : "";
+  const baseUsername = requestedUsername || usernameFromEmail(normalized);
+  if (requestedUsername) {
+    const uExisting = await findUserByUsername(requestedUsername);
+    if (uExisting) throw new ApiError(409, "Username already taken", null, "AUTH_USERNAME_TAKEN");
+  }
+  const finalUsername = await ensureUniqueUsername(baseUsername);
+
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await User.create({ email: normalized, passwordHash, role });
+  const user = await User.create({ email: normalized, username: finalUsername, passwordHash, role });
 
   const accessToken = signAccessToken(user);
   const refreshToken = createRefreshToken();
@@ -53,7 +105,7 @@ async function register(email, password, role = "USER") {
     expiresAt,
   });
 
-  return { user: { id: user.id, email: user.email, role: user.role }, accessToken, refreshToken };
+  return { user: { id: user.id, email: user.email, username: user.username, role: user.role }, accessToken, refreshToken };
 }
 
 async function login(email, password) {
@@ -85,7 +137,7 @@ async function login(email, password) {
     expiresAt,
   });
 
-  return { user: { id: user.id, email: user.email, role: user.role }, accessToken, refreshToken };
+  return { user: { id: user.id, email: user.email, username: user.username, role: user.role }, accessToken, refreshToken };
 }
 
 async function refresh(refreshToken) {
@@ -196,4 +248,27 @@ async function resetPasswordWithToken(rawToken, newPassword) {
   });
 }
 
-module.exports = { register, login, refresh, logout, requestPasswordReset, resetPasswordWithToken };
+async function changePassword(userId, currentPassword, newPassword) {
+  const user = await User.findByPk(userId);
+  if (!user) throw new ApiError(404, "User not found", null, "AUTH_USER_NOT_FOUND");
+
+  const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!ok)
+    throw new ApiError(
+      401,
+      env.AUTH_DETAILED_ERRORS ? "Incorrect password" : "Invalid credentials",
+      null,
+      env.AUTH_DETAILED_ERRORS ? "AUTH_INCORRECT_PASSWORD" : "AUTH_INVALID_CREDENTIALS"
+    );
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await sequelize.transaction(async (trx) => {
+    await user.update({ passwordHash }, { transaction: trx });
+    // revoke all refresh tokens (force relogin on other devices)
+    await RefreshToken.update({ revokedAt: new Date() }, { where: { userId: user.id }, transaction: trx });
+  });
+
+  return { ok: true };
+}
+
+module.exports = { register, login, refresh, logout, requestPasswordReset, resetPasswordWithToken, changePassword };

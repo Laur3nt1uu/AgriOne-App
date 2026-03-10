@@ -22,7 +22,11 @@ export default function Topbar() {
   const title = titleMap[base] || "AgriOne";
 
   const user = authStore.getUser();
-  const initial = (user?.email || "U")[0]?.toUpperCase?.() || "U";
+  const displayName =
+    user?.username ||
+    (user?.email ? String(user.email).split("@")[0] : "") ||
+    "Cont";
+  const initial = (displayName || "U")[0]?.toUpperCase?.() || "U";
 
   return (
     <div className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-border/15">
@@ -47,8 +51,13 @@ export default function Topbar() {
                   <span className="text-foreground font-extrabold text-sm">{initial}</span>
                 </span>
                 <span className="hidden sm:block text-sm font-semibold text-foreground/90 max-w-[160px] truncate">
-                  {user?.email || "Cont"}
+                  {displayName}
                 </span>
+                {user?.role ? (
+                  <span className="hidden md:inline-flex">
+                    <Badge variant={user.role === "ADMIN" ? "success" : "default"}>{user.role}</Badge>
+                  </span>
+                ) : null}
                 <ChevronDown size={16} className="text-muted-foreground" />
               </button>
             </DropdownMenu.Trigger>
@@ -61,7 +70,13 @@ export default function Topbar() {
               >
                 <div className="px-3 py-2">
                   <div className="text-xs muted">Conectat ca</div>
-                  <div className="text-sm font-extrabold truncate">{user?.email || "—"}</div>
+                  <div className="text-sm font-extrabold truncate">{displayName}</div>
+                  <div className="text-xs muted truncate mt-1">{user?.email || "—"}</div>
+                  {user?.role ? (
+                    <div className="mt-2">
+                      <Badge variant={user.role === "ADMIN" ? "success" : "default"}>{user.role}</Badge>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="my-2 border-t border-border/10" />

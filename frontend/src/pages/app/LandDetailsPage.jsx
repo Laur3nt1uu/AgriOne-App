@@ -6,6 +6,7 @@ import GooglePolygonViewMap from "../../components/maps/GooglePolygonViewMap";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { Cloud, CloudRain, CloudSun, Droplets, Sun, Thermometer, Wind } from "lucide-react";
+import { authStore } from "../../auth/auth.store";
 
 
 function isOnline(lastAt) {
@@ -43,12 +44,16 @@ export default function LandDetailsPage() {
   const { id } = useParams();
   const nav = useNavigate();
 
+  const user = authStore.getUser();
+  const isAdmin = user?.role === "ADMIN";
+
   const [land, setLand] = useState(null);
   const [busy, setBusy] = useState(true);
 
-  // mock readings demo (până ai Arduino)
+  // latest readings
   const [temp, setTemp] = useState(null);
   const [hum, setHum] = useState(null);
+  const [lastReadingAt, setLastReadingAt] = useState(null);
 
   // export state
   const [exporting, setExporting] = useState(false);
@@ -68,6 +73,16 @@ export default function LandDetailsPage() {
   const [pairOpen, setPairOpen] = useState(false);
   const [pairCode, setPairCode] = useState("");
   const [pairing, setPairing] = useState(false);
+
+  // unpair modal
+  const [unpairOpen, setUnpairOpen] = useState(false);
+  const [unpairing, setUnpairing] = useState(false);
+
+  // calibration modal
+  const [calOpen, setCalOpen] = useState(false);
+  const [calTemp, setCalTemp] = useState("0");
+  const [calHum, setCalHum] = useState("0");
+  const [calSaving, setCalSaving] = useState(false);
 
   const polygonPairs = useMemo(() => {
     const poly = land?.polygon;
@@ -143,15 +158,39 @@ export default function LandDetailsPage() {
     try {
       const data = await api.lands.get(id);
       setLand(data);
-
-      // mock readings local (demo)
-      setTemp((Math.random() * 10 + 18).toFixed(1));
-      setHum((Math.random() * 30 + 45).toFixed(0));
     } catch (e) {
       setLand(null);
       toastError(e, "Nu pot încărca terenul.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function loadLatestReadings(silent = true) {
+    if (!id) return;
+
+    try {
+      const data = await api.readings.byLand(id, "24h");
+      const rows = Array.isArray(data) ? data : (data?.items || []);
+      if (!rows.length) {
+        setTemp(null);
+        setHum(null);
+        setLastReadingAt(null);
+        return;
+      }
+
+      const last = rows[rows.length - 1];
+      const t = Number(last?.temperatureC ?? last?.temperature ?? last?.temp ?? NaN);
+      const h = Number(last?.humidityPct ?? last?.humidity ?? last?.hum ?? NaN);
+
+      setTemp(Number.isFinite(t) ? t.toFixed(1) : null);
+      setHum(Number.isFinite(h) ? String(Math.round(h)) : null);
+      setLastReadingAt(last?.recordedAt || null);
+    } catch (e) {
+      if (!silent) toastError(e, "Nu pot încărca ultimele citiri.");
+      setTemp(null);
+      setHum(null);
+      setLastReadingAt(null);
     }
   }
 
@@ -164,8 +203,22 @@ export default function LandDetailsPage() {
     if (!land?.id) return;
     loadWeather(true);
     loadRecommendations(true);
+    loadLatestReadings(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [land?.id, coords?.lat, coords?.lng]);
+
+  const lastReadingLabel = useMemo(() => {
+    if (!lastReadingAt) return null;
+    const t = new Date(lastReadingAt);
+    if (Number.isNaN(t.getTime())) return null;
+    return t.toLocaleString("ro-RO", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }, [lastReadingAt]);
 
   // close modal on ESC
   useEffect(() => {
@@ -176,6 +229,24 @@ export default function LandDetailsPage() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [pairOpen]);
+
+  useEffect(() => {
+    if (!unpairOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setUnpairOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [unpairOpen]);
+
+  useEffect(() => {
+    if (!calOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setCalOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [calOpen]);
 
   useEffect(() => {
     if (!deleteOpen) return;
@@ -191,6 +262,19 @@ export default function LandDetailsPage() {
   function openPair() {
     setPairCode("");
     setPairOpen(true);
+  }
+
+  function openUnpair() {
+    if (!land?.id || unpairing) return;
+    setUnpairOpen(true);
+  }
+
+  function openCalibrate() {
+    const code = land?.arduinoCode || land?.sensorId;
+    if (!code) return;
+    setCalTemp(String(land.arduinoCalibrationTempOffsetC ?? 0));
+    setCalHum(String(land.arduinoCalibrationHumidityOffsetPct ?? 0));
+    setCalOpen(true);
   }
 
   function openDelete() {
@@ -217,6 +301,48 @@ export default function LandDetailsPage() {
       toastError(e2, "Nu pot asocia placa Arduino.");
     } finally {
       setPairing(false);
+    }
+  }
+
+  async function submitUnpair() {
+    if (!land?.id || unpairing) return;
+
+    setUnpairing(true);
+    try {
+      await api.iot.unpairBoard({ landId: land.id });
+      toastSuccess("Placa Arduino a fost dezasociată.");
+      setUnpairOpen(false);
+      await load();
+    } catch (e) {
+      toastError(e, "Nu pot dezasocia placa Arduino.");
+    } finally {
+      setUnpairing(false);
+    }
+  }
+
+  async function submitCalibration(e) {
+    e?.preventDefault?.();
+    const code = land?.arduinoCode || land?.sensorId;
+    if (!code || calSaving) return;
+
+    const tempOffsetC = calTemp === "" ? 0 : Number(calTemp);
+    const humidityOffsetPct = calHum === "" ? 0 : Number(calHum);
+
+    if (!Number.isFinite(tempOffsetC) || !Number.isFinite(humidityOffsetPct)) {
+      toastError(null, "Valorile de calibrare sunt invalide.");
+      return;
+    }
+
+    setCalSaving(true);
+    try {
+      await api.sensors.calibrate(code, { tempOffsetC, humidityOffsetPct });
+      toastSuccess("Calibrarea a fost salvată.");
+      setCalOpen(false);
+      await load();
+    } catch (e2) {
+      toastError(e2, "Nu pot salva calibrarea.");
+    } finally {
+      setCalSaving(false);
     }
   }
 
@@ -288,6 +414,11 @@ export default function LandDetailsPage() {
     );
 
   const online = isOnline(land.lastSensorAt);
+  const hasArduino = !!(land.arduinoCode || land.sensorId);
+  const arduinoCode = land.arduinoCode || land.sensorId;
+  const ownerLabel = isAdmin
+    ? land?.owner?.username || (land?.owner?.email ? String(land.owner.email).split("@")[0] : "") || land?.owner?.email || ""
+    : "";
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -297,6 +428,7 @@ export default function LandDetailsPage() {
           <div className="page-title truncate">{land.name}</div>
           <div className="muted text-sm mt-1">
             {land.cropType || "—"} • {(Number(land.areaHa || 0)).toFixed(2)} ha
+            {isAdmin && ownerLabel ? ` • ${ownerLabel}` : ""}
           </div>
         </div>
 
@@ -305,9 +437,20 @@ export default function LandDetailsPage() {
             ← Înapoi
           </Button>
 
-          <Button onClick={openPair} variant="ghost">
-            Asociază Arduino
-          </Button>
+          {!hasArduino ? (
+            <Button onClick={openPair} variant="ghost">
+              Asociază Arduino
+            </Button>
+          ) : (
+            <>
+              <Button onClick={openUnpair} variant="ghost">
+                Dezasociază Arduino
+              </Button>
+              <Button onClick={openCalibrate} variant="ghost">
+                Calibrare
+              </Button>
+            </>
+          )}
 
           <Button onClick={() => nav(`/sensors?landId=${land.id}`)} variant="primary">
             Vezi istoricul
@@ -335,7 +478,7 @@ export default function LandDetailsPage() {
           <span className={`dot ${online ? "dot-online" : "dot-offline"}`} />
           {online ? "Online" : "Offline"}
         </Badge>
-        <Badge>Arduino: {land.arduinoCode || land.sensorId || "Neasociat"}</Badge>
+        <Badge>Arduino: {arduinoCode || "Neasociat"}</Badge>
         <Badge>
           Centroid: {land.centroid?.lat?.toFixed?.(4) || land.centroidLat?.toFixed?.(4) || "-"},{" "}
           {land.centroid?.lng?.toFixed?.(4) || land.centroidLng?.toFixed?.(4) || "-"}
@@ -382,6 +525,106 @@ export default function LandDetailsPage() {
                 </Button>
                 <Button type="submit" variant="primary" disabled={pairing}>
                   {pairing ? "Se asociază..." : "Asociază Arduino"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {unpairOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !unpairing) setUnpairOpen(false);
+          }}
+        >
+          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
+          <div className="relative w-full max-w-md card p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-lg font-extrabold">Dezasociază Arduino</div>
+                <div className="muted text-sm mt-1">
+                  Sigur dorești să dezasociezi placa <span className="font-semibold">{arduinoCode}</span> de la acest teren?
+                </div>
+              </div>
+              <Button type="button" variant="ghost" onClick={() => setUnpairOpen(false)} disabled={unpairing} title="Închide">
+                ✕
+              </Button>
+            </div>
+
+            <div className="mt-4 flex gap-2 justify-end">
+              <Button type="button" variant="ghost" onClick={() => setUnpairOpen(false)} disabled={unpairing}>
+                Renunță
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={submitUnpair}
+                disabled={unpairing}
+                className="border border-destructive/25 text-destructive hover:bg-destructive/10"
+              >
+                {unpairing ? "Se dezasociază..." : "Dezasociază"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {calOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !calSaving) setCalOpen(false);
+          }}
+        >
+          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
+          <div className="relative w-full max-w-md card p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-lg font-extrabold">Calibrare senzor</div>
+                <div className="muted text-sm mt-1">Offset-uri aplicate peste citirile brute.</div>
+              </div>
+              <Button type="button" variant="ghost" onClick={() => setCalOpen(false)} disabled={calSaving} title="Închide">
+                ✕
+              </Button>
+            </div>
+
+            <form className="mt-4 space-y-4" onSubmit={submitCalibration}>
+              <div>
+                <div className="muted text-xs mb-1">Offset temperatură (°C)</div>
+                <input
+                  className="input"
+                  type="number"
+                  step="0.1"
+                  value={calTemp}
+                  onChange={(e) => setCalTemp(e.target.value)}
+                  disabled={calSaving}
+                />
+              </div>
+
+              <div>
+                <div className="muted text-xs mb-1">Offset umiditate (%)</div>
+                <input
+                  className="input"
+                  type="number"
+                  step="0.1"
+                  value={calHum}
+                  onChange={(e) => setCalHum(e.target.value)}
+                  disabled={calSaving}
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="ghost" onClick={() => setCalOpen(false)} disabled={calSaving}>
+                  Renunță
+                </Button>
+                <Button type="submit" variant="primary" disabled={calSaving}>
+                  {calSaving ? "Se salvează..." : "Salvează"}
                 </Button>
               </div>
             </form>
@@ -456,9 +699,9 @@ export default function LandDetailsPage() {
           {/* widgets */}
           <div className="space-y-4">
           <div className="card p-5">
-            <div className="text-sm font-bold">Ultimele citiri (demo)</div>
+            <div className="text-sm font-bold">Ultimele citiri</div>
             <div className="muted text-sm mt-1">
-              Până conectezi Arduino, afișăm valori simulate.
+              {lastReadingLabel ? `Ultima actualizare: ${lastReadingLabel}` : "Nu există citiri în ultimele 24h."}
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3">

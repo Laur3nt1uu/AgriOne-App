@@ -1,11 +1,13 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const { User, Land, Sensor } = require("../../models");
 const ApiError = require("../../utils/ApiError");
+const env = require("../../config/env");
+const { spawn } = require("child_process");
 
 exports.listUsers = asyncHandler(async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ["id", "email", "role", "created_at"],
+      attributes: ["id", "email", "username", "role", "created_at"],
       order: [["created_at", "DESC"]],
     });
     res.json({ users });
@@ -29,7 +31,7 @@ exports.updateUser = asyncHandler(async (req, res) => {
   user.role = role;
   await user.save();
 
-  res.json({ message: "User updated", user: { id: user.id, email: user.email, role: user.role } });
+  res.json({ message: "User updated", user: { id: user.id, email: user.email, username: user.username, role: user.role } });
 });
 
 exports.deleteUser = asyncHandler(async (req, res) => {
@@ -60,8 +62,72 @@ exports.getStats = asyncHandler(async (req, res) => {
 });
 
 exports.backup = asyncHandler(async (req, res) => {
-  // Simple backup - in production you'd use pg_dump or similar
-  res.setHeader("Content-Type", "application/sql");
-  res.setHeader("Content-Disposition", "attachment; filename=backup.sql");
-  res.send("-- Backup functionality requires pg_dump integration\n-- Contact system administrator");
+  // Practical approach for this project: run pg_dump inside the dockerized Postgres.
+  // Requires: docker running + container name from docker-compose.yml (agrione_postgres).
+
+  const container = process.env.PG_DOCKER_CONTAINER || "agrione_postgres";
+
+  const args = [
+    "exec",
+    "-i",
+    "-e",
+    `PGPASSWORD=${env.DB_PASS}`,
+    container,
+    "pg_dump",
+    "-U",
+    env.DB_USER,
+    "-d",
+    env.DB_NAME,
+    "--no-owner",
+    "--no-privileges",
+  ];
+
+  const proc = spawn("docker", args, { stdio: ["ignore", "pipe", "pipe"] });
+
+  let started = false;
+  let stderr = "";
+
+  proc.stderr.on("data", (d) => {
+    stderr += d.toString();
+  });
+
+  proc.on("error", (e) => {
+    console.error("Backup spawn error:", e);
+    if (started || res.headersSent) return;
+    res.status(503).json({
+      message: "Backup unavailable (docker not available)",
+      code: "ADMIN_BACKUP_UNAVAILABLE",
+      details: { reason: "docker-not-available" },
+    });
+  });
+
+  proc.stdout.on("data", (chunk) => {
+    if (!started) {
+      started = true;
+      res.setHeader("Content-Type", "application/sql");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=backup_${new Date().toISOString().replace(/[:.]/g, "-")}.sql`
+      );
+    }
+    res.write(chunk);
+  });
+
+  proc.stdout.on("end", () => {
+    if (started) res.end();
+  });
+
+  proc.on("close", (code) => {
+    if (code === 0) return;
+    console.error("Backup pg_dump failed:", stderr);
+    if (!started && !res.headersSent) {
+      res.status(503).json({
+        message: "Backup failed (pg_dump)",
+        code: "ADMIN_BACKUP_FAILED",
+        details: { stderr: stderr.slice(0, 4000) },
+      });
+      return;
+    }
+    try { res.end(); } catch { /* ignore */ }
+  });
 });
