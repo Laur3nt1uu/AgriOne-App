@@ -16,8 +16,6 @@ import {
   PenLine,
   HelpCircle,
   Users,
-  Code2,
-  Cpu,
   ArrowRight,
 } from "lucide-react";
 import { useState } from "react";
@@ -146,8 +144,6 @@ export default function LandingMobileMenu({
     { icon: PenLine, title: t("nav.mega.blog.title"), desc: t("nav.mega.blog.desc"), href: "/blog", isRoute: true },
     { icon: HelpCircle, title: t("nav.mega.helpCenter.title"), desc: t("nav.mega.helpCenter.desc"), href: "/help", isRoute: true },
     { icon: Users, title: t("nav.mega.community.title"), desc: t("nav.mega.community.desc"), href: "/community", isRoute: true },
-    { icon: Code2, title: t("nav.mega.apiDocs.title"), desc: t("nav.mega.apiDocs.desc"), href: "/api-docs", isRoute: true },
-    { icon: Cpu, title: t("nav.mega.sensorGuide.title"), desc: t("nav.mega.sensorGuide.desc"), href: "/sensor-guide", isRoute: true },
   ];
 
   return (
@@ -160,7 +156,7 @@ export default function LandingMobileMenu({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
             onClick={onClose}
           />
 
@@ -170,7 +166,7 @@ export default function LandingMobileMenu({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed top-[72px] left-3 right-3 z-50 lg:hidden max-h-[calc(100vh-88px)] overflow-y-auto"
+            className="fixed top-16 left-3 right-3 z-50 md:hidden max-h-[calc(100vh-5rem)] overflow-y-auto"
           >
             <div className="glass p-4 shadow-2xl relative overflow-hidden">
               {/* Background effects */}

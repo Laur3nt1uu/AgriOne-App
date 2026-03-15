@@ -6,30 +6,30 @@ export default {
     about: "Despre Noi",
     faq: "Întrebări",
     getStarted: "Începe Acum",
-    signIn: "Conectare",
-    goToDashboard: "Mergi la Dashboard",
+    signIn: "Intră în Cont",
+    goToDashboard: "Deschide Aplicația",
     mega: {
       platform: "Platformă",
       platformDesc: "Totul despre ce oferim",
       solutions: "Soluții",
       solutionsDesc: "Pentru orice tip de fermă",
       resources: "Resurse",
-      resourcesDesc: "Învață și crește",
+      resourcesDesc: "Învață și prosperă",
       monitoring: {
         title: "Monitorizare în Timp Real",
-        desc: "Date live de la senzori IoT din câmp",
+        desc: "Date live de la senzorii din câmp",
       },
       alerts: {
         title: "Alerte Inteligente",
         desc: "Notificări SMS și email când ceva nu e în regulă",
       },
       mapping: {
-        title: "Harta Terenurilor",
-        desc: "Parcele vizibile pe hartă interactivă cu GPS",
+        title: "Hărțile Fermei",
+        desc: "Parcelele tale vizibile pe hartă cu coordonate GPS",
       },
       financial: {
-        title: "Evidență Financiară",
-        desc: "Cheltuieli și venituri pe fiecare cultură",
+        title: "Gestiune Financiară",
+        desc: "Cheltuieli și venituri înregistrate pe fiecare cultură",
       },
       reports: {
         title: "Rapoarte PDF",
@@ -48,8 +48,8 @@ export default {
         desc: "10-100 hectare — monitorizare completă",
       },
       largeFarms: {
-        title: "Ferme Mari & Asociații",
-        desc: "100+ hectare — enterprise cu API",
+        title: "Ferme Mari & Cooperative",
+        desc: "100+ hectare — soluții enterprise",
       },
       crops: {
         title: "Culturi Diverse",
@@ -71,14 +71,6 @@ export default {
         title: "Comunitate",
         desc: "Alătură-te fermierilor din România",
       },
-      apiDocs: {
-        title: "Documentație API",
-        desc: "Integrare pentru dezvoltatori",
-      },
-      sensorGuide: {
-        title: "Ghid Senzori",
-        desc: "Cum alegi și instalezi senzorii potriviți",
-      },
       featuredPost: "Articol Recomandat",
       featuredPostTitle: "Cum IoT transformă agricultura în România",
       featuredPostDesc: "Descoperă cum senzorii inteligenți ajută fermierii să economisească apă și să crească recolta cu până la 30%.",
@@ -91,15 +83,15 @@ export default {
     headline: "Ferma ta,",
     headlineHighlight: "mai deșteaptă",
     subheadline:
-      "Ții evidența terenurilor, vezi ce zic senzorii în timp real și iei decizii mai bune pentru recoltă. AgriOne pune totul într-un singur loc.",
-    ctaPrimary: "Intră în Platformă",
-    ctaPrimaryAuthed: "Mergi la Dashboard",
-    ctaSecondary: "Vezi mai multe",
-    scrollToExplore: "Dă scroll mai jos",
+      "Ții evidența terenurilor, vezi ce spun senzorii în timp real și iei decizii mai bune pentru recoltă. AgriOne pune totul într-un singur loc.",
+    ctaPrimary: "Deschide Platforma",
+    ctaPrimaryAuthed: "Deschide Aplicația",
+    ctaSecondary: "Află mai multe",
+    scrollToExplore: "Continuă să citești",
     stats: {
-      farms: "Ferme Conectate",
+      farms: "Ferme Monitorizate",
       sensors: "Senzori Activi",
-      uptime: "Disponibilitate",
+      uptime: "Funcționare Continuă",
     },
   },
 
@@ -109,7 +101,7 @@ export default {
     titleHighlight: "ușurezi",
     titleEnd: "munca",
     subtitle:
-      "De la senzorii din câmp până la evidența banilor — AgriOne te ajută să ai o imagine clară asupra fermei și să iei decizii mai bune.",
+      "De la senzorii din câmp până la evidența financiară — AgriOne te ajută să ai o imagine completă asupra fermei și să iei decizii mai bune.",
     monitoring: {
       title: "Monitorizare în Timp Real",
       description: "Vezi umiditatea și temperatura din sol non-stop",
@@ -167,7 +159,7 @@ export default {
     title: "Pornești în",
     titleHighlight: "3 pași",
     subtitle:
-      "Nu e complicat deloc. Instalezi senzorii, setezi regulile și gata — dashboard-ul face restul.",
+      "Nu e complicat deloc. Instalezi senzorii, configurezi alertele și gata — aplicația face restul.",
     steps: {
       install: {
         title: "Pui Senzorii",
@@ -252,7 +244,7 @@ export default {
     ctaStarter: "Începe Gratuit",
     ctaPro: "Alege Pro",
     ctaEnterprise: "Contactează-ne",
-    ctaAuthed: "Mergi la Dashboard",
+    ctaAuthed: "Deschide Aplicația",
     ctaCurrent: "Planul tău curent",
     ctaUpgrade: "Fă upgrade",
     ctaChangePlan: "Schimbă planul",
@@ -302,21 +294,21 @@ export default {
 
   about: {
     badge: "Despre Noi",
-    title: "Facem agricultura",
-    titleHighlight: "mai accesibilă",
+    title: "Suntem o echipă de",
+    titleHighlight: "dezvoltatori",
     subtitle:
-      "AgriOne a pornit de la o idee simplă: fermierul nu ar trebui să fie expert în tehnologie ca să aibă acces la date utile despre terenul lui.",
+      "AgriOne este creat de studenți pasionați de tehnologie și agricultură, cu experiență în dezvoltare software și senzori IoT. Misiunea noastră este să aducem agricultura României în era digitală.",
     mission: {
-      label: "De ce facem asta",
-      text: "Vrem să aducem senzori IoT și date clare la fermieri care până acum se bazau doar pe experiență și intuiție. Nu e greșit — dar cu date exacte, deciziile sunt mai ușoare.",
+      label: "Cine suntem",
+      text: "Suntem o echipă de dezvoltatori software cu background în tehnologii web moderne, IoT și baze de date. Avem experiență practică cu React, Node.js, senzori Arduino și platforme cloud. Proiectul nostru combină cunoștințele tehnice cu o problemă reală din agricultură.",
     },
     vision: {
-      label: "Unde vrem să ajungem",
-      text: "Ne-ar plăcea ca din ce în ce mai mulți fermieri din România să aibă acces la unelte digitale simple, care chiar îi ajută în munca de zi cu zi.",
+      label: "Care este viziunea noastră",
+      text: "Vrem să demonstrăm că tehnologia poate fi simplă și utilă pentru fermieri. Nu creăm doar o aplicație — construim punți între inovația tehnologică și nevoile concrete ale agriculturii românești. Fiecare feature este gândit să rezolve o problemă reală.",
     },
-    thesisBadge: "Proiect de Licență",
+    thesisBadge: "Proiect de Licență - Ingineeri Software",
     thesisText:
-      "AgriOne este construit ca proiect de licență — o aplicație reală care combină tehnologii web moderne cu senzori IoT, cu scopul de a rezolva o problemă concretă din agricultură.",
+      "AgriOne este proiectul nostru de licență în Ingineria Sistemelor - o platformă full-stack care demonstrează integrarea tehnologiilor web moderne (React, Node.js, PostgreSQL) cu hardware IoT pentru monitorizarea în timp real a condițiilor agricole.",
     values: {
       accessibility: {
         title: "Accesibilitate",

@@ -26,10 +26,10 @@ import {
   loadNotFoundPage,
   loadDocumentationPage,
   loadBlogPage,
-  loadSensorGuidePage,
   loadHelpCenterPage,
   loadCommunityPage,
-  loadApiDocsPage,
+  loadAuthCallbackPage,
+  loadAuthRedirectPage,
 } from "./chunks";
 
 const LandingPage = lazy(loadLandingPage);
@@ -37,6 +37,8 @@ const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
 const ForgotPasswordPage = lazy(loadForgotPasswordPage);
 const ResetPasswordPage = lazy(loadResetPasswordPage);
+const AuthCallbackPage = lazy(loadAuthCallbackPage);
+const AuthRedirectPage = lazy(loadAuthRedirectPage);
 
 const DashboardPage = lazy(loadDashboardPage);
 const LandsPage = lazy(loadLandsPage);
@@ -56,10 +58,8 @@ const NotFoundPage = lazy(loadNotFoundPage);
 // Resource pages
 const DocumentationPage = lazy(loadDocumentationPage);
 const BlogPage = lazy(loadBlogPage);
-const SensorGuidePage = lazy(loadSensorGuidePage);
 const HelpCenterPage = lazy(loadHelpCenterPage);
 const CommunityPage = lazy(loadCommunityPage);
-const ApiDocsPage = lazy(loadApiDocsPage);
 
 function suspense(el) {
   return (
@@ -86,6 +86,8 @@ export const router = createBrowserRouter([
       { path: "register", element: suspense(<RegisterPage />) },
       { path: "forgot-password", element: suspense(<ForgotPasswordPage />) },
       { path: "reset-password", element: suspense(<ResetPasswordPage />) },
+      { path: "callback", element: suspense(<AuthCallbackPage />) },
+      { path: "redirect", element: suspense(<AuthRedirectPage />) },
     ],
   },
 
@@ -99,20 +101,12 @@ export const router = createBrowserRouter([
     element: suspense(<BlogPage />),
   },
   {
-    path: "/sensor-guide",
-    element: suspense(<SensorGuidePage />),
-  },
-  {
     path: "/help",
     element: suspense(<HelpCenterPage />),
   },
   {
     path: "/community",
     element: suspense(<CommunityPage />),
-  },
-  {
-    path: "/api-docs",
-    element: suspense(<ApiDocsPage />),
   },
 
   // App Routes (Authenticated Application)

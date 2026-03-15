@@ -18,8 +18,6 @@ import {
   PenLine,
   HelpCircle,
   Users,
-  Code2,
-  Cpu,
   ArrowRight,
   Sparkles,
 } from "lucide-react";
@@ -34,16 +32,16 @@ function MegaMenuItem({ icon: Icon, title, desc, href, onClick, accent }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-start gap-3 p-3 rounded-xl hover:bg-primary/5 transition-all duration-200 text-left w-full group"
+      className="flex items-start gap-3 p-4 rounded-xl hover:bg-primary/5 transition-all duration-200 text-left w-full group min-h-[60px]"
     >
       <div
-        className={`mt-0.5 flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-200 ${
+        className={`mt-0.5 flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-200 ${
           accent
             ? "bg-primary/10 text-primary group-hover:bg-primary/20"
             : "bg-secondary/60 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
         }`}
       >
-        <Icon className="w-[18px] h-[18px]" />
+        <Icon className="w-[20px] h-[20px]" />
       </div>
       <div className="min-w-0">
         <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -62,17 +60,24 @@ function MegaDropdown({ children, isOpen }) {
     <AnimatePresence>
       {isOpen && (
         <Motion.div
-          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+          initial={{ opacity: 0, y: 12, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 8, scale: 0.98 }}
-          transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-          className="absolute top-full left-1/2 -translate-x-1/2 pt-3 z-50"
+          exit={{ opacity: 0, y: 12, scale: 0.96 }}
+          transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+          className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
         >
-          <div className="bg-card/95 backdrop-blur-2xl border border-border/15 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden">
-            {/* Top accent bar */}
-            <div className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-            {children}
-          </div>
+          <Motion.div
+            className="bg-card/90 backdrop-blur-3xl border border-border/20 rounded-2xl shadow-[0_32px_80px_rgba(0,0,0,0.18)] overflow-hidden"
+            initial={{ boxShadow: "0 20px 50px rgba(0,0,0,0.15)" }}
+            animate={{ boxShadow: "0 32px 80px rgba(0,0,0,0.18)" }}
+          >
+            {/* Enhanced top accent bar with gradient */}
+            <div className="h-px bg-gradient-to-r from-transparent via-primary/60 via-blue-500/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-blue-500/5 pointer-events-none opacity-60" />
+            <div className="relative z-10">
+              {children}
+            </div>
+          </Motion.div>
         </Motion.div>
       )}
     </AnimatePresence>
@@ -250,20 +255,6 @@ export default function LandingNavbar() {
       href: "/community",
       isRoute: true,
     },
-    {
-      icon: Code2,
-      title: t("nav.mega.apiDocs.title"),
-      desc: t("nav.mega.apiDocs.desc"),
-      href: "/api-docs",
-      isRoute: true,
-    },
-    {
-      icon: Cpu,
-      title: t("nav.mega.sensorGuide.title"),
-      desc: t("nav.mega.sensorGuide.desc"),
-      href: "/sensor-guide",
-      isRoute: true,
-    },
   ];
 
   const megaMenuItems = [
@@ -296,22 +287,32 @@ export default function LandingNavbar() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="sticky top-0 z-50 bg-card/80 backdrop-blur-2xl border-b border-border/50 shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+        className="sticky top-0 z-50 bg-card/60 backdrop-blur-3xl border-b border-border/30 shadow-[0_8px_40px_rgba(0,0,0,0.12)]"
       >
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-blue-500/5 opacity-50 pointer-events-none" />
+        {/* Enhanced gradient overlay with multiple layers */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-transparent via-transparent to-blue-500/8 opacity-70 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/20 to-transparent pointer-events-none" />
 
-        {/* Shimmer effect */}
+        {/* Enhanced border effect */}
         <Motion.div
-          className="absolute inset-0 opacity-20 pointer-events-none"
+          className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-60"
+          animate={{
+            opacity: [0.4, 0.8, 0.4],
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* Enhanced shimmer effect with multiple colors */}
+        <Motion.div
+          className="absolute inset-0 opacity-30 pointer-events-none"
           animate={{
             backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
           }}
-          transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.1), transparent)",
-            backgroundSize: "200% 100%",
+              "linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.15), rgba(59, 130, 246, 0.15), transparent)",
+            backgroundSize: "300% 100%",
           }}
         />
 
@@ -320,38 +321,50 @@ export default function LandingNavbar() {
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
         >
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
+            {/* Enhanced Logo */}
             <Motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/")}
-              className="flex items-center gap-2.5 group flex-shrink-0"
+              className="flex items-center gap-3 group flex-shrink-0"
             >
               <Motion.div
-                className="w-9 h-9 rounded-xl overflow-hidden relative"
-                whileHover={{ rotate: 5 }}
+                className="w-10 h-10 rounded-xl overflow-hidden relative ring-1 ring-primary/20"
+                whileHover={{
+                  rotate: [0, -2, 2, 0],
+                  scale: 1.1
+                }}
                 animate={{
                   boxShadow: [
-                    "0 0 20px rgb(var(--primary) / 0.20)",
-                    "0 0 30px rgb(var(--primary) / 0.40)",
-                    "0 0 20px rgb(var(--primary) / 0.20)",
+                    "0 0 20px rgb(var(--primary) / 0.15)",
+                    "0 0 40px rgb(var(--primary) / 0.35)",
+                    "0 0 60px rgb(var(--primary) / 0.25)",
+                    "0 0 20px rgb(var(--primary) / 0.15)",
                   ],
                 }}
-                transition={{ duration: 2, repeat: Infinity }}
+                transition={{
+                  boxShadow: { duration: 4, repeat: Infinity },
+                  rotate: { duration: 0.5 },
+                  scale: { duration: 0.2 }
+                }}
               >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <img
                   src={logo}
                   alt="AgriOne"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover relative z-10"
                 />
               </Motion.div>
-              <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+              <Motion.span
+                className="text-xl font-bold bg-gradient-to-r from-foreground via-primary/90 to-foreground bg-clip-text text-transparent group-hover:from-primary group-hover:to-blue-500 transition-all duration-300"
+                whileHover={{ scale: 1.02 }}
+              >
                 AgriOne
-              </span>
+              </Motion.span>
             </Motion.button>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1">
+            {/* Desktop Navigation - Fixed breakpoint */}
+            <nav className="hidden md:flex items-center gap-1">
               {megaMenuItems.map((menu, index) => (
                 <div
                   key={menu.key}
@@ -381,7 +394,7 @@ export default function LandingNavbar() {
                   {/* Platform Mega Dropdown */}
                   {menu.key === "platform" && (
                     <MegaDropdown isOpen={openDropdown === "platform"}>
-                      <div className="w-[640px] max-w-[calc(100vw-2rem)] p-5">
+                      <div className="w-full max-w-[640px] sm:w-[640px] p-5">
                         <div className="flex items-center gap-2 mb-4">
                           <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
                             <Sparkles className="w-3.5 h-3.5 text-primary" />
@@ -393,7 +406,7 @@ export default function LandingNavbar() {
                             — {t("nav.mega.platformDesc")}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                           {platformItems.map((item) => (
                             <MegaMenuItem
                               key={item.title}
@@ -418,7 +431,7 @@ export default function LandingNavbar() {
                   {/* Solutions Mega Dropdown */}
                   {menu.key === "solutions" && (
                     <MegaDropdown isOpen={openDropdown === "solutions"}>
-                      <div className="w-[480px] max-w-[calc(100vw-2rem)] p-5">
+                      <div className="w-full max-w-[480px] sm:w-[480px] p-5">
                         <div className="flex items-center gap-2 mb-4">
                           <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
                             <Sprout className="w-3.5 h-3.5 text-primary" />
@@ -430,7 +443,7 @@ export default function LandingNavbar() {
                             — {t("nav.mega.solutionsDesc")}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                           {solutionItems.map((item) => (
                             <MegaMenuItem
                               key={item.title}
@@ -455,7 +468,7 @@ export default function LandingNavbar() {
                   {/* Resources Mega Dropdown */}
                   {menu.key === "resources" && (
                     <MegaDropdown isOpen={openDropdown === "resources"}>
-                      <div className="w-[720px] max-w-[calc(100vw-2rem)] p-5">
+                      <div className="w-full max-w-[720px] sm:w-[720px] p-5">
                         <div className="flex gap-5">
                           {/* Left column — resource links */}
                           <div className="flex-1">
@@ -470,7 +483,7 @@ export default function LandingNavbar() {
                                 — {t("nav.mega.resourcesDesc")}
                               </span>
                             </div>
-                            <div className="grid grid-cols-2 gap-1">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                               {resourceItems.map((item) => (
                                 <MegaMenuItem
                                   key={item.title}
@@ -530,42 +543,42 @@ export default function LandingNavbar() {
               ))}
             </nav>
 
-            {/* Desktop CTA + Language Toggle */}
-            <div className="hidden lg:flex items-center gap-2.5">
-              {/* Language Toggle */}
+            {/* Desktop CTA + Language Toggle - Fixed breakpoint */}
+            <div className="hidden md:flex items-center gap-2.5">
+              {/* Enhanced Language Toggle */}
               <Motion.button
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.35 }}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, y: -1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={toggleLanguage}
-                className="relative flex items-center h-8 rounded-full bg-secondary/50 border border-border/50 p-0.5 text-xs font-semibold"
+                className="relative flex items-center h-9 rounded-xl bg-secondary/60 backdrop-blur-sm border border-border/40 p-1 text-xs font-semibold shadow-sm hover:shadow-lg transition-all duration-200"
               >
                 <span
-                  className={`relative z-10 px-2.5 py-1 rounded-full transition-colors duration-200 ${
+                  className={`relative z-10 px-3 py-1.5 rounded-lg transition-all duration-300 ${
                     language === "ro"
-                      ? "text-primary-foreground"
+                      ? "text-primary-foreground shadow-sm"
                       : "text-muted-foreground"
                   }`}
                 >
                   RO
                 </span>
                 <span
-                  className={`relative z-10 px-2.5 py-1 rounded-full transition-colors duration-200 ${
+                  className={`relative z-10 px-3 py-1.5 rounded-lg transition-all duration-300 ${
                     language === "en"
-                      ? "text-primary-foreground"
+                      ? "text-primary-foreground shadow-sm"
                       : "text-muted-foreground"
                   }`}
                 >
                   EN
                 </span>
                 <Motion.div
-                  className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-primary"
+                  className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-gradient-to-r from-primary to-primary/90 shadow-md"
                   animate={{
-                    left: language === "ro" ? "2px" : "calc(50%)",
+                    left: language === "ro" ? "4px" : "calc(50%)",
                   }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 />
               </Motion.button>
 
@@ -590,14 +603,19 @@ export default function LandingNavbar() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.45 }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card/50 border border-border/20"
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-card/60 backdrop-blur-sm border border-border/30 shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  <span className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/25 flex items-center justify-center">
-                    <span className="text-foreground font-bold text-xs">
+                  <Motion.span
+                    className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-blue-500/20 border border-primary/30 flex items-center justify-center relative overflow-hidden"
+                    whileHover={{ rotate: 5, scale: 1.1 }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-blue-500/10 animate-pulse" />
+                    <span className="text-foreground font-bold text-sm relative z-10">
                       {(authStore.getUser()?.name || authStore.getUser()?.username || "U")[0].toUpperCase()}
                     </span>
-                  </span>
-                  <span className="text-sm font-medium text-foreground/80 max-w-[120px] truncate">
+                  </Motion.span>
+                  <span className="text-sm font-medium text-foreground/90 max-w-[120px] truncate">
                     {authStore.getUser()?.name || authStore.getUser()?.username || "User"}
                   </span>
                 </Motion.div>
@@ -620,8 +638,8 @@ export default function LandingNavbar() {
               )}
             </div>
 
-            {/* Mobile: Language Toggle + Menu Button */}
-            <div className="flex lg:hidden items-center gap-2">
+            {/* Mobile: Language Toggle + Menu Button - Fixed breakpoint */}
+            <div className="flex md:hidden items-center gap-2">
               <Motion.button
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}

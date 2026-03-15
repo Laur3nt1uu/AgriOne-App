@@ -71,14 +71,6 @@ export default {
         title: "Community",
         desc: "Join farmers across Romania",
       },
-      apiDocs: {
-        title: "API Documentation",
-        desc: "Developer integration guide",
-      },
-      sensorGuide: {
-        title: "Sensor Guide",
-        desc: "How to choose and install the right sensors",
-      },
       featuredPost: "Featured Article",
       featuredPostTitle: "How IoT is Transforming Agriculture in Romania",
       featuredPostDesc: "Discover how smart sensors help farmers save water and boost yields by up to 30%.",
@@ -302,21 +294,21 @@ export default {
 
   about: {
     badge: "About Us",
-    title: "Making farming",
-    titleHighlight: "more accessible",
+    title: "We're a team of",
+    titleHighlight: "developers",
     subtitle:
-      "AgriOne started from a simple idea: a farmer shouldn't have to be a tech expert to get useful data about their land.",
+      "AgriOne is created by students passionate about technology and agriculture, with hands-on experience in software development and IoT sensors. Our mission is to bring Romania's agriculture into the digital era.",
     mission: {
-      label: "Why we're building this",
-      text: "We want to bring IoT sensors and clear data to farmers who until now relied only on experience and gut feeling. That's not wrong — but with actual numbers, decisions get easier.",
+      label: "Who we are",
+      text: "We are a team of software developers with background in modern web technologies, IoT and databases. We have practical experience with React, Node.js, Arduino sensors and cloud platforms. Our project combines technical knowledge with real agricultural challenges.",
     },
     vision: {
-      label: "Where we want to go",
-      text: "We'd like more and more Romanian farmers to have access to simple digital tools that actually help in their day-to-day work.",
+      label: "What's our vision",
+      text: "We want to demonstrate that technology can be simple and useful for farmers. We're not just creating an app — we're building bridges between technological innovation and the concrete needs of Romanian agriculture. Every feature is designed to solve a real problem.",
     },
-    thesisBadge: "University Thesis Project",
+    thesisBadge: "Bachelor Thesis - Software Engineers",
     thesisText:
-      "AgriOne is built as a thesis project — a real application combining modern web technologies with IoT sensors, aiming to solve a concrete problem in agriculture.",
+      "AgriOne is our bachelor thesis project in Systems Engineering - a full-stack platform demonstrating the integration of modern web technologies (React, Node.js, PostgreSQL) with IoT hardware for real-time agricultural monitoring.",
     values: {
       accessibility: {
         title: "Accessibility",

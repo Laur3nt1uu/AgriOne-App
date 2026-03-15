@@ -7,6 +7,8 @@ export const loadLoginPage = () => import("../pages/auth/LoginPage");
 export const loadRegisterPage = () => import("../pages/auth/RegisterPage");
 export const loadForgotPasswordPage = () => import("../pages/auth/ForgotPasswordPage");
 export const loadResetPasswordPage = () => import("../pages/auth/ResetPasswordPage");
+export const loadAuthCallbackPage = () => import("../pages/auth/AuthCallbackPage");
+export const loadAuthRedirectPage = () => import("../pages/auth/AuthRedirectPage");
 
 export const loadDashboardPage = () => import("../pages/app/DashboardPage");
 export const loadLandsPage = () => import("../pages/app/LandsPage");
@@ -26,10 +28,8 @@ export const loadNotFoundPage = () => import("../pages/NotFoundPage");
 // Resource pages (public)
 export const loadDocumentationPage = () => import("../pages/resources/DocumentationPage");
 export const loadBlogPage = () => import("../pages/resources/BlogPage");
-export const loadSensorGuidePage = () => import("../pages/resources/SensorGuidePage");
 export const loadHelpCenterPage = () => import("../pages/resources/HelpCenterPage");
 export const loadCommunityPage = () => import("../pages/resources/CommunityPage");
-export const loadApiDocsPage = () => import("../pages/resources/ApiDocsPage");
 
 function safePrefetch(loader) {
   try {
@@ -51,6 +51,8 @@ export function prefetchByPath(path) {
   if (p.startsWith("/auth/register")) return safePrefetch(loadRegisterPage);
   if (p.startsWith("/auth/forgot-password")) return safePrefetch(loadForgotPasswordPage);
   if (p.startsWith("/auth/reset-password")) return safePrefetch(loadResetPasswordPage);
+  if (p.startsWith("/auth/callback")) return safePrefetch(loadAuthCallbackPage);
+  if (p.startsWith("/auth/redirect")) return safePrefetch(loadAuthRedirectPage);
 
   // App routes
   if (p.startsWith("/app/dashboard") || p === "/app") return safePrefetch(loadDashboardPage);
@@ -70,10 +72,8 @@ export function prefetchByPath(path) {
   // Resource pages
   if (p.startsWith("/docs")) return safePrefetch(loadDocumentationPage);
   if (p.startsWith("/blog")) return safePrefetch(loadBlogPage);
-  if (p.startsWith("/sensor-guide")) return safePrefetch(loadSensorGuidePage);
   if (p.startsWith("/help")) return safePrefetch(loadHelpCenterPage);
   if (p.startsWith("/community")) return safePrefetch(loadCommunityPage);
-  if (p.startsWith("/api-docs")) return safePrefetch(loadApiDocsPage);
 
   // Legacy paths support (for gradual migration)
   if (p.startsWith("/login")) return safePrefetch(loadLoginPage);
