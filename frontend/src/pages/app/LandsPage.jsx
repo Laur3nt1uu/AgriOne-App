@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion as Motion } from "framer-motion";
 import { api } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
-import { Cloud, CloudRain, CloudSun, Cpu, Leaf, Ruler, Sun } from "lucide-react";
+import { StatusBadge } from "../../components/agri/StatusBadge";
+import { LandsSkeleton } from "../../ui/skeleton";
+import { Cloud, CloudRain, CloudSun, Cpu, Leaf, Ruler, Sun, Crown } from "lucide-react";
 import { authStore } from "../../auth/auth.store";
+
+const PLAN_LIMITS = { STARTER: 2, PRO: Infinity, ENTERPRISE: Infinity };
 
 function weatherKind(weather) {
   const rain = weather?.forecast?.nextHoursRainMm;
@@ -43,6 +48,7 @@ export default function LandsPage() {
   const [busy, setBusy] = useState(true);
 
   const user = authStore.getUser();
+  const _userRole = user?.role || user?.app_metadata?.role || user?.['https://agri.one/role'];
   const isAdmin = user?.role === "ADMIN";
 
   const [recByLand, setRecByLand] = useState({});
@@ -119,6 +125,11 @@ export default function LandsPage() {
   );
   const offlineCount = useMemo(() => Math.max(0, count - onlineCount), [count, onlineCount]);
 
+  // Show full skeleton on initial load
+  if (busy && items.length === 0) {
+    return <LandsSkeleton />;
+  }
+
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
@@ -126,9 +137,20 @@ export default function LandsPage() {
           <div className="page-title">{isAdmin ? "Toate terenurile" : "Terenurile mele"}</div>
           <div className="muted text-sm">{isAdmin ? "Administrare globală" : "Monitorizare personală"} • parcele • senzori</div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          {!isAdmin && (() => {
+            const plan = authStore.getPlan();
+            const max = PLAN_LIMITS[plan] ?? PLAN_LIMITS.STARTER;
+            if (max === Infinity) return null;
+            return (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
+                <Crown size={14} className="text-primary" />
+                <span className="text-xs font-semibold text-primary">{count}/{max} terenuri</span>
+              </div>
+            );
+          })()}
           <Button onClick={load} variant="ghost">Actualizează</Button>
-          <Button onClick={() => nav("/lands/new")} variant="primary">
+          <Button onClick={() => nav("/app/lands/new")} variant="primary">
             + Adaugă teren
           </Button>
         </div>
@@ -146,13 +168,13 @@ export default function LandsPage() {
                   ? "Încă nu sunt terenuri în sistem. Când utilizatorii adaugă parcele, vor apărea aici."
                   : "Creează primul teren și desenează limita pe hartă."}
               </div>
-              <Button onClick={() => nav("/lands/new")} variant="primary" className="mt-5">
+              <Button onClick={() => nav("/app/lands/new")} variant="primary" className="mt-5">
                 {isAdmin ? "Adaugă teren" : "Creează primul teren"}
               </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {items.map((it) => {
+              {items.map((it, index) => {
                 const online = isOnline(it.lastSensorAt);
                 const rec = recByLand[it.id];
                 const weather = rec?.data?.inputs?.weather;
@@ -172,15 +194,30 @@ export default function LandsPage() {
                   (it.centroid?.lat != null && it.centroid?.lng != null);
 
                 const ownerLabel = isAdmin
-                  ? it?.owner?.username || (it?.owner?.email ? String(it.owner.email).split("@")[0] : "") || it?.owner?.email || ""
+                  ? it?.owner?.name || it?.owner?.username || (it?.owner?.email ? String(it.owner.email).split("@")[0] : "") || it?.owner?.email || ""
                   : "";
 
                 return (
-                  <button
+                  <Motion.div
                     key={it.id}
-                    onClick={() => nav(`/lands/${it.id}`)}
-                    className="text-left card p-5 card-hover agri-pattern"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    whileTap={{ scale: 0.98 }}
                   >
+                  <button
+                    onClick={() => nav(`/app/lands/${it.id}`)}
+                    className="text-left card p-5 card-hover agri-pattern relative overflow-hidden group"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = "0 8px 30px rgba(16, 185, 129, 0.15)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="text-lg font-extrabold truncate">{it.name}</div>
@@ -190,10 +227,7 @@ export default function LandsPage() {
                         </div>
                       </div>
 
-                      <Badge>
-                        <span className={`dot ${online ? "dot-online" : "dot-offline"}`} />
-                        {online ? "Online" : "Offline"}
-                      </Badge>
+                      <StatusBadge status={online ? "online" : "offline"} />
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
@@ -265,6 +299,7 @@ export default function LandsPage() {
                       Apasă pentru detalii → hartă, limită, senzor și istoric
                     </div>
                   </button>
+                  </Motion.div>
                 );
               })}
             </div>
@@ -288,6 +323,25 @@ export default function LandsPage() {
                 <div className="text-2xl font-extrabold mt-1">{offlineCount}</div>
               </div>
             </div>
+
+            {!isAdmin && (() => {
+              const plan = authStore.getPlan();
+              const max = PLAN_LIMITS[plan] ?? PLAN_LIMITS.STARTER;
+              return (
+                <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/15">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Crown size={14} className="text-primary" />
+                    <span className="text-xs font-semibold text-foreground">Plan {plan}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Terenuri: {count}/{max === Infinity ? "∞" : max}
+                    {max !== Infinity && count >= max && (
+                      <span className="text-amber-500 ml-2 font-semibold">• Limită atinsă</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="mt-4 flex gap-2 flex-wrap">
               <Badge>

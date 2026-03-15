@@ -5,14 +5,30 @@ import { Button } from "../../../ui/button";
 import { Badge } from "../../../ui/badge";
 import { Input } from "../../../ui/input";
 import { Label } from "../../../ui/label";
-import { Cpu, Database, Download, Leaf, RefreshCcw, Thermometer, Users } from "lucide-react";
+import { CheckCircle2, Cpu, Database, Download, FileUp, History, Leaf, RefreshCcw, Sliders, Thermometer, Upload, Users, X, Wifi, WifiOff } from "lucide-react";
 import { useConfirm } from "../../../components/confirm/ConfirmProvider";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 
 function isOnline(lastAt) {
   if (!lastAt) return false;
   const t = new Date(lastAt).getTime();
   if (Number.isNaN(t)) return false;
   return Date.now() - t < 15 * 60 * 1000;
+}
+
+// Export history in localStorage
+const EXPORT_HISTORY_KEY = "agrione_export_history";
+function getExportHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(EXPORT_HISTORY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+function addExportHistory(entry) {
+  const history = getExportHistory();
+  history.unshift({ ...entry, timestamp: new Date().toISOString() });
+  localStorage.setItem(EXPORT_HISTORY_KEY, JSON.stringify(history.slice(0, 20))); // Keep last 20
 }
 
 export default function SystemSettingsPage() {
@@ -22,6 +38,7 @@ export default function SystemSettingsPage() {
 
   const [sensors, setSensors] = useState([]);
   const [sensorsBusy, setSensorsBusy] = useState(true);
+  const [selectedSensors, setSelectedSensors] = useState(new Set());
 
   const [lands, setLands] = useState([]);
 
@@ -35,6 +52,13 @@ export default function SystemSettingsPage() {
   const [calTemp, setCalTemp] = useState("0");
   const [calHum, setCalHum] = useState("0");
 
+  // Export history
+  const [exportHistory, setExportHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Restore modal
+  const [restoreOpen, setRestoreOpen] = useState(false);
+
   async function load() {
     setSensorsBusy(true);
     try {
@@ -47,8 +71,9 @@ export default function SystemSettingsPage() {
       setStats(data);
       setSensors(Array.isArray(sens) ? sens : (sens?.items || []));
       setLands(Array.isArray(landList) ? landList : (landList?.items || []));
+      setExportHistory(getExportHistory());
     } catch (e) {
-      toastError(e, "Nu pot încărca datele de sistem.");
+      toastError(e, "Nu pot incarca datele de sistem.");
       setSensors([]);
       setLands([]);
     } finally {
@@ -57,6 +82,51 @@ export default function SystemSettingsPage() {
   }
 
   useEffect(() => { load(); }, []);
+
+  // Bulk operations
+  function toggleSensorSelection(sensorId) {
+    setSelectedSensors(prev => {
+      const next = new Set(prev);
+      if (next.has(sensorId)) next.delete(sensorId);
+      else next.add(sensorId);
+      return next;
+    });
+  }
+
+  function selectAllSensors() {
+    if (selectedSensors.size === sensors.length) {
+      setSelectedSensors(new Set());
+    } else {
+      setSelectedSensors(new Set(sensors.map(s => s.id || s.sensorCode)));
+    }
+  }
+
+  async function bulkUnpair() {
+    if (selectedSensors.size === 0) return;
+
+    const ok = await confirm({
+      title: "Dezasociere in masa",
+      message: `Dezasociezi ${selectedSensors.size} senzori de pe terenuri?`,
+      confirmText: "Dezasociaza",
+      cancelText: "Renunta",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    try {
+      const selected = sensors.filter(s => selectedSensors.has(s.id || s.sensorCode));
+      for (const sensor of selected) {
+        if (sensor.landId) {
+          await api.sensors.unpair({ sensorCode: sensor.sensorCode });
+        }
+      }
+      toastSuccess(`${selectedSensors.size} senzori dezasociati.`);
+      setSelectedSensors(new Set());
+      await load();
+    } catch (e) {
+      toastError(e, "Eroare la dezasociere.");
+    }
+  }
 
   function openCalibrate(sensor) {
     if (!sensor?.sensorCode) return;
@@ -79,7 +149,7 @@ export default function SystemSettingsPage() {
     setCalSaving(true);
     try {
       await api.sensors.calibrate(calSensor.sensorCode, { tempOffsetC, humidityOffsetPct });
-      toastSuccess("Calibrarea a fost salvată.");
+      toastSuccess("Calibrarea a fost salvata.");
       setCalOpen(false);
       setCalSensor(null);
       await load();
@@ -90,14 +160,31 @@ export default function SystemSettingsPage() {
     }
   }
 
+  // Quick calibration presets
+  async function quickCalibrate(sensor, preset) {
+    const presets = {
+      reset: { tempOffsetC: 0, humidityOffsetPct: 0 },
+      standard: { tempOffsetC: -0.5, humidityOffsetPct: 2 },
+    };
+    const { tempOffsetC, humidityOffsetPct } = presets[preset] || presets.reset;
+
+    try {
+      await api.sensors.calibrate(sensor.sensorCode, { tempOffsetC, humidityOffsetPct });
+      toastSuccess(`Calibrare ${preset} aplicata.`);
+      await load();
+    } catch (e) {
+      toastError(e, "Eroare calibrare.");
+    }
+  }
+
   async function unpair(sensor) {
     const code = sensor?.sensorCode;
     if (!code) return;
     const ok = await confirm({
       title: "Dezasociere senzor",
       message: `Dezasociezi senzorul ${code} de pe teren?`,
-      confirmText: "Dezasociază",
-      cancelText: "Renunță",
+      confirmText: "Dezasociaza",
+      cancelText: "Renunta",
       destructive: true,
     });
     if (!ok) return;
@@ -115,7 +202,7 @@ export default function SystemSettingsPage() {
     const sensorCode = String(pairSensorCode || "").trim();
     const landId = String(pairLandId || "").trim();
     if (!sensorCode) return toastError(null, "Introdu codul senzorului.");
-    if (!landId) return toastError(null, "Selectează un teren.");
+    if (!landId) return toastError(null, "Selecteaza un teren.");
 
     setPairing(true);
     try {
@@ -133,26 +220,31 @@ export default function SystemSettingsPage() {
 
   async function doBackup() {
     const ok = await confirm({
-      title: "Backup bază de date",
+      title: "Backup baza de date",
       message: "Faci backup la baza de date?",
-      confirmText: "Generează",
-      cancelText: "Renunță",
+      confirmText: "Genereaza",
+      cancelText: "Renunta",
       destructive: false,
     });
     if (!ok) return;
     setBacking(true);
     try {
       const blob = await api.admin.backup();
+      const filename = `backup_${new Date().toISOString().split("T")[0]}.sql`;
       const url = window.URL.createObjectURL(new Blob([blob], { type: "application/sql" }));
       const a = document.createElement("a");
       a.href = url;
-      a.download = `backup_${new Date().toISOString()}.sql`;
+      a.download = filename;
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toastSuccess("Backup descărcat cu succes!");
+      toastSuccess("Backup descarcat cu succes!");
+
+      // Add to history
+      addExportHistory({ type: "backup", filename });
+      setExportHistory(getExportHistory());
     } catch (e) {
-      toastError(e, "Backup eșuat.");
+      toastError(e, "Backup esuat.");
     } finally {
       setBacking(false);
     }
@@ -160,223 +252,378 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-        <div>
-          <div className="page-title">Setări sistem</div>
-          <div className="muted text-sm">Configurări și statistici sistem</div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={load} variant="ghost">
-            <RefreshCcw size={16} /> Actualizează
-          </Button>
-          <span className="icon-chip hidden sm:inline-flex" title="Sistem">
-            <Database size={20} className="text-muted-foreground" />
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card p-5 agri-pattern">
-            <div className="flex items-center justify-between gap-3">
-              <div className="muted text-sm">Total utilizatori</div>
-              <span className="icon-chip w-10 h-10 rounded-2xl"><Users size={18} className="text-muted-foreground" /></span>
-            </div>
-            <div className="text-3xl font-extrabold mt-2">{stats?.totalUsers || 0}</div>
+      {/* Header */}
+      <div className="card p-4 sm:p-6 agri-pattern">
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+          <div>
+            <div className="page-title">Setari sistem</div>
+            <div className="muted text-sm">Configurari, senzori si statistici</div>
           </div>
-          <div className="card p-5 agri-pattern">
-            <div className="flex items-center justify-between gap-3">
-              <div className="muted text-sm">Total terenuri</div>
-              <span className="icon-chip w-10 h-10 rounded-2xl"><Leaf size={18} className="text-muted-foreground" /></span>
-            </div>
-            <div className="text-3xl font-extrabold mt-2">{stats?.totalLands || 0}</div>
-          </div>
-          <div className="card p-5 agri-pattern">
-            <div className="flex items-center justify-between gap-3">
-              <div className="muted text-sm">Total senzori</div>
-              <span className="icon-chip w-10 h-10 rounded-2xl"><Cpu size={18} className="text-muted-foreground" /></span>
-            </div>
-            <div className="text-3xl font-extrabold mt-2">{stats?.totalSensors || 0}</div>
-          </div>
-          </div>
-
-          <div className="card p-5 agri-pattern">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-bold">Senzori</div>
-                <div className="muted text-sm mt-1">Listă globală (admin) • calibrare • dezasociere</div>
-              </div>
-              <Button onClick={load} variant="ghost" disabled={sensorsBusy}>Actualizează</Button>
-            </div>
-
-            <div className="mt-4 card-soft p-4">
-              <div className="text-sm font-bold">Asociere (pair)</div>
-              <div className="muted text-sm mt-1">Leagă un senzor existent de un teren.</div>
-
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="pairSensor">Cod senzor</Label>
-                  <Input
-                    id="pairSensor"
-                    placeholder="ex: AGRI-SENSOR-001"
-                    value={pairSensorCode}
-                    onChange={(e) => setPairSensorCode(e.target.value)}
-                    disabled={sensorsBusy || pairing}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="pairLand">Teren</Label>
-                  <select
-                    id="pairLand"
-                    className="flex h-11 w-full rounded-xl border border-input/15 bg-[rgb(var(--input-background)/1)] px-4 py-3 text-sm text-foreground outline-none focus:border-ring/40 focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={pairLandId}
-                    onChange={(e) => setPairLandId(e.target.value)}
-                    disabled={sensorsBusy || pairing || !lands.length}
-                  >
-                    <option value="">{lands.length ? "Selectează teren" : "Nu există terenuri"}</option>
-                    {lands.slice(0, 200).map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {(() => {
-                          const owner = l?.owner;
-                          const ownerLabel = owner?.username || (owner?.email ? String(owner.email).split("@")[0] : "") || owner?.email || "";
-                          return ownerLabel ? `${ownerLabel} • ` : "";
-                        })()}
-                        {l.name}
-                      </option>
-                    ))}
-                  </select>
-                  {lands.length > 200 ? (
-                    <div className="muted text-xs">Se afișează primele 200 terenuri.</div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="mt-3 flex gap-2 justify-end">
-                <Button variant="primary" onClick={submitPair} disabled={sensorsBusy || pairing}>
-                  {pairing ? "Se asociază..." : "Asociază"}
-                </Button>
-              </div>
-            </div>
-
-            {sensorsBusy ? (
-              <div className="mt-4 muted">Se încarcă…</div>
-            ) : sensors?.length ? (
-              <div className="mt-4 space-y-3">
-                {sensors.slice(0, 50).map((s) => {
-                  const online = isOnline(s.lastReadingAt);
-                  return (
-                    <div key={s.id || s.sensorCode} className="card-soft p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="font-extrabold truncate">{s.sensorCode}</div>
-                          <div className="muted text-sm mt-1 truncate">
-                            {s?.owner ? (() => {
-                              const owner = s.owner;
-                              const ownerLabel = owner?.username || (owner?.email ? String(owner.email).split("@")[0] : "") || owner?.email || "";
-                              return ownerLabel ? `Owner: ${ownerLabel}` : "Owner: —";
-                            })() : "Owner: —"}
-                            {s?.land?.name ? ` • Teren: ${s.land.name}` : " • Teren: Neasociat"}
-                          </div>
-
-                          <div className="mt-2 flex gap-2 flex-wrap">
-                            <Badge>
-                              <span className={`dot ${online ? "dot-online" : "dot-offline"}`} />
-                              {online ? "Online" : "Offline"}
-                            </Badge>
-                            <Badge>Temp offset: {Number(s.calibrationTempOffsetC ?? 0).toFixed(2)}°C</Badge>
-                            <Badge>Hum offset: {Number(s.calibrationHumidityOffsetPct ?? 0).toFixed(1)}%</Badge>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 flex-wrap justify-end">
-                          <Button variant="ghost" onClick={() => openCalibrate(s)} disabled={calSaving}>
-                            <Thermometer size={16} /> Calibrează
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            onClick={() => unpair(s)}
-                            disabled={!s.landId}
-                            className="border border-destructive/25 text-destructive hover:bg-destructive/10"
-                            title={!s.landId ? "Senzorul nu e asociat" : "Dezasociază de pe teren"}
-                          >
-                            Dezasociază
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {sensors.length > 50 ? (
-                  <div className="muted text-xs">Se afișează primele 50. (Pentru licență e suficient; dacă vrei, facem paginare.)</div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="mt-4 muted">Nu există senzori.</div>
-            )}
-          </div>
-        </div>
-
-        <div className="card p-5 space-y-4 agri-pattern">
-          <div className="flex items-center justify-between gap-3">
-            <div className="font-bold text-lg">Baza de date</div>
-            <span className="icon-chip w-10 h-10 rounded-2xl" title="Backup">
-              <Download size={18} className="text-muted-foreground" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button onClick={load} variant="ghost" size="sm">
+              <RefreshCcw size={14} className={sensorsBusy ? "animate-spin" : ""} />
+            </Button>
+            <Button onClick={() => setShowHistory(!showHistory)} variant="ghost" size="sm">
+              <History size={14} className="mr-1" />
+              Istoric
+            </Button>
+            <span className="icon-chip hidden sm:inline-flex" title="Sistem">
+              <Database size={20} className="text-muted-foreground" />
             </span>
           </div>
-          <div className="muted text-sm">Exportă un backup SQL pentru siguranță.</div>
-          <div className="flex gap-3">
-            <Button onClick={doBackup} disabled={backing} variant="primary">
-              {backing ? "Se generează..." : "Descarcă backup"}
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <Motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card p-4 sm:p-5 text-center agri-pattern">
+          <Users size={20} className="mx-auto text-primary mb-2" />
+          <div className="text-2xl sm:text-3xl font-extrabold">{stats?.totalUsers || 0}</div>
+          <div className="muted text-xs sm:text-sm">Utilizatori</div>
+        </Motion.div>
+        <Motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="card p-4 sm:p-5 text-center agri-pattern">
+          <Leaf size={20} className="mx-auto text-green-500 mb-2" />
+          <div className="text-2xl sm:text-3xl font-extrabold">{stats?.totalLands || 0}</div>
+          <div className="muted text-xs sm:text-sm">Terenuri</div>
+        </Motion.div>
+        <Motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card p-4 sm:p-5 text-center agri-pattern">
+          <Cpu size={20} className="mx-auto text-blue-500 mb-2" />
+          <div className="text-2xl sm:text-3xl font-extrabold">{stats?.totalSensors || 0}</div>
+          <div className="muted text-xs sm:text-sm">Senzori</div>
+        </Motion.div>
+      </div>
+
+      {/* Export History Panel */}
+      <AnimatePresence>
+        {showHistory && (
+          <Motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="card p-5 agri-pattern">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <History size={16} className="text-primary" />
+                  <span className="font-bold">Istoric exporturi</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>
+                  <X size={14} />
+                </Button>
+              </div>
+              {exportHistory.length === 0 ? (
+                <div className="muted text-sm">Nu exista exporturi recente.</div>
+              ) : (
+                <div className="space-y-2 max-h-40 overflow-auto">
+                  {exportHistory.map((entry, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm card-soft p-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-green-500" />
+                        <span>{entry.filename}</span>
+                      </div>
+                      <span className="muted text-xs">
+                        {new Date(entry.timestamp).toLocaleString("ro-RO")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-4">
+        {/* Sensors Management */}
+        <div className="card p-4 sm:p-5 agri-pattern">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <div className="text-sm font-bold">Senzori</div>
+              <div className="muted text-xs">Gestionare si calibrare</div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {sensors.length > 0 && (
+                <>
+                  <Button variant="ghost" size="sm" onClick={selectAllSensors}>
+                    {selectedSensors.size === sensors.length ? "Deselecteaza" : "Selecteaza tot"}
+                  </Button>
+                  {selectedSensors.size > 0 && (
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={bulkUnpair}>
+                      Dezasociaza ({selectedSensors.size})
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Pair Form */}
+          <div className="card-soft p-4 mb-4">
+            <div className="text-sm font-bold mb-2">Asociaza senzor</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Input
+                placeholder="Cod senzor"
+                value={pairSensorCode}
+                onChange={(e) => setPairSensorCode(e.target.value)}
+                disabled={pairing}
+              />
+              <select
+                className="input"
+                value={pairLandId}
+                onChange={(e) => setPairLandId(e.target.value)}
+                disabled={pairing || !lands.length}
+              >
+                <option value="">Selecteaza teren</option>
+                {lands.slice(0, 100).map((l) => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
+                ))}
+              </select>
+              <Button variant="primary" onClick={submitPair} disabled={pairing} className="w-full sm:w-auto">
+                {pairing ? "..." : "Asociaza"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Sensors List */}
+          {sensorsBusy ? (
+            <div className="muted py-8 text-center">Se incarca...</div>
+          ) : sensors.length === 0 ? (
+            <div className="muted py-8 text-center">Nu exista senzori.</div>
+          ) : (
+            <div className="space-y-2 max-h-[400px] overflow-auto">
+              {sensors.slice(0, 50).map((s, index) => {
+                const online = isOnline(s.lastReadingAt);
+                const isSelected = selectedSensors.has(s.id || s.sensorCode);
+
+                return (
+                  <Motion.div
+                    key={s.id || s.sensorCode}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.03, 0.3) }}
+                    className={`card-soft p-3 border-2 transition-colors ${isSelected ? "border-primary/50" : "border-transparent"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSensorSelection(s.id || s.sensorCode)}
+                        className="w-4 h-4 rounded"
+                      />
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${online ? "bg-green-500/10" : "bg-muted/50"}`}>
+                        {online ? <Wifi size={14} className="text-green-500" /> : <WifiOff size={14} className="text-muted-foreground" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-sm truncate">{s.sensorCode}</div>
+                        <div className="muted text-xs truncate">
+                          {s?.land?.name || "Neasociat"}
+                          {s?.owner?.username && ` • ${s.owner.username}`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => quickCalibrate(s, "reset")}
+                          title="Reset calibrare"
+                        >
+                          <RefreshCcw size={12} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openCalibrate(s)}
+                          title="Calibrare avansata"
+                        >
+                          <Sliders size={12} />
+                        </Button>
+                        {s.landId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => unpair(s)}
+                            title="Dezasociaza"
+                          >
+                            <X size={12} />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Database & Backup */}
+        <div className="space-y-4">
+          <div className="card p-5 agri-pattern">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="icon-chip w-10 h-10 rounded-2xl">
+                <Download size={18} className="text-primary" />
+              </span>
+              <div>
+                <div className="font-bold">Backup</div>
+                <div className="muted text-xs">Exporta baza de date</div>
+              </div>
+            </div>
+            <Button onClick={doBackup} disabled={backing} variant="primary" className="w-full">
+              {backing ? "Se genereaza..." : "Descarca backup SQL"}
             </Button>
+          </div>
+
+          <div className="card p-5 agri-pattern">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="icon-chip w-10 h-10 rounded-2xl">
+                <Upload size={18} className="text-warn" />
+              </span>
+              <div>
+                <div className="font-bold">Restore</div>
+                <div className="muted text-xs">Restaureaza din backup</div>
+              </div>
+            </div>
+            <Button onClick={() => setRestoreOpen(true)} variant="ghost" className="w-full border border-warn/30 text-warn hover:bg-warn/10">
+              <FileUp size={14} className="mr-2" />
+              Restaureaza backup
+            </Button>
+          </div>
+
+          {/* System Info */}
+          <div className="card p-5 agri-pattern">
+            <div className="font-bold mb-3">Info sistem</div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="muted">Versiune</span>
+                <span>1.0.0 (Licenta)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="muted">Baza date</span>
+                <span>PostgreSQL</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="muted">API Status</span>
+                <Badge variant="success">Online</Badge>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {calOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget && !calSaving) setCalOpen(false);
-          }}
-        >
-          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-lg font-extrabold">Calibrare senzor</div>
-                <div className="muted text-sm mt-1">{calSensor?.sensorCode || "—"}</div>
-              </div>
-              <Button type="button" variant="ghost" onClick={() => setCalOpen(false)} disabled={calSaving} title="Închide">
-                ✕
-              </Button>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="calTemp">Offset temperatură (°C)</Label>
-                <Input id="calTemp" value={calTemp} onChange={(e) => setCalTemp(e.target.value)} disabled={calSaving} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="calHum">Offset umiditate (%)</Label>
-                <Input id="calHum" value={calHum} onChange={(e) => setCalHum(e.target.value)} disabled={calSaving} />
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <Button type="button" variant="ghost" onClick={() => setCalOpen(false)} disabled={calSaving}>
-                  Renunță
-                </Button>
-                <Button type="button" variant="primary" onClick={submitCalibration} disabled={calSaving}>
-                  {calSaving ? "Se salvează..." : "Salvează"}
+      {/* Calibration Modal */}
+      <AnimatePresence>
+        {calOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !calSaving) setCalOpen(false);
+            }}
+          >
+            <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+            <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md card p-6">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <div className="text-lg font-extrabold">Calibrare senzor</div>
+                  <div className="muted text-sm">{calSensor?.sensorCode}</div>
+                </div>
+                <Button variant="ghost" onClick={() => setCalOpen(false)} disabled={calSaving}>
+                  <X size={18} />
                 </Button>
               </div>
-            </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="flex items-center gap-2">
+                      <Thermometer size={14} className="text-orange-500" />
+                      Offset temp (°C)
+                    </Label>
+                    <Input className="mt-1" value={calTemp} onChange={(e) => setCalTemp(e.target.value)} disabled={calSaving} type="number" step="0.1" />
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-2">
+                      <Thermometer size={14} className="text-blue-500" />
+                      Offset umiditate (%)
+                    </Label>
+                    <Input className="mt-1" value={calHum} onChange={(e) => setCalHum(e.target.value)} disabled={calSaving} type="number" step="0.5" />
+                  </div>
+                </div>
+
+                <div className="text-xs muted p-3 card-soft">
+                  Offset-ul se adauga la citirile brute ale senzorului. Ex: offset -0.5°C inseamna ca temperatura afisata va fi cu 0.5°C mai mica.
+                </div>
+
+                <div className="flex gap-2">
+                  <Button variant="ghost" className="flex-1" onClick={() => setCalOpen(false)} disabled={calSaving}>
+                    Renunta
+                  </Button>
+                  <Button variant="primary" className="flex-1" onClick={submitCalibration} disabled={calSaving}>
+                    {calSaving ? "Se salveaza..." : "Salveaza"}
+                  </Button>
+                </div>
+              </div>
+            </Motion.div>
           </div>
-        </div>
-      ) : null}
+        )}
+      </AnimatePresence>
+
+      {/* Restore Modal */}
+      <AnimatePresence>
+        {restoreOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setRestoreOpen(false);
+            }}
+          >
+            <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+            <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-md card p-6">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <div className="text-lg font-extrabold text-warn">Restaurare backup</div>
+                  <div className="muted text-sm">Operatiune avansata</div>
+                </div>
+                <Button variant="ghost" onClick={() => setRestoreOpen(false)}>
+                  <X size={18} />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-warn/10 border border-warn/30 rounded-xl">
+                  <div className="font-bold text-warn mb-2">Atentie!</div>
+                  <div className="text-sm">
+                    Restaurarea unui backup va inlocui TOATE datele curente. Aceasta operatiune este ireversibila.
+                  </div>
+                </div>
+
+                <div className="text-sm muted">
+                  Pentru a restaura un backup SQL:
+                </div>
+                <ol className="text-sm space-y-2 list-decimal list-inside">
+                  <li>Opreste serverul backend</li>
+                  <li>Conecteaza-te la PostgreSQL</li>
+                  <li>Ruleaza: <code className="bg-muted/50 px-1 rounded">psql -U user -d agrione &lt; backup.sql</code></li>
+                  <li>Reporneste serverul</li>
+                </ol>
+
+                <div className="text-xs muted">
+                  Din motive de securitate, restaurarea automata din browser nu este disponibila. Contacteaza administratorul de sistem pentru asistenta.
+                </div>
+
+                <Button variant="ghost" className="w-full" onClick={() => setRestoreOpen(false)}>
+                  Am inteles
+                </Button>
+              </div>
+            </Motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

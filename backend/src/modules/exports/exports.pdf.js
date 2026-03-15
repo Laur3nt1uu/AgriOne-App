@@ -75,11 +75,24 @@ function buildLandPdf(res, data) {
   doc.moveDown();
 
   // Economics summary
-  doc.fontSize(14).text("Economic Summary (last transactions)", { underline: true });
+  doc.fontSize(14).text("Economic Summary", { underline: true });
   doc.moveDown(0.5);
+  if (data?.summary?.from || data?.summary?.to) {
+    doc
+      .fontSize(10)
+      .fillColor("gray")
+      .text(
+        `Period: ${data.summary.from ? formatDate(data.summary.from) : "-"}  ->  ${data.summary.to ? formatDate(data.summary.to) : "-"}`
+      );
+    doc.fillColor("black");
+    doc.moveDown(0.2);
+  }
   doc.fontSize(12).text(`Revenue: ${money(data.summary.revenue)}`);
   doc.text(`Expense: ${money(data.summary.expense)}`);
   doc.text(`Profit: ${money(data.summary.profit)}`);
+  if (data?.summary?.count != null) {
+    doc.text(`Transactions in period: ${Number(data.summary.count || 0)}`);
+  }
   doc.moveDown(0.5);
 
   if (!data.transactions.length) {
@@ -109,4 +122,70 @@ function buildLandPdf(res, data) {
   doc.end();
 }
 
-module.exports = { buildLandPdf };
+function buildEconomicsPdf(res, data) {
+  const doc = new PDFDocument({ margin: 50 });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="economics-report.pdf"`);
+
+  doc.pipe(res);
+
+  doc.fontSize(20).text("AgriOne - Economics Report", { align: "left" });
+  doc.moveDown(0.2);
+  doc.fontSize(10).fillColor("gray").text(`Generated: ${formatDate(new Date())}`);
+  doc.fillColor("black");
+  doc.moveDown();
+
+  doc.fontSize(12).text(`Scope: ${data?.scope || "OWNER"}`);
+  if (data?.summary?.from || data?.summary?.to) {
+    doc
+      .fontSize(10)
+      .fillColor("gray")
+      .text(
+        `Period: ${data.summary.from ? formatDate(data.summary.from) : "-"}  ->  ${data.summary.to ? formatDate(data.summary.to) : "-"}`
+      );
+    doc.fillColor("black");
+  } else {
+    doc.fontSize(10).fillColor("gray").text("Period: ALL");
+    doc.fillColor("black");
+  }
+  doc.moveDown();
+
+  doc.fontSize(14).text("Summary", { underline: true });
+  doc.moveDown(0.5);
+  doc.fontSize(12).text(`Revenue: ${money(data?.summary?.revenue)}`);
+  doc.text(`Expense: ${money(data?.summary?.expense)}`);
+  doc.text(`Profit: ${money(data?.summary?.profit)}`);
+  doc.text(`Transactions in period: ${Number(data?.summary?.count || 0)}`);
+  doc.moveDown();
+
+  doc.fontSize(14).text("Transactions (latest)", { underline: true });
+  doc.moveDown(0.5);
+
+  const txs = Array.isArray(data?.transactions) ? data.transactions : [];
+  if (!txs.length) {
+    doc.fontSize(12).text("No transactions recorded.");
+  } else {
+    doc.fontSize(11);
+    txs.forEach((t) => {
+      const occurredAt = t.occurredAt || t.occurred_at || t.createdAt || t.created_at;
+      const landName = t?.Land?.name || t?.land?.name || "";
+      const ownerLabel = t?.User?.username || t?.User?.email || "";
+      const parts = [
+        formatDate(occurredAt),
+        t.type,
+        t.category,
+        money(t.amount),
+        t.description || "",
+        landName ? `Land: ${landName}` : "",
+        ownerLabel ? `Owner: ${ownerLabel}` : "",
+      ].filter(Boolean);
+
+      doc.text(parts.join("  |  "));
+    });
+  }
+
+  doc.end();
+}
+
+module.exports = { buildLandPdf, buildEconomicsPdf };

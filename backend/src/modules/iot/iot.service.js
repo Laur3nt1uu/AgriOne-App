@@ -1,6 +1,7 @@
 const ApiError = require("../../utils/ApiError");
 const { Sensor, Reading, Land } = require("../../models");
 const { Op } = require("sequelize");
+const { checkSensorLimit } = require("../sensors/sensors.service");
 
 async function ingest({ sensorCode, temperatureC, humidityPct, recordedAt }) {
   const sensor = await Sensor.findOne({ where: { sensorCode } });
@@ -43,6 +44,8 @@ async function pairBoard(actor, { landId, boardCode, name }) {
   let board = await Sensor.findOne({ where: { sensorCode: boardCode } });
 
   if (!board) {
+    // Check plan sensor limit before auto-creating
+    if (!isAdmin) await checkSensorLimit(effectiveOwnerId);
     board = await Sensor.create({ ownerId: effectiveOwnerId, sensorCode: boardCode, name: name || null });
   } else if (String(board.ownerId) !== String(effectiveOwnerId)) {
     if (!isAdmin) {

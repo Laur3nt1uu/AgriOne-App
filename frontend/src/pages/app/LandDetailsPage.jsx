@@ -5,8 +5,10 @@ import { toastError, toastSuccess } from "../../utils/toast";
 import GooglePolygonViewMap from "../../components/maps/GooglePolygonViewMap";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { StatusBadge } from "../../components/agri/StatusBadge";
 import { Cloud, CloudRain, CloudSun, Droplets, Sun, Thermometer, Wind } from "lucide-react";
 import { authStore } from "../../auth/auth.store";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 
 
 function isOnline(lastAt) {
@@ -45,6 +47,7 @@ export default function LandDetailsPage() {
   const nav = useNavigate();
 
   const user = authStore.getUser();
+  const _userRole = user?.role || user?.app_metadata?.role || user?.['https://agri.one/role'];
   const isAdmin = user?.role === "ADMIN";
 
   const [land, setLand] = useState(null);
@@ -347,23 +350,83 @@ export default function LandDetailsPage() {
   }
 
   async function exportPdf() {
-    if (!land?.id) return;
+    // Export is now handled via the period selector modal.
+    setExportOpen(true);
+  }
+
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportPreset, setExportPreset] = useState("ALL");
+  const [exportYear, setExportYear] = useState(String(new Date().getFullYear()));
+  const [exportFrom, setExportFrom] = useState(""); // YYYY-MM-DD
+  const [exportTo, setExportTo] = useState(""); // YYYY-MM-DD
+
+  function ymd(d) {
+    const dt = new Date(d);
+    if (Number.isNaN(dt.getTime())) return "";
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, "0");
+    const day = String(dt.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function computeExportParams() {
+    const now = new Date();
+
+    if (exportPreset === "ALL") return undefined;
+
+    if (exportPreset === "YESTERDAY") {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 1);
+      const s = ymd(d);
+      return { from: s, to: s };
+    }
+
+    if (exportPreset === "LAST_7_DAYS") {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 6);
+      return { from: ymd(from), to: ymd(now) };
+    }
+
+    if (exportPreset === "YEAR") {
+      const y = Number(exportYear);
+      if (!Number.isFinite(y) || y < 1970 || y > 2100) return null;
+      return { from: `${y}-01-01`, to: `${y}-12-31` };
+    }
+
+    if (exportPreset === "CUSTOM") {
+      if (!exportFrom || !exportTo) return null;
+      if (exportFrom > exportTo) return null;
+      return { from: exportFrom, to: exportTo };
+    }
+
+    return undefined;
+  }
+
+  async function downloadPdfWithPeriod() {
+    if (!land?.id || exporting) return;
+    const params = computeExportParams();
+    if (params === null) {
+      toastError(null, "Perioadă invalidă. Verifică datele.");
+      return;
+    }
 
     setExporting(true);
     try {
-      const blob = await api.exports.landReport(land.id);
+      const blob = await api.exports.landReport(land.id, params);
 
-      const url = window.URL.createObjectURL(
-        new Blob([blob], { type: "application/pdf" })
-      );
-
+      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
       const a = document.createElement("a");
       a.href = url;
-      a.download = `AgriOne_Land_${land.id}.pdf`;
+
+      const suffix = params?.from && params?.to ? `_${params.from}_to_${params.to}` : "";
+      a.download = `AgriOne_Land_${land.id}${suffix}.pdf`;
+
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+
+      setExportOpen(false);
       toastSuccess("Raportul a fost descărcat.");
     } catch (e) {
       toastError(e, "Nu pot exporta raportul.");
@@ -380,7 +443,7 @@ export default function LandDetailsPage() {
       await api.lands.remove(land.id);
       toastSuccess("Teren șters cu succes.");
       setDeleteOpen(false);
-      nav("/lands", { replace: true });
+      nav("/app/lands", { replace: true });
     } catch (e) {
       toastError(e, "Nu pot șterge terenul.");
     } finally {
@@ -408,7 +471,7 @@ export default function LandDetailsPage() {
         <div className="text-lg font-bold">Teren indisponibil</div>
         <div className="muted mt-1">Nu am putut încărca datele acestui teren.</div>
         <div className="mt-4">
-          <Button onClick={() => nav("/lands")} variant="ghost">← Înapoi</Button>
+          <Button onClick={() => nav("/app/lands")} variant="ghost">← Înapoi</Button>
         </div>
       </div>
     );
@@ -417,13 +480,14 @@ export default function LandDetailsPage() {
   const hasArduino = !!(land.arduinoCode || land.sensorId);
   const arduinoCode = land.arduinoCode || land.sensorId;
   const ownerLabel = isAdmin
-    ? land?.owner?.username || (land?.owner?.email ? String(land.owner.email).split("@")[0] : "") || land?.owner?.email || ""
+    ? land?.owner?.name || land?.owner?.username || (land?.owner?.email ? String(land.owner.email).split("@")[0] : "") || land?.owner?.email || ""
     : "";
 
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Header */}
-      <div className="card p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="card p-5 agri-pattern relative overflow-hidden flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-40 pointer-events-none" />
         <div className="min-w-0">
           <div className="page-title truncate">{land.name}</div>
           <div className="muted text-sm mt-1">
@@ -433,7 +497,7 @@ export default function LandDetailsPage() {
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={() => nav("/lands")} variant="ghost">
+          <Button onClick={() => nav("/app/lands")} variant="ghost">
             ← Înapoi
           </Button>
 
@@ -474,10 +538,7 @@ export default function LandDetailsPage() {
 
       {/* badges */}
       <div className="flex gap-2 flex-wrap">
-        <Badge>
-          <span className={`dot ${online ? "dot-online" : "dot-offline"}`} />
-          {online ? "Online" : "Offline"}
-        </Badge>
+        <StatusBadge status={online ? "online" : "offline"} />
         <Badge>Arduino: {arduinoCode || "Neasociat"}</Badge>
         <Badge>
           Centroid: {land.centroid?.lat?.toFixed?.(4) || land.centroidLat?.toFixed?.(4) || "-"},{" "}
@@ -485,6 +546,7 @@ export default function LandDetailsPage() {
         </Badge>
       </div>
 
+      <AnimatePresence>
       {pairOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -494,8 +556,8 @@ export default function LandDetailsPage() {
             if (e.target === e.currentTarget) setPairOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card p-5">
+          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-md card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-lg font-extrabold">Asociază placă Arduino</div>
@@ -528,10 +590,88 @@ export default function LandDetailsPage() {
                 </Button>
               </div>
             </form>
-          </div>
+          </Motion.div>
         </div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
+      {exportOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setExportOpen(false);
+          }}
+        >
+          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-md card p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-lg font-extrabold">Export raport PDF</div>
+                <div className="muted text-sm mt-1">Alege perioada pentru raportul economic din PDF.</div>
+              </div>
+              <Button type="button" variant="ghost" onClick={() => setExportOpen(false)} disabled={exporting} title="Închide">
+                ✕
+              </Button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="muted text-xs">Perioadă</div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="tab" className={`w-full ${exportPreset === "ALL" ? "is-active" : ""}`} onClick={() => setExportPreset("ALL")}>
+                  Toate
+                </Button>
+                <Button variant="tab" className={`w-full ${exportPreset === "YESTERDAY" ? "is-active" : ""}`} onClick={() => setExportPreset("YESTERDAY")}>
+                  Ieri
+                </Button>
+                <Button variant="tab" className={`w-full ${exportPreset === "LAST_7_DAYS" ? "is-active" : ""}`} onClick={() => setExportPreset("LAST_7_DAYS")}>
+                  Ultimele 7 zile
+                </Button>
+                <Button variant="tab" className={`w-full ${exportPreset === "YEAR" ? "is-active" : ""}`} onClick={() => setExportPreset("YEAR")}>
+                  Un an
+                </Button>
+                <Button variant="tab" className={`col-span-2 w-full ${exportPreset === "CUSTOM" ? "is-active" : ""}`} onClick={() => setExportPreset("CUSTOM")}>
+                  Personalizat
+                </Button>
+              </div>
+
+              {exportPreset === "YEAR" ? (
+                <div>
+                  <div className="muted text-xs mb-1">An</div>
+                  <input className="input" value={exportYear} onChange={(e) => setExportYear(e.target.value)} placeholder="ex: 2025" disabled={exporting} />
+                </div>
+              ) : null}
+
+              {exportPreset === "CUSTOM" ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="muted text-xs mb-1">De la</div>
+                    <input type="date" className="input" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} disabled={exporting} />
+                  </div>
+                  <div>
+                    <div className="muted text-xs mb-1">Până la</div>
+                    <input type="date" className="input" value={exportTo} onChange={(e) => setExportTo(e.target.value)} disabled={exporting} />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <Button variant="ghost" className="flex-1" onClick={() => setExportOpen(false)} disabled={exporting}>
+                Renunță
+              </Button>
+              <Button variant="primary" className="flex-1" onClick={downloadPdfWithPeriod} disabled={exporting}>
+                {exporting ? "Se exportă..." : "Descarcă PDF"}
+              </Button>
+            </div>
+          </Motion.div>
+        </div>
+      )}
+      </AnimatePresence>
+
+      <AnimatePresence>
       {unpairOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -541,8 +681,8 @@ export default function LandDetailsPage() {
             if (e.target === e.currentTarget && !unpairing) setUnpairOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card p-5">
+          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-md card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-lg font-extrabold">Dezasociază Arduino</div>
@@ -569,10 +709,12 @@ export default function LandDetailsPage() {
                 {unpairing ? "Se dezasociază..." : "Dezasociază"}
               </Button>
             </div>
-          </div>
+          </Motion.div>
         </div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {calOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -582,8 +724,8 @@ export default function LandDetailsPage() {
             if (e.target === e.currentTarget && !calSaving) setCalOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card p-5">
+          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-md card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-lg font-extrabold">Calibrare senzor</div>
@@ -628,10 +770,12 @@ export default function LandDetailsPage() {
                 </Button>
               </div>
             </form>
-          </div>
+          </Motion.div>
         </div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {deleteOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -641,8 +785,8 @@ export default function LandDetailsPage() {
             if (e.target === e.currentTarget && !deleting) setDeleteOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card p-5">
+          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-md card p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-lg font-extrabold">Șterge terenul</div>
@@ -680,13 +824,14 @@ export default function LandDetailsPage() {
                 {deleting ? "Se șterge..." : "Da, șterge"}
               </Button>
             </div>
-          </div>
+          </Motion.div>
         </div>
       )}
+      </AnimatePresence>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
           {/* map */}
-          <div className="card p-3 h-[560px] md:h-[720px]">
+          <div className="card p-3 h-[560px] md:h-[720px] agri-pattern">
             <GooglePolygonViewMap
               center={center}
               zoom={14}
@@ -698,7 +843,7 @@ export default function LandDetailsPage() {
 
           {/* widgets */}
           <div className="space-y-4">
-          <div className="card p-5">
+          <div className="card p-5 agri-pattern">
             <div className="text-sm font-bold">Ultimele citiri</div>
             <div className="muted text-sm mt-1">
               {lastReadingLabel ? `Ultima actualizare: ${lastReadingLabel}` : "Nu există citiri în ultimele 24h."}
@@ -806,7 +951,7 @@ export default function LandDetailsPage() {
             )}
           </div>
 
-          <div className="card p-5">
+          <div className="card p-5 agri-pattern">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-bold">Recomandări (azi)</div>
@@ -827,7 +972,7 @@ export default function LandDetailsPage() {
             ) : actions?.length ? (
               <div className="mt-4 space-y-3">
                   {actions.slice(0, 8).map((a, idx) => (
-                  <div key={`${a.type || "A"}-${idx}`} className="card-soft p-4">
+                  <Motion.div key={`${a.type || "A"}-${idx}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="card-soft p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-extrabold truncate">{a.title || "—"}</div>
@@ -835,7 +980,7 @@ export default function LandDetailsPage() {
                       </div>
                       <Badge>P{a.priority ?? "-"}</Badge>
                     </div>
-                  </div>
+                  </Motion.div>
                 ))}
               </div>
             ) : (
@@ -843,7 +988,7 @@ export default function LandDetailsPage() {
             )}
           </div>
 
-          <div className="card p-5">
+          <div className="card p-5 agri-pattern">
             <div className="text-sm font-bold">Delimitare</div>
             <div className="muted text-sm mt-1">
               {polygonPairs.length ? `Puncte poligon: ${polygonPairs.length}` : "Nu există poligon salvat."}

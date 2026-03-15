@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
       footer={
         <div>
           <span className="text-muted-foreground">Back to </span>
-          <Link to="/login" className="text-primary hover:underline font-medium transition-all hover:text-primary/80">
+          <Link to="/auth/login" className="text-primary hover:underline font-medium transition-all hover:text-primary/80">
             sign in
           </Link>
         </div>

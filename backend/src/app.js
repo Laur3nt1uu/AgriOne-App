@@ -21,7 +21,7 @@ const iotLimiter = rateLimit({
 });
 
 app.use("/api/iot", iotLimiter);
-app.get("/health", (req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+app.get("/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 
 
 const authRoutes = require("./modules/auth/auth.routes");
@@ -60,6 +60,9 @@ app.use("/api/exports", exportsRoutes);
 
 const adminRoutes = require("./modules/admin/admin.routes");
 app.use("/api/admin", adminRoutes);
+
+const apiaRoutes = require("./modules/apia/apia.routes");
+app.use("/api/apia", apiaRoutes);
 
 const notFound = require("./middlewares/notFound.middleware");
 const errorHandler = require("./middlewares/error.middleware");

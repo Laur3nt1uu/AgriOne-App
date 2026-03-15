@@ -7,7 +7,7 @@ const { spawn } = require("child_process");
 exports.listUsers = asyncHandler(async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ["id", "email", "username", "role", "created_at"],
+      attributes: ["id", "email", "username", "name", "role", "plan", "created_at"],
       order: [["created_at", "DESC"]],
     });
     res.json({ users });

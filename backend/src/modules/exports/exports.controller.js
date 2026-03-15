@@ -1,12 +1,15 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const requireAuth = require("../../middlewares/auth.middleware");
 const service = require("./exports.service");
-const { buildLandPdf } = require("./exports.pdf");
+const { buildLandPdf, buildEconomicsPdf } = require("./exports.pdf");
 
 const landPdf = [
   requireAuth,
   asyncHandler(async (req, res) => {
-    const data = await service.getLandReportData(req.user, req.params.landId);
+    const data = await service.getLandReportData(req.user, req.params.landId, {
+      from: req.query.from,
+      to: req.query.to,
+    });
     buildLandPdf(res, data);
   }),
 ];
@@ -23,4 +26,15 @@ const readingsCsv = [
   }),
 ];
 
-module.exports = { landPdf, readingsCsv };
+const economicsPdf = [
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const data = await service.getEconomicsReportData(req.user, {
+      from: req.query.from,
+      to: req.query.to,
+    });
+    buildEconomicsPdf(res, data);
+  }),
+];
+
+module.exports = { landPdf, economicsPdf, readingsCsv };

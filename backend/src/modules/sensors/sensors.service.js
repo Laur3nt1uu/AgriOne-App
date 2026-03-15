@@ -1,14 +1,28 @@
 const ApiError = require("../../utils/ApiError");
 const { Sensor, Land, User } = require("../../models");
+const { getLimits } = require("../../config/planLimits");
 
 function isOnline(lastReadingAt, minutes = 15) {
   if (!lastReadingAt) return false;
   return Date.now() - new Date(lastReadingAt).getTime() <= minutes * 60 * 1000;
 }
 
+async function checkSensorLimit(ownerId) {
+  const owner = await User.findByPk(ownerId, { attributes: ["plan"] });
+  const limits = getLimits(owner?.plan);
+  if (limits.maxSensors !== Infinity) {
+    const count = await Sensor.count({ where: { ownerId } });
+    if (count >= limits.maxSensors) {
+      throw new ApiError(403, `Planul tău (${owner?.plan || "STARTER"}) permite maxim ${limits.maxSensors} senzori. Fă upgrade pentru mai mulți.`, null, "PLAN_SENSOR_LIMIT");
+    }
+  }
+}
+
 async function createSensor(ownerId, { sensorCode, name }) {
   const existing = await Sensor.findOne({ where: { sensorCode } });
   if (existing) throw new ApiError(409, "Sensor code already exists", null, "SENSOR_CODE_EXISTS");
+
+  await checkSensorLimit(ownerId);
 
   return Sensor.create({ ownerId, sensorCode, name: name || null });
 }
@@ -96,6 +110,7 @@ async function updateCalibration(actor, sensorCode, { tempOffsetC, humidityOffse
 
 module.exports = {
   createSensor,
+  checkSensorLimit,
   listMySensors,
   listSensorsForActor,
   pairSensor,

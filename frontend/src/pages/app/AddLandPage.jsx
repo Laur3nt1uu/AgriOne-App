@@ -21,6 +21,7 @@ export default function AddLandPage() {
   const nav = useNavigate();
   const [params] = useSearchParams();
   const user = authStore.getUser();
+  const userRole = user?.role || user?.app_metadata?.role || user?.['https://agri.one/role'];
   const isAdmin = user?.role === "ADMIN";
 
   const ownerIdFromUrl = params.get("ownerId") || "";
@@ -46,6 +47,8 @@ export default function AddLandPage() {
         const data = await api.admin.listUsers();
         const arr = Array.isArray(data) ? data : (data?.users || []);
         const displayName = (u) => {
+          const name = u?.name ? String(u.name) : "";
+          if (name) return name;
           const username = u?.username ? String(u.username) : "";
           if (username) return username;
           const email = u?.email ? String(u.email) : "";
@@ -143,8 +146,8 @@ export default function AddLandPage() {
       const created = await api.lands.create(payload);
       const newId = created?.id || created?.landId || created?.uuid || created?.data?.id;
       toastSuccess("Terenul a fost salvat.");
-      if (newId) nav(`/lands/${newId}`);
-      else nav("/lands");
+      if (newId) nav(`/app/lands/${newId}`);
+      else nav("/app/lands");
     } catch (e) {
       toastError(e, "Nu pot salva terenul.");
     } finally {
@@ -175,7 +178,7 @@ export default function AddLandPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={() => nav("/lands")} variant="ghost">
+          <Button onClick={() => nav("/app/lands")} variant="ghost">
             Anulează
           </Button>
 
@@ -229,7 +232,7 @@ export default function AddLandPage() {
                     <option value="">— alege utilizator —</option>
                     {filteredUsers.slice(0, 200).map((u) => (
                       <option key={u.id} value={u.id}>
-                        {(u.username || (u.email ? String(u.email).split("@")[0] : ""))} ({u.role}){u.email ? ` • ${u.email}` : ""}
+                        {(u.name || u.username || (u.email ? String(u.email).split("@")[0] : ""))} ({u.role}){u.email ? ` • ${u.email}` : ""}
                       </option>
                     ))}
                   </select>

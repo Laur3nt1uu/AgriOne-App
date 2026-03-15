@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { motion as Motion } from "framer-motion";
 import { api, pick } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { HealthScoreBadge } from "../../components/agri/HealthScoreBadge";
+import { AnalyticsSkeleton } from "../../ui/skeleton";
 import { Activity, BarChart3, Cpu, Leaf, Thermometer, TrendingUp } from "lucide-react";
 import { authStore } from "../../auth/auth.store";
 
@@ -21,8 +24,15 @@ function scoreVariant(score){
   return "bad";
 }
 
+function scoreCategory(score){
+  if (score >= 80) return "GOOD";
+  if (score >= 55) return "WARNING";
+  return "CRITICAL";
+}
+
 export default function AnalyticsPage() {
   const user = authStore.getUser();
+  const userRole = user?.role || user?.app_metadata?.role || user?.['https://agri.one/role'];
   const isAdmin = user?.role === "ADMIN";
 
   const [busy, setBusy] = useState(true);
@@ -55,9 +65,15 @@ export default function AnalyticsPage() {
 
   useEffect(() => { load(); }, []);
 
+  // Show skeleton on initial load
+  if (busy && !overview) {
+    return <AnalyticsSkeleton />;
+  }
+
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+      <div className="card p-6 agri-pattern relative overflow-hidden flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
         <div>
           <div className="page-title">Analize</div>
           <div className="muted text-sm">
@@ -75,20 +91,26 @@ export default function AnalyticsPage() {
         <div className="card p-6 muted">Se încarcă…</div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
-          <div className="card p-5">
+          <div className="card p-5 agri-pattern">
             <div className="text-sm font-bold">Sănătatea terenurilor</div>
             <div className="muted text-sm mt-1">
               Scor = indicator demo (excelent pentru licență). Ulterior poate deveni bazat pe reguli/ML.
             </div>
 
             <div className="mt-4 space-y-3">
-              {health.map((h) => {
+              {health.map((h, index) => {
                 const score = clamp(Number(h.score || 0), 0, 100);
                 const ownerLabel = isAdmin
-                  ? h?.owner?.username || (h?.owner?.email ? String(h.owner.email).split("@")[0] : "") || h?.owner?.email || ""
+                  ? h?.owner?.name || h?.owner?.username || (h?.owner?.email ? String(h.owner.email).split("@")[0] : "") || h?.owner?.email || ""
                   : "";
                 return (
-                  <div key={h.landId} className={`card-soft p-4 border ${scoreColor(score)} agri-pattern card-hover`}>
+                  <Motion.div
+                    key={h.landId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`card-soft p-4 border ${scoreColor(score)} agri-pattern card-hover`}
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-extrabold truncate">{h.landName}</div>
@@ -98,6 +120,7 @@ export default function AnalyticsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <HealthScoreBadge score={scoreCategory(score)} />
                         <Badge>Scor: {score}</Badge>
                         <span className="icon-chip hidden sm:inline-flex" title="Health score">
                           <Activity size={18} className="text-muted-foreground" />
@@ -123,7 +146,7 @@ export default function AnalyticsPage() {
                         ))}
                       </div>
                     ) : null}
-                  </div>
+                  </Motion.div>
                 );
               })}
 
@@ -134,7 +157,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="card p-5">
+            <div className="card p-5 agri-pattern">
               <div className="text-sm font-bold">Overview</div>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <div className="card-soft p-4 agri-pattern">
@@ -168,7 +191,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="card p-5">
+            <div className="card p-5 agri-pattern">
               <div className="text-sm font-bold">Recomandări</div>
               <div className="muted text-sm mt-2">
                 • Dacă umiditatea scade sub prag → recomandă irigare

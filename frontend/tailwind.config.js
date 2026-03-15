@@ -5,6 +5,18 @@ export default {
     "./index.html",
     "./src/**/*.{js,jsx}",
   ],
+  safelist: [
+    // Dynamic color classes used via template literals in landing page sections
+    ...["primary", "blue-500", "green-500", "amber-500", "red-500"].flatMap(color => [
+      `bg-${color}/5`,
+      `bg-${color}/10`,
+      `bg-${color}/15`,
+      `bg-${color}/20`,
+      `border-${color}/20`,
+      `border-${color}/30`,
+      `text-${color}`,
+    ]),
+  ],
   theme: {
     extend: {
       colors: {
@@ -46,6 +58,13 @@ export default {
         "sidebar-accent-foreground": "rgb(var(--sidebar-accent-foreground) / <alpha-value>)",
         "sidebar-border": "rgb(var(--sidebar-border) / <alpha-value>)",
         "sidebar-ring": "rgb(var(--sidebar-ring) / <alpha-value>)",
+
+        "chart-1": "rgb(var(--chart-1) / <alpha-value>)",
+        "chart-2": "rgb(var(--chart-2) / <alpha-value>)",
+        "chart-3": "rgb(var(--chart-3) / <alpha-value>)",
+        "chart-4": "rgb(var(--chart-4) / <alpha-value>)",
+        "chart-5": "rgb(var(--chart-5) / <alpha-value>)",
+        "switch-background": "rgb(var(--switch-background) / <alpha-value>)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -55,6 +74,11 @@ export default {
       animation: {
         'fadeIn': 'fadeIn 0.5s ease-in-out',
         'slideIn': 'slideIn 0.4s ease-out',
+        'glow': 'glow 2s ease-in-out infinite',
+        'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+        'float': 'float 4s ease-in-out infinite',
+        'scaleIn': 'scale-in 0.3s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -64,6 +88,26 @@ export default {
         slideIn: {
           '0%': { opacity: '0', transform: 'translateX(-20px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        glow: {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.2)' },
+          '50%': { boxShadow: '0 0 32px rgba(34, 197, 94, 0.4)' },
+        },
+        'glow-pulse': {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.2)' },
+          '50%': { boxShadow: '0 0 40px rgba(34, 197, 94, 0.6)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-1000px 0' },
+          '100%': { backgroundPosition: '1000px 0' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        'scale-in': {
+          from: { transform: 'scale(0.95)', opacity: '0' },
+          to: { transform: 'scale(1)', opacity: '1' },
         },
       },
     },

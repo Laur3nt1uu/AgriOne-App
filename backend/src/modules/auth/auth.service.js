@@ -23,6 +23,14 @@ function createResetToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
+function decodeJwtPayload(jwtToken) {
+  const parts = String(jwtToken || "").split(".");
+  if (parts.length < 2) throw new ApiError(400, "Invalid Google credential", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");
+  const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+  const json = Buffer.from(base64, "base64").toString("utf8");
+  return JSON.parse(json);
+}
+
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
@@ -79,7 +87,7 @@ async function ensureUniqueUsername(desired, maxAttempts = 6) {
   return "user_" + crypto.randomBytes(4).toString("hex");
 }
 
-async function register(email, password, role = "USER", username = undefined) {
+async function register(email, password, role = "USER", username = undefined, name = undefined) {
   const normalized = normalizeEmail(email);
   const existing = await findUserByEmail(normalized);
   if (existing) throw new ApiError(409, "Email already registered", null, "AUTH_EMAIL_ALREADY_REGISTERED");
@@ -92,8 +100,10 @@ async function register(email, password, role = "USER", username = undefined) {
   }
   const finalUsername = await ensureUniqueUsername(baseUsername);
 
+  const trimmedName = name ? String(name).trim() : null;
+
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await User.create({ email: normalized, username: finalUsername, passwordHash, role });
+  const user = await User.create({ email: normalized, username: finalUsername, name: trimmedName, passwordHash, role });
 
   const accessToken = signAccessToken(user);
   const refreshToken = createRefreshToken();
@@ -105,7 +115,7 @@ async function register(email, password, role = "USER", username = undefined) {
     expiresAt,
   });
 
-  return { user: { id: user.id, email: user.email, username: user.username, role: user.role }, accessToken, refreshToken };
+  return { user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role, plan: user.plan }, accessToken, refreshToken };
 }
 
 async function login(email, password) {
@@ -137,7 +147,56 @@ async function login(email, password) {
     expiresAt,
   });
 
-  return { user: { id: user.id, email: user.email, username: user.username, role: user.role }, accessToken, refreshToken };
+  return { user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role, plan: user.plan }, accessToken, refreshToken };
+}
+
+async function loginWithGoogle(credential, profile = {}) {
+  let payload = null;
+  try {
+    payload = decodeJwtPayload(credential);
+  } catch {
+    throw new ApiError(401, "Google credential invalid", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");
+  }
+
+  const email = normalizeEmail(payload?.email || profile?.email || "");
+  if (!email) throw new ApiError(400, "Missing Google email", null, "AUTH_GOOGLE_MISSING_EMAIL");
+  if (payload?.email_verified === false) {
+    throw new ApiError(401, "Google email not verified", null, "AUTH_GOOGLE_EMAIL_NOT_VERIFIED");
+  }
+
+  let user = await findUserByEmail(email);
+
+  if (!user) {
+    const baseUsername = usernameFromEmail(email);
+    const finalUsername = await ensureUniqueUsername(baseUsername);
+    const randomPass = crypto.randomBytes(24).toString("hex");
+    const passwordHash = await bcrypt.hash(randomPass, 12);
+    const name = String(payload?.name || profile?.name || "").trim() || null;
+
+    user = await User.create({
+      email,
+      username: finalUsername,
+      name,
+      passwordHash,
+      role: "USER",
+    });
+  }
+
+  const accessToken = signAccessToken(user);
+  const refreshToken = createRefreshToken();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+  await RefreshToken.create({
+    userId: user.id,
+    tokenHash: hashToken(refreshToken),
+    expiresAt,
+  });
+
+  return {
+    user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role, plan: user.plan },
+    accessToken,
+    refreshToken,
+  };
 }
 
 async function refresh(refreshToken) {
@@ -200,7 +259,7 @@ async function requestPasswordReset(email) {
 
   await PasswordResetToken.create({ userId: user.id, tokenHash, expiresAt });
 
-  const resetLink = `${env.APP_PUBLIC_URL.replace(/\/$/, "")}/reset-password?token=${raw}`;
+  const resetLink = `${env.APP_PUBLIC_URL.replace(/\/$/, "")}/auth/reset-password?token=${raw}`;
 
   const subject = "Reset your AgriOne password";
   const text =
@@ -271,4 +330,13 @@ async function changePassword(userId, currentPassword, newPassword) {
   return { ok: true };
 }
 
-module.exports = { register, login, refresh, logout, requestPasswordReset, resetPasswordWithToken, changePassword };
+module.exports = {
+  register,
+  login,
+  loginWithGoogle,
+  refresh,
+  logout,
+  requestPasswordReset,
+  resetPasswordWithToken,
+  changePassword,
+};

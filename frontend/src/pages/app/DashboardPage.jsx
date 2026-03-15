@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { createElement, useCallback, useEffect, useMemo, useState } from "react";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { api, pick } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
 import { authStore } from "../../auth/auth.store";
@@ -7,6 +8,8 @@ import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Card } from "../../ui/card";
+import { KPICard } from "../../components/agri/KPICard";
+import { DashboardSkeleton } from "../../ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import {
   BellRing,
@@ -61,6 +64,7 @@ export default function DashboardPage() {
   const user = authStore.getUser();
   const isAdmin = user?.role === "ADMIN";
 
+  const [initialLoading, setInitialLoading] = useState(true);
   const [overview, setOverview] = useState(null);
   const [now, setNow] = useState(() => new Date());
 
@@ -90,6 +94,8 @@ export default function DashboardPage() {
         setOverview(data);
       } catch (e) {
         toastError(e, "Nu pot încărca dashboard-ul.");
+      } finally {
+        setInitialLoading(false);
       }
     })();
   }, []);
@@ -383,8 +389,13 @@ export default function DashboardPage() {
   const LandWeatherIcon = landWeatherVisual.Icon;
   const GlobalWeatherIcon = globalWeatherVisual.Icon;
 
+  // Show skeleton while initial data is loading
+  if (initialLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
       <Card className="relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-warn/10" />
         <div className="relative flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
@@ -458,33 +469,25 @@ export default function DashboardPage() {
               </div>
 
               <div className="mt-4 flex gap-2 flex-wrap">
-                <Button variant="primary" onClick={() => nav("/admin/users")}>Utilizatori</Button>
-                <Button variant="secondary" onClick={() => nav("/admin/settings")}>Setări sistem</Button>
-                <Button variant="ghost" onClick={() => nav("/admin/users")}>Adaugă teren pentru utilizator</Button>
-                <Button variant="ghost" onClick={() => nav("/admin/settings")}>Asociază senzor</Button>
-                <Button variant="ghost" onClick={() => nav("/lands")}>Toate terenurile</Button>
+                <Button variant="primary" onClick={() => nav("/app/admin/users")}>Utilizatori</Button>
+                <Button variant="secondary" onClick={() => nav("/app/admin/settings")}>Setări sistem</Button>
+                <Button variant="ghost" onClick={() => nav("/app/admin/users")}>Adaugă teren pentru utilizator</Button>
+                <Button variant="ghost" onClick={() => nav("/app/admin/settings")}>Asociază senzor</Button>
+                <Button variant="ghost" onClick={() => nav("/app/lands")}>Toate terenurile</Button>
               </div>
             </Card>
           ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {kpiCards.map(({ label, value, Icon }) => (
-              <Card key={label} className="relative overflow-hidden p-5 group">
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-muted-foreground text-sm">{label}</div>
-                    <div className="text-3xl font-semibold mt-2 truncate">{String(value)}</div>
-                    <div className="text-muted-foreground text-xs mt-1">Actualizat din backend</div>
-                  </div>
-                  <div className="h-10 w-10 shrink-0 rounded-xl border border-border/15 bg-background/50 grid place-items-center">
-                    <Icon size={18} className="text-muted-foreground" />
-                  </div>
-                </div>
-                <div className="relative mt-4 h-2 rounded-full bg-border/25 overflow-hidden">
-                  <div className="h-full w-1/2 bg-gradient-to-r from-primary/40 to-transparent" />
-                </div>
-              </Card>
+            {kpiCards.map(({ label, value, Icon: KpiIcon }, index) => (
+              <KPICard
+                key={label}
+                title={label}
+                value={String(value)}
+                subtitle="Actualizat din backend"
+                icon={createElement(KpiIcon, { size: 24 })}
+                variant={index === 5 && String(value) !== "—" && Number(value) > 0 ? "warning" : "default"}
+              />
             ))}
           </div>
 
@@ -500,10 +503,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-              {[{ title: "Terenuri", desc: "Gestionează parcele și hartă", Icon: Leaf }, { title: "Senzori", desc: "Istoric citiri și status", Icon: Cpu }, { title: "Economie", desc: "Venituri / cheltuieli", Icon: TrendingUp }].map(({ title, desc, Icon }) => (
+              {[{ title: "Terenuri", desc: "Gestionează parcele și hartă", Icon: Leaf }, { title: "Senzori", desc: "Istoric citiri și status", Icon: Cpu }, { title: "Economie", desc: "Venituri / cheltuieli", Icon: TrendingUp }].map(({ title, desc, Icon: QuickIcon }) => (
                 <div key={title} className="rounded-xl border border-border/15 bg-background/40 p-4 flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl border border-border/15 bg-background/60 grid place-items-center">
-                    <Icon size={18} className="text-muted-foreground" />
+                    {createElement(QuickIcon, { size: 18, className: "text-muted-foreground" })}
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold truncate">{title}</div>
@@ -514,7 +517,9 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-5">
+          <Card className="p-5 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
+            <div className="relative z-10">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold">Alerte recente</div>
@@ -529,7 +534,7 @@ export default function DashboardPage() {
               {recentAlertsBusy ? (
                 <div className="text-muted-foreground text-sm">Se încarcă…</div>
               ) : recentAlerts.length ? (
-                recentAlerts.slice(0, 6).map((a) => {
+                recentAlerts.slice(0, 6).map((a, index) => {
                   const id = pick(a, ["id", "uuid"], "");
                   const sev = (pick(a, ["severity", "level"], "WARNING") || "WARNING").toUpperCase();
                   const title = pick(a, ["title", "message"], "Alert");
@@ -540,14 +545,33 @@ export default function DashboardPage() {
 
                   const badgeVariant = sev === "CRITICAL" ? "danger" : "warn";
                   const SevIcon = sev === "CRITICAL" ? ShieldAlert : TriangleAlert;
-                  const borderClass = sev === "CRITICAL" ? "border-destructive/25" : "border-warn/25";
 
                   return (
-                    <div
+                    <Motion.div
                       key={id || `${title}-${when}`}
-                      className={`rounded-xl border ${borderClass} bg-background/40 p-4 flex items-start justify-between gap-3`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                      className={`rounded-xl border p-4 flex items-start justify-between gap-3 cursor-pointer relative overflow-hidden transition-all duration-300 group ${
+                        sev === "CRITICAL"
+                          ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30"
+                          : "bg-gradient-to-br from-warn/10 to-warn/5 border-warn/30"
+                      }`}
+                      style={{
+                        "--hover-shadow": sev === "CRITICAL" ? "var(--shadow-destructive-hover)" : "var(--shadow-warn-hover)"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.boxShadow = sev === "CRITICAL"
+                          ? "0 8px 24px rgba(220, 38, 38, 0.15)"
+                          : "0 8px 24px rgba(245, 158, 11, 0.1)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
                     >
-                      <div className="min-w-0">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                      <div className="min-w-0 relative z-10">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant={badgeVariant}>{sev}</Badge>
                           {landName ? <Badge>{landName}</Badge> : null}
@@ -560,18 +584,19 @@ export default function DashboardPage() {
                         <div className="mt-2 font-semibold truncate">{title}</div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center gap-3 shrink-0 relative z-10">
                         <div className="text-muted-foreground text-xs whitespace-nowrap">{when}</div>
                         <div className="h-9 w-9 rounded-xl border border-border/15 bg-background/60 hidden sm:grid place-items-center">
                           <SevIcon size={18} className="text-muted-foreground" />
                         </div>
                       </div>
-                    </div>
+                    </Motion.div>
                   );
                 })
               ) : (
                 <div className="text-muted-foreground text-sm">Nu există alerte.</div>
               )}
+            </div>
             </div>
           </Card>
         </div>
@@ -748,6 +773,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <AnimatePresence>
       {prefOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -757,7 +783,8 @@ export default function DashboardPage() {
             if (e.target === e.currentTarget) setPrefOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}>
           <Card className="relative w-full max-w-md p-6 gap-4">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -819,8 +846,10 @@ export default function DashboardPage() {
               </div>
             </div>
           </Card>
+          </Motion.div>
         </div>
       ) : null}
+      </AnimatePresence>
     </div>
   );
 }

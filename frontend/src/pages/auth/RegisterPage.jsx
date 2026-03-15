@@ -1,23 +1,30 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
-import { Eye, EyeOff, Lock, Mail, Sparkles, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, Sparkles, User, UserCircle } from "lucide-react";
 import { api } from "../../api/endpoints";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import AuthNexusLayout from "./AuthNexusLayout";
+import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
+import AuthDivider from "../../components/auth/AuthDivider";
 
 export default function RegisterPage() {
   const nav = useNavigate();
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  const handleOAuthSuccess = () => {
+    nav("/app/dashboard", { replace: true });
+  };
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -42,10 +49,11 @@ export default function RegisterPage() {
         password,
         role: "USER",
         username: username.trim() || undefined,
+        name: name.trim() || undefined,
       };
       await api.auth.register(payload);
       toastSuccess("Account created. You can sign in now.");
-      nav("/login", { replace: true });
+      nav("/auth/login", { replace: true });
     } catch (e2) {
       setError("Registration failed. Please try again.");
       toastError(e2, "Registration failed.");
@@ -61,12 +69,23 @@ export default function RegisterPage() {
       footer={
         <div>
           <span className="text-muted-foreground">Already have an account? </span>
-          <Link to="/login" className="text-primary hover:underline font-medium transition-all hover:text-primary/80">
+          <Link to="/auth/login" className="text-primary hover:underline font-medium transition-all hover:text-primary/80">
             Sign in
           </Link>
         </div>
       }
     >
+      {/* Google OAuth Section */}
+      <Motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+        <GoogleSignInButton onSuccess={handleOAuthSuccess} disabled={busy} />
+      </Motion.div>
+
+      {/* Divider */}
+      <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+        <AuthDivider text="sau creează un cont" />
+      </Motion.div>
+
+      {/* Traditional Register Form */}
       <form onSubmit={onSubmit} className="space-y-4">
         {error ? (
           <Motion.div
@@ -79,6 +98,22 @@ export default function RegisterPage() {
         ) : null}
 
         <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+          <Label htmlFor="name">Nume complet</Label>
+          <div className="relative mt-1.5">
+            <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              id="name"
+              type="text"
+              placeholder="ex: Popescu Ion"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="pl-10 transition-all focus:border-primary/50 focus:shadow-lg focus:shadow-primary/10"
+              autoComplete="name"
+            />
+          </div>
+        </Motion.div>
+
+        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
           <Label htmlFor="username">Username (optional)</Label>
           <div className="relative mt-1.5">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -95,7 +130,7 @@ export default function RegisterPage() {
           <div className="text-xs text-muted-foreground mt-1">Litere/cifre, ., _, - (3–30 caractere).</div>
         </Motion.div>
 
-        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
+        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
           <Label htmlFor="email">Email</Label>
           <div className="relative mt-1.5">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -112,7 +147,7 @@ export default function RegisterPage() {
           </div>
         </Motion.div>
 
-        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.22 }}>
+        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.25 }}>
           <Label htmlFor="password">Password</Label>
           <div className="relative mt-1.5">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -139,7 +174,7 @@ export default function RegisterPage() {
           </div>
         </Motion.div>
 
-        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.27 }}>
+        <Motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
           <Label htmlFor="confirmPassword">Confirm Password</Label>
           <div className="relative mt-1.5">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -156,7 +191,7 @@ export default function RegisterPage() {
           </div>
         </Motion.div>
 
-        <Motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.33 }}>
+        <Motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.36 }}>
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? (
               <Motion.span animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>

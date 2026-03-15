@@ -9,6 +9,8 @@ import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import AuthNexusLayout from "./AuthNexusLayout";
+import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
+import AuthDivider from "../../components/auth/AuthDivider";
 
 export default function LoginPage() {
   const nav = useNavigate();
@@ -19,7 +21,7 @@ export default function LoginPage() {
       ? from
       : from?.pathname
         ? `${from.pathname}${from.search || ""}${from.hash || ""}`
-        : "/dashboard";
+        : "/app/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,6 +53,10 @@ export default function LoginPage() {
     }
   }
 
+  const handleOAuthSuccess = () => {
+    nav(redirectTo, { replace: true });
+  };
+
   return (
     <AuthNexusLayout
       title="Welcome Back"
@@ -60,7 +66,7 @@ export default function LoginPage() {
           <div>
             <Link
               className="text-primary hover:underline font-medium transition-all hover:text-primary/80"
-              to="/forgot-password"
+              to="/auth/forgot-password"
             >
               Forgot password?
             </Link>
@@ -68,7 +74,7 @@ export default function LoginPage() {
           <div>
             <span className="text-muted-foreground">Don't have an account? </span>
             <Link
-              to="/register"
+              to="/auth/register"
               className="text-primary hover:underline font-medium transition-all hover:text-primary/80"
             >
               Sign up
@@ -77,6 +83,17 @@ export default function LoginPage() {
         </div>
       }
     >
+      {/* Google OAuth Section */}
+      <Motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+        <GoogleSignInButton onSuccess={handleOAuthSuccess} disabled={busy} />
+      </Motion.div>
+
+      {/* Divider */}
+      <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+        <AuthDivider />
+      </Motion.div>
+
+      {/* Traditional Login Form */}
       <form onSubmit={onSubmit} className="space-y-4">
         {error ? (
           <Motion.div

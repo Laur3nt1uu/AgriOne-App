@@ -1,13 +1,49 @@
 <!doctype html>
-<html lang="en">
+<html lang="ro">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/src/assets/agrione.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agrione</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Primary Meta Tags -->
+    <title>AgriOne - Smart Farming Platform</title>
+    <meta name="title" content="AgriOne - Smart Farming Platform" />
+    <meta name="description" content="Platformă inteligentă pentru gestionarea fermelor. Monitorizare senzori, analize meteo și recomandări agricole." />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-192x192.png" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#22c55e" />
+    <meta name="background-color" content="#0a0a0a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="AgriOne" />
+
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AgriOne" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#22c55e" />
+    <meta name="msapplication-TileImage" content="/icons/icon-192x192.png" />
+
+    <!-- Preconnect pentru performanță -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.openweathermap.org" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <noscript>
+      <div style="padding: 2rem; text-align: center; font-family: system-ui, sans-serif;">
+        <h1>AgriOne</h1>
+        <p>Pentru a utiliza această aplicație, te rugăm să activezi JavaScript în browser.</p>
+      </div>
+    </noscript>
   </body>
 </html>

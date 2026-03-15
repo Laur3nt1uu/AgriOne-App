@@ -51,7 +51,10 @@ export const getErrorMessage = (err, fallback = "A apărut o eroare.") => {
 
     return msg || "Neautorizat.";
   }
-  if (status === 403) return "Nu ai permisiune pentru această acțiune.";
+  if (status === 403) {
+    if (code === "PLAN_LAND_LIMIT" || code === "PLAN_SENSOR_LIMIT") return msg || "Ai atins limita planului tău. Fă upgrade pentru mai mult.";
+    return "Nu ai permisiune pentru această acțiune.";
+  }
   if (status === 404) {
     if (code === "LAND_NOT_FOUND") return "Terenul nu a fost găsit.";
     if (code === "ALERT_NOT_FOUND") return "Alerta nu a fost găsită.";
@@ -76,11 +79,13 @@ export const getErrorMessage = (err, fallback = "A apărut o eroare.") => {
 export const api = {
   auth: {
     login: (data) => apiClient.post("/api/auth/login", data).then(r => r.data),
+    googleLogin: (data) => apiClient.post("/api/auth/google", data).then(r => r.data),
     register: (data) => apiClient.post("/api/auth/register", data).then(r => r.data),
     me: () => apiClient.get("/api/auth/me").then(r => r.data),
     getPreferences: () => apiClient.get("/api/auth/preferences").then((r) => r.data?.preferences || r.data),
     updatePreferences: (data) => apiClient.put("/api/auth/preferences", data).then((r) => r.data?.preferences || r.data),
     changePassword: (data) => apiClient.put("/api/auth/password", data).then((r) => r.data),
+    changePlan: (data) => apiClient.put("/api/auth/plan", data).then((r) => r.data),
     forgotPassword: (data) => apiClient.post("/api/auth/forgot-password", data).then(r => r.data),
     resetPassword: (data) => apiClient.post("/api/auth/reset-password", data).then(r => r.data),
   },
@@ -117,7 +122,7 @@ export const api = {
   list: (params) => apiClient.get("/api/economics/transactions", { params }).then(r=>r.data?.transactions || r.data?.items || r.data),
   create: (data) => apiClient.post("/api/economics/transactions", data).then(r=>r.data?.transaction || r.data),
   remove: (id) => apiClient.delete(`/api/economics/transactions/${id}`).then(r=>r.data),
-  summary: () => apiClient.get("/api/economics/summary").then(r=>r.data?.summary || r.data),
+  summary: (params) => apiClient.get("/api/economics/summary", { params }).then(r=>r.data?.summary || r.data),
   },
 
   analytics: {
@@ -128,11 +133,19 @@ export const api = {
   alerts: {
     list: (params) => apiClient.get("/api/alerts", { params }).then(r => r.data?.alerts || r.data?.items || r.data),
     remove: (id) => apiClient.delete(`/api/alerts/${id}`).then(() => true),
+    // Alert rules management
+    getRules: (landId) => apiClient.get("/api/alerts/rules", { params: landId ? { landId } : undefined }).then(r => r.data?.rules || r.data),
+    upsertRule: (data) => apiClient.post("/api/alerts/rules", data).then(r => r.data?.rule || r.data),
   },
 
   exports: {
-  landReport: (landId) =>
-    apiClient.get(`/api/exports/land/${landId}/pdf`, { responseType: "blob" }).then(r => r.data),
+    landReport: (landId, params = undefined) =>
+      apiClient.get(`/api/exports/land/${landId}/pdf`, { params, responseType: "blob" }).then(r => r.data),
+    economicsReport: (params = undefined) =>
+      apiClient.get("/api/exports/economics/pdf", { params, responseType: "blob" }).then((r) => r.data),
+    // CSV exports
+    readingsCsv: (landId, params = undefined) =>
+      apiClient.get(`/api/exports/land/${landId}/readings.csv`, { params, responseType: "blob" }).then(r => r.data),
   },
 
   weather: {
@@ -168,7 +181,19 @@ export const api = {
     apiClient.post(`/api/dev/seed-readings/${landId}`, body, {
       headers: { "x-dev-key": import.meta.env.VITE_DEV_KEY },
     }).then(r => r.data),
-  }
+  },
+
+  apia: {
+    listParcels: () => apiClient.get("/api/apia/parcels").then(r => r.data?.parcels || r.data),
+    getParcel: (landId) => apiClient.get(`/api/apia/parcels/${landId}`).then(r => r.data?.parcel || r.data),
+    createParcel: (data) => apiClient.post("/api/apia/parcels", data).then(r => r.data?.parcel || r.data),
+    updateParcel: (id, data) => apiClient.put(`/api/apia/parcels/${id}`, data).then(r => r.data?.parcel || r.data),
+    deleteParcel: (id) => apiClient.delete(`/api/apia/parcels/${id}`).then(() => true),
+    calendar: (year) => apiClient.get("/api/apia/calendar", { params: { year } }).then(r => r.data),
+    rates: () => apiClient.get("/api/apia/rates").then(r => r.data?.rates || r.data),
+    calculate: (landId) => apiClient.get("/api/apia/calculate", { params: { landId } }).then(r => r.data),
+    exportPdf: () => apiClient.get("/api/apia/export/pdf", { responseType: "blob" }).then(r => r.data),
+  },
 
 
   

@@ -6,7 +6,7 @@ export default function RequireAuth({ children }) {
   if (!authStore.isAuthed()) {
     return (
       <Navigate
-        to="/login"
+        to="/auth/login"
         replace
         state={{ from: { pathname: loc.pathname, search: loc.search, hash: loc.hash } }}
       />

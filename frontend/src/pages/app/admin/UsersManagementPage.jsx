@@ -6,6 +6,7 @@ import { Badge } from "../../../ui/badge";
 import { RefreshCcw, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useConfirm } from "../../../components/confirm/ConfirmProvider";
+import { motion as Motion } from "framer-motion";
 
 export default function UsersManagementPage() {
   const nav = useNavigate();
@@ -93,17 +94,17 @@ export default function UsersManagementPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border/10">
-                  <th className="text-left p-4 text-muted-foreground font-medium">Username</th>
+                  <th className="text-left p-4 text-muted-foreground font-medium">Utilizator</th>
                   <th className="text-left p-4 text-muted-foreground font-medium">Rol</th>
                   <th className="text-left p-4 text-muted-foreground font-medium">Creat</th>
                   <th className="text-right p-4 text-muted-foreground font-medium">Acțiuni</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b border-border/10 hover:bg-muted/30">
+                {users.map((u, index) => (
+                  <Motion.tr key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.05 }} className="border-b border-border/10 hover:bg-muted/30">
                     <td className="p-4">
-                      <div className="font-semibold">{u.username || (u.email ? String(u.email).split("@")[0] : "—")}</div>
+                      <div className="font-semibold">{u.name || u.username || (u.email ? String(u.email).split("@")[0] : "—")}</div>
                       <div className="muted text-xs">{u.email || "—"}</div>
                     </td>
                     <td className="p-4">
@@ -125,7 +126,7 @@ export default function UsersManagementPage() {
                         </Button>
                       </div>
                     </td>
-                  </tr>
+                  </Motion.tr>
                 ))}
               </tbody>
             </table>

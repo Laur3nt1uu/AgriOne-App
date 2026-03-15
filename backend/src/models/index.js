@@ -64,6 +64,15 @@ const PasswordResetToken = PasswordResetTokenModel(sequelize);
 User.hasMany(PasswordResetToken, { foreignKey: "userId" });
 PasswordResetToken.belongsTo(User, { foreignKey: "userId" });
 
+const ApiaParcelModel = require("./apiaParcel.model");
+const ApiaParcel = ApiaParcelModel(sequelize);
+
+Land.hasOne(ApiaParcel, { foreignKey: "landId" });
+ApiaParcel.belongsTo(Land, { foreignKey: "landId" });
+
+User.hasMany(ApiaParcel, { foreignKey: "ownerId" });
+ApiaParcel.belongsTo(User, { foreignKey: "ownerId" });
+
 module.exports = {
 	sequelize,
 	User,
@@ -75,4 +84,5 @@ module.exports = {
 	Alert,
 	Transaction,
 	PasswordResetToken,
+	ApiaParcel,
 };

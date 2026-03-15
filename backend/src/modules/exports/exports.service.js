@@ -1,10 +1,28 @@
 const ApiError = require("../../utils/ApiError");
 const { Op } = require("sequelize");
-const { Land, Sensor, Reading, AlertRule, Alert, Transaction } = require("../../models");
+const { Land, Sensor, Reading, AlertRule, Alert, Transaction, User } = require("../../models");
 
-async function getLandReportData(actor, landId) {
+function parseDateParam(value, { endOfDay = false } = {}) {
+  if (value == null) return null;
+  const s = String(value).trim();
+  if (!s) return null;
+
+  // Accept YYYY-MM-DD (treat as UTC day bounds)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return new Date(s + (endOfDay ? "T23:59:59.999Z" : "T00:00:00.000Z"));
+  }
+
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+}
+
+async function getLandReportData(actor, landId, { from = undefined, to = undefined } = {}) {
   const ownerId = actor?.sub;
   const isAdmin = actor?.role === "ADMIN";
+
+  const fromDate = parseDateParam(from, { endOfDay: false });
+  const toDate = parseDateParam(to, { endOfDay: true });
 
   const land = await Land.findOne({ where: isAdmin ? { id: landId } : { id: landId, ownerId } });
   if (!land) throw new ApiError(404, "Land not found", null, "LAND_NOT_FOUND");
@@ -48,21 +66,28 @@ async function getLandReportData(actor, landId) {
     limit: 10,
   }), []);
 
-  const transactions = await safe(() => Transaction.findAll({
-    where: { ownerId: effectiveOwnerId, landId },
-    order: [["occurred_at", "DESC"]],
-    limit: 15,
-  }), []);
-
-  let revenue = 0;
-  let expense = 0;
-  for (const t of transactions) {
-    const val = Number(t.amount);
-    if (t.type === "REVENUE") revenue += val;
-    else expense += val;
+  const txWhere = { ownerId: effectiveOwnerId, landId };
+  if (fromDate || toDate) {
+    txWhere.occurredAt = {};
+    if (fromDate) txWhere.occurredAt[Op.gte] = fromDate;
+    if (toDate) txWhere.occurredAt[Op.lte] = toDate;
   }
 
-  const profit = revenue - expense;
+  // Keep list readable in PDF; summary is computed across the whole period.
+  const transactions = await safe(
+    () =>
+      Transaction.findAll({
+        where: txWhere,
+        order: [["occurred_at", "DESC"]],
+        limit: fromDate || toDate ? 100 : 15,
+      }),
+    []
+  );
+
+  const txCount = await safe(() => Transaction.count({ where: txWhere }), 0);
+  const revenue = await safe(() => Transaction.sum("amount", { where: { ...txWhere, type: "REVENUE" } }), 0);
+  const expense = await safe(() => Transaction.sum("amount", { where: { ...txWhere, type: "EXPENSE" } }), 0);
+  const profit = Number(revenue || 0) - Number(expense || 0);
 
   return {
     land,
@@ -73,9 +98,12 @@ async function getLandReportData(actor, landId) {
     alerts,
     transactions,
     summary: {
-      revenue: Number(revenue.toFixed(2)),
-      expense: Number(expense.toFixed(2)),
-      profit: Number(profit.toFixed(2)),
+      revenue: Number(Number(revenue || 0).toFixed(2)),
+      expense: Number(Number(expense || 0).toFixed(2)),
+      profit: Number(Number(profit || 0).toFixed(2)),
+      count: Number(txCount || 0),
+      from: fromDate ? fromDate.toISOString() : null,
+      to: toDate ? toDate.toISOString() : null,
     },
   };
 }
@@ -120,4 +148,62 @@ async function getReadingsCsv(actor, landId, range = "24h") {
   return { land, csv };
 }
 
-module.exports = { getLandReportData, getReadingsCsv };
+async function getEconomicsReportData(actor, { from = undefined, to = undefined } = {}) {
+  const ownerId = actor?.sub;
+  const isAdmin = actor?.role === "ADMIN";
+
+  const fromDate = parseDateParam(from, { endOfDay: false });
+  const toDate = parseDateParam(to, { endOfDay: true });
+
+  const safe = async (fn, fallback) => {
+    try {
+      return await fn();
+    } catch (e) {
+      console.error("Exports query failed:", e?.message || e);
+      return fallback;
+    }
+  };
+
+  const txWhere = isAdmin ? {} : { ownerId };
+  if (fromDate || toDate) {
+    txWhere.occurredAt = {};
+    if (fromDate) txWhere.occurredAt[Op.gte] = fromDate;
+    if (toDate) txWhere.occurredAt[Op.lte] = toDate;
+  }
+
+  const include = [
+    { model: Land, attributes: ["id", "name"], required: false },
+    ...(isAdmin ? [{ model: User, attributes: ["id", "email", "username", "role"], required: false }] : []),
+  ];
+
+  const transactions = await safe(
+    () =>
+      Transaction.findAll({
+        where: txWhere,
+        include,
+        order: [["occurred_at", "DESC"]],
+        limit: 500,
+      }),
+    []
+  );
+
+  const txCount = await safe(() => Transaction.count({ where: txWhere }), 0);
+  const revenue = await safe(() => Transaction.sum("amount", { where: { ...txWhere, type: "REVENUE" } }), 0);
+  const expense = await safe(() => Transaction.sum("amount", { where: { ...txWhere, type: "EXPENSE" } }), 0);
+  const profit = Number(revenue || 0) - Number(expense || 0);
+
+  return {
+    scope: isAdmin ? "ADMIN_GLOBAL" : "OWNER",
+    transactions,
+    summary: {
+      revenue: Number(Number(revenue || 0).toFixed(2)),
+      expense: Number(Number(expense || 0).toFixed(2)),
+      profit: Number(Number(profit || 0).toFixed(2)),
+      count: Number(txCount || 0),
+      from: fromDate ? fromDate.toISOString() : null,
+      to: toDate ? toDate.toISOString() : null,
+    },
+  };
+}
+
+module.exports = { getLandReportData, getEconomicsReportData, getReadingsCsv };

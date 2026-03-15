@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { authStore } from "../../auth/auth.store";
+import { useTheme } from "../../theme/ThemeProvider";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/endpoints";
 import { toastError, toastSuccess } from "../../utils/toast";
@@ -7,7 +8,8 @@ import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
-import { KeyRound, LogOut, MapPin, Shield, User as UserIcon } from "lucide-react";
+import { KeyRound, LogOut, MapPin, Shield, User as UserIcon, Sun, Moon, Crown } from "lucide-react";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 
 export default function ProfilePage() {
   const nav = useNavigate();
@@ -16,6 +18,7 @@ export default function ProfilePage() {
   const isAdmin = user?.role === "ADMIN";
 
   const displayName =
+    user?.name ||
     user?.username ||
     (user?.email ? String(user.email).split("@")[0] : "") ||
     (user?.role === "ADMIN" ? "Administrator" : "Utilizator");
@@ -56,7 +59,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     loadPreferences(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function openPrefs() {
@@ -185,12 +187,13 @@ export default function ProfilePage() {
 
   function logout() {
     authStore.logout();
-    nav("/login", { replace: true });
+    nav("/auth/login", { replace: true });
   }
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="card p-6 agri-pattern">
+      <div className="card p-6 agri-pattern relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center">
             <span className="text-foreground font-extrabold text-2xl">
@@ -220,17 +223,11 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="card p-5 agri-pattern">
+      <Motion.div className="card p-5 agri-pattern" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.05 }}>
         <div className="text-xl font-bold">Preferințe</div>
-        <div className="mt-4 card-soft p-4 flex items-center justify-between">
-          <div>
-            <div className="font-semibold">Temă întunecată</div>
-            <div className="text-sm muted">Activată permanent</div>
-          </div>
-          <Badge as="div" variant="success">ON</Badge>
-        </div>
+        <ThemePreference />
 
-        <div className="mt-3 card-soft p-4 flex items-center justify-between gap-3">
+        <div className="mt-3 card-soft p-4 flex items-center justify-between gap-3 transition-shadow hover:shadow-[0_8px_24px_rgba(16,185,129,0.1)]">
           <div>
             <div className="font-semibold">Locație globală</div>
             <div className="text-sm muted">
@@ -250,7 +247,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="mt-3 card-soft p-4 flex items-center justify-between gap-3">
+        <div className="mt-3 card-soft p-4 flex items-center justify-between gap-3 transition-shadow hover:shadow-[0_8px_24px_rgba(16,185,129,0.1)]">
           <div>
             <div className="font-semibold">Schimbă parola</div>
             <div className="text-sm muted">Actualizează parola contului</div>
@@ -264,8 +261,28 @@ export default function ProfilePage() {
             </span>
           </div>
         </div>
-      </div>
+      </Motion.div>
 
+      {/* Subscription Plan */}
+      <Motion.div className="card p-5 agri-pattern" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <div className="text-xl font-bold">Abonament</div>
+        <div className="mt-3 card-soft p-4 flex items-center justify-between gap-3 transition-shadow hover:shadow-[0_8px_24px_rgba(16,185,129,0.1)]">
+          <div>
+            <div className="font-semibold">{user?.plan || "STARTER"}</div>
+            <div className="text-sm muted">Planul tău curent</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="primary" onClick={() => nav("/app/plan")}>
+              Schimbă planul
+            </Button>
+            <span className="icon-chip" title="Abonament">
+              <Crown size={18} className="text-muted-foreground" />
+            </span>
+          </div>
+        </div>
+      </Motion.div>
+
+      <AnimatePresence>
       {prefsOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -275,8 +292,8 @@ export default function ProfilePage() {
             if (e.target === e.currentTarget) setPrefsOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card p-6">
+          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-md card p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-lg font-extrabold">Locație globală</div>
@@ -342,35 +359,37 @@ export default function ProfilePage() {
                 </div>
               ) : null}
             </div>
-          </div>
+          </Motion.div>
         </div>
       ) : null}
+      </AnimatePresence>
 
       {isAdmin ? (
-        <div className="card p-5 agri-pattern">
+        <Motion.div className="card p-5 agri-pattern" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.05 }}>
           <div className="text-xl font-bold">Admin</div>
           <div className="muted text-sm mt-1">Scurtături pentru administrare (global)</div>
 
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="card-soft p-4 flex items-center justify-between gap-3">
+            <div className="card-soft p-4 flex items-center justify-between gap-3 transition-shadow hover:shadow-[0_4px_20px_rgba(16,185,129,0.1)]">
               <div>
                 <div className="font-semibold">Utilizatori</div>
                 <div className="muted text-xs">Roluri • ștergere</div>
               </div>
-              <Button variant="primary" onClick={() => nav("/admin/users")}>Deschide</Button>
+              <Button variant="primary" onClick={() => nav("/app/admin/users")}>Deschide</Button>
             </div>
 
-            <div className="card-soft p-4 flex items-center justify-between gap-3">
+            <div className="card-soft p-4 flex items-center justify-between gap-3 transition-shadow hover:shadow-[0_4px_20px_rgba(16,185,129,0.1)]">
               <div>
                 <div className="font-semibold">Setări sistem</div>
                 <div className="muted text-xs">Senzori • backup</div>
               </div>
-              <Button variant="primary" onClick={() => nav("/admin/settings")}>Deschide</Button>
+              <Button variant="primary" onClick={() => nav("/app/admin/settings")}>Deschide</Button>
             </div>
           </div>
-        </div>
+        </Motion.div>
       ) : null}
 
+      <AnimatePresence>
       {pwdOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -380,8 +399,8 @@ export default function ProfilePage() {
             if (e.target === e.currentTarget) setPwdOpen(false);
           }}
         >
-          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card p-6">
+          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-md card p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-lg font-extrabold">Schimbă parola</div>
@@ -435,15 +454,52 @@ export default function ProfilePage() {
                 </Button>
               </div>
             </div>
-          </div>
+          </Motion.div>
         </div>
       ) : null}
+      </AnimatePresence>
 
-      <div className="card p-5 agri-pattern">
+      <Motion.div className="card p-5 agri-pattern" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.05 }}>
         <Button onClick={logout} variant="ghost" fullWidth className="rounded-2xl py-3">
           <LogOut size={18} /> Deconectare
         </Button>
+      </Motion.div>
+    </div>
+  );
+}
+
+function ThemePreference() {
+  const { theme, toggleTheme } = useTheme();
+
+  const themeLabel = theme === 'light' ? 'Light' : 'Dark';
+  const themeDescription = theme === 'light'
+    ? 'Interfață luminoasă'
+    : 'Interfață întunecată';
+
+  return (
+    <div className="mt-4 card-soft p-4 flex items-center justify-between">
+      <div>
+        <div className="font-semibold">Temă</div>
+        <div className="text-sm muted">{themeDescription}</div>
       </div>
+      <Motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={toggleTheme}
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 border border-primary/25 hover:bg-primary/15 transition-colors"
+      >
+        {theme === 'light' ? (
+          <>
+            <Sun size={18} className="text-primary" />
+            <span className="text-sm font-semibold text-primary">{themeLabel}</span>
+          </>
+        ) : (
+          <>
+            <Moon size={18} className="text-primary" />
+            <span className="text-sm font-semibold text-primary">{themeLabel}</span>
+          </>
+        )}
+      </Motion.button>
     </div>
   );
 }

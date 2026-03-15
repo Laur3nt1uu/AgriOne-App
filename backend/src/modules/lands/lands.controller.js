@@ -3,6 +3,7 @@ const ApiError = require("../../utils/ApiError");
 const { createLandSchema, updateLandSchema } = require("./lands.validation");
 const service = require("./lands.service");
 const { Land, User } = require("../../models");
+const { getLimits } = require("../../config/planLimits");
 
 const create = asyncHandler(async (req, res) => {
   const parsed = createLandSchema.safeParse(req.body);
@@ -10,6 +11,18 @@ const create = asyncHandler(async (req, res) => {
 
   const requestedOwnerId = parsed.data.ownerId;
   const ownerId = req.user?.role === "ADMIN" && requestedOwnerId ? requestedOwnerId : req.user.sub;
+
+  // Enforce plan limit on lands (skip for admins)
+  if (req.user?.role !== "ADMIN") {
+    const owner = await User.findByPk(ownerId, { attributes: ["plan"] });
+    const limits = getLimits(owner?.plan);
+    if (limits.maxLands !== Infinity) {
+      const count = await Land.count({ where: { ownerId } });
+      if (count >= limits.maxLands) {
+        throw new ApiError(403, `Planul tău (${owner?.plan || "STARTER"}) permite maxim ${limits.maxLands} terenuri. Fă upgrade pentru mai multe.`, null, "PLAN_LAND_LIMIT");
+      }
+    }
+  }
 
   const { ownerId: _ignore, ...payload } = parsed.data;
   const land = await service.createLand(ownerId, payload);

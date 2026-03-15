@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
       await api.auth.resetPassword({ token, password });
       setOk(true);
       toastSuccess("Parola a fost actualizată.");
-      setTimeout(() => nav("/login"), 900);
+      setTimeout(() => nav("/auth/login"), 900);
     } catch (e2) {
       toastError(e2, "Resetare eșuată.");
     } finally {
@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
       footer={
         <div>
           <span className="text-muted-foreground">Back to </span>
-          <Link to="/login" className="text-primary hover:underline font-medium transition-all hover:text-primary/80">
+          <Link to="/auth/login" className="text-primary hover:underline font-medium transition-all hover:text-primary/80">
             sign in
           </Link>
         </div>

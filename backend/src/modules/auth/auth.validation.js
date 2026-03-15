@@ -9,6 +9,12 @@ const registerSchema = z.object({
     .max(30, "Username-ul este prea lung.")
     .regex(/^[a-zA-Z0-9._-]+$/, "Username invalid. Folosește litere/cifre și . _ -")
     .optional(),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Numele trebuie să aibă cel puțin 2 caractere.")
+    .max(100, "Numele este prea lung.")
+    .optional(),
   password: z
     .string()
     .min(6, "Parola trebuie să aibă cel puțin 6 caractere.")
@@ -22,6 +28,17 @@ const loginSchema = z.object({
     .string()
     .min(1, "Parola este obligatorie.")
     .max(72, "Parola este prea lungă."),
+});
+
+const googleLoginSchema = z.object({
+  credential: z.string().min(10, "Credential Google invalid."),
+  user: z
+    .object({
+      email: z.string().email().optional(),
+      name: z.string().optional(),
+      picture: z.string().url().optional(),
+    })
+    .optional(),
 });
 
 const refreshSchema = z.object({
@@ -70,12 +87,20 @@ const updatePreferencesSchema = z.object({
     .optional(),
 });
 
+const changePlanSchema = z.object({
+  plan: z.enum(["STARTER", "PRO", "ENTERPRISE"], {
+    errorMap: () => ({ message: "Plan invalid." }),
+  }),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
+  googleLoginSchema,
   refreshSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   updatePreferencesSchema,
   changePasswordSchema,
+  changePlanSchema,
 };
