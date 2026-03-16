@@ -64,6 +64,12 @@ app.use("/api/admin", adminRoutes);
 const apiaRoutes = require("./modules/apia/apia.routes");
 app.use("/api/apia", apiaRoutes);
 
+const newsletterRoutes = require("./modules/newsletter/newsletter.routes");
+app.use("/api/newsletter", newsletterRoutes);
+
+const blogsRoutes = require("./modules/blogs/blogs.routes");
+app.use("/api/blogs", blogsRoutes);
+
 const notFound = require("./middlewares/notFound.middleware");
 const errorHandler = require("./middlewares/error.middleware");
 

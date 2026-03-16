@@ -73,6 +73,12 @@ ApiaParcel.belongsTo(Land, { foreignKey: "landId" });
 User.hasMany(ApiaParcel, { foreignKey: "ownerId" });
 ApiaParcel.belongsTo(User, { foreignKey: "ownerId" });
 
+const NewsletterSubscriberModel = require("./newsletterSubscriber.model");
+const NewsletterSubscriber = NewsletterSubscriberModel(sequelize);
+
+const BlogModel = require("./blog.model");
+const Blog = BlogModel(sequelize);
+
 module.exports = {
 	sequelize,
 	User,
@@ -85,4 +91,6 @@ module.exports = {
 	Transaction,
 	PasswordResetToken,
 	ApiaParcel,
+	NewsletterSubscriber,
+	Blog,
 };
