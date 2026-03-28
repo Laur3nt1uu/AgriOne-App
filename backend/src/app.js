@@ -70,6 +70,12 @@ app.use("/api/newsletter", newsletterRoutes);
 const blogsRoutes = require("./modules/blogs/blogs.routes");
 app.use("/api/blogs", blogsRoutes);
 
+const paymentsRoutes = require("./modules/payments/payments.routes");
+app.use("/api/payments", paymentsRoutes);
+
+const aiRoutes = require("./modules/ai/ai.routes");
+app.use("/api/ai", aiRoutes);
+
 const notFound = require("./middlewares/notFound.middleware");
 const errorHandler = require("./middlewares/error.middleware");
 

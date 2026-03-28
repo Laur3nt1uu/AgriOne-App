@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriOne - Configurare Senzori IoT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: rgba(24, 24, 27, 0.85);
+            --bg-secondary: rgba(39, 39, 42, 0.6);
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --primary: #22c55e;
+            --primary-dark: #16a34a;
+            --primary-glow: rgba(34, 197, 94, 0.4);
+            --accent: #3b82f6;
+            --accent-dark: #2563eb;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --border: rgba(63, 63, 70, 0.5);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --shadow: rgba(0, 0, 0, 0.5);
+            --code-bg: rgba(0, 0, 0, 0.6);
+        }
+
+        .light {
+            --bg: #fafafa;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-secondary: rgba(244, 244, 245, 0.9);
+            --text: #18181b;
+            --text-muted: #71717a;
+            --border: rgba(228, 228, 231, 0.9);
+            --shadow: rgba(0, 0, 0, 0.1);
+            --code-bg: rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+            font-weight: 400;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, var(--accent-glow) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, var(--primary-glow) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 100%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+
+        .header {
+            text-align: center;
+            padding: 4rem 0;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.875rem;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 48px var(--accent-glow), 0 0 0 1px rgba(59, 130, 246, 0.2);
+            transform: rotate(2deg);
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover .logo-icon {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            background: linear-gradient(135deg, var(--accent-glow), rgba(59, 130, 246, 0.1));
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            backdrop-filter: blur(12px);
+        }
+
+        .badge-intermediate {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1));
+            border-color: rgba(245, 158, 11, 0.4);
+            color: var(--warning);
+            margin-left: 0.5rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text) 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 750px;
+            margin: 0 auto 3rem;
+            line-height: 1.6;
+        }
+
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+
+        .info-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out both;
+            box-shadow: 0 8px 32px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px var(--shadow), 0 0 0 1px var(--accent-glow);
+        }
+
+        .info-card:nth-child(1) { animation-delay: 0.2s; }
+        .info-card:nth-child(2) { animation-delay: 0.3s; }
+        .info-card:nth-child(3) { animation-delay: 0.4s; }
+
+        .info-card-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: var(--accent);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+        }
+
+        .info-card-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .info-card-value {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            animation: fadeIn 0.8s ease-out 0.3s both;
+            box-shadow: 0 8px 32px var(--shadow);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: var(--bg-secondary);
+            border-radius: 9999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+            border-radius: 9999px;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 24px var(--accent-glow);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .step {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeIn 0.8s ease-out both;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px var(--shadow);
+        }
+
+        .step:nth-child(1) { animation-delay: 0.4s; }
+        .step:nth-child(2) { animation-delay: 0.5s; }
+        .step:nth-child(3) { animation-delay: 0.6s; }
+        .step:nth-child(4) { animation-delay: 0.7s; }
+
+        .step::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--primary), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .step:hover {
+            border-color: rgba(59, 130, 246, 0.6);
+            transform: translateY(-8px);
+            box-shadow: 0 24px 64px var(--shadow), 0 0 80px var(--accent-glow);
+        }
+
+        .step:hover::before {
+            opacity: 1;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .step-number {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 8px 32px var(--accent-glow);
+            position: relative;
+        }
+
+        .step-number::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 18px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .step:hover .step-number::after {
+            opacity: 0.3;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .step-duration {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .step-content {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 1.0625rem;
+            line-height: 1.7;
+        }
+
+        /* Enhanced component grid */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .component-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-glow) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .component-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px var(--shadow);
+        }
+
+        .component-item:hover::before {
+            opacity: 1;
+        }
+
+        .component-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: var(--accent);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .component-item:hover .component-icon {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+        }
+
+        .component-name {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            position: relative;
+            z-index: 1;
+        }
+
+        .component-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Enhanced circuit diagram mockup */
+        .circuit-diagram {
+            background: linear-gradient(135deg, rgba(24, 24, 27, 0.95), rgba(39, 39, 42, 0.9));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 16px 48px var(--shadow);
+        }
+
+        .circuit-diagram::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-glow) 0%, transparent 30%, var(--primary-glow) 70%, transparent 100%);
+            opacity: 0.3;
+        }
+
+        .circuit-board {
+            background: #1a3d2e;
+            border-radius: 12px;
+            padding: 2rem;
+            position: relative;
+            border: 2px solid #22c55e;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+        }
+
+        .esp32-board {
+            background: linear-gradient(135deg, #2a5490, #1e3b7a);
+            border-radius: 8px;
+            width: 200px;
+            height: 80px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .connection-lines {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .connection-line {
+            position: absolute;
+            background: var(--accent);
+            opacity: 0.6;
+            animation: pulse-line 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-line {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .sensor-component {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Enhanced code block */
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin: 2rem 0;
+            overflow: hidden;
+            box-shadow: 0 8px 32px var(--shadow);
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-lang {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .code-copy {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .code-copy:hover {
+            color: var(--accent);
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .code-content {
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.7;
+            color: var(--text);
+        }
+
+        .code-content .comment {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .code-content .keyword {
+            color: #c084fc;
+            font-weight: 600;
+        }
+
+        .code-content .string {
+            color: #86efac;
+        }
+
+        .code-content .function {
+            color: #60a5fa;
+            font-weight: 500;
+        }
+
+        .code-content .number {
+            color: #fbbf24;
+        }
+
+        .instructions {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .instructions li {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .instructions li:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateX(8px);
+        }
+
+        .check-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .check-icon svg {
+            width: 14px;
+            height: 14px;
+            color: white;
+            stroke-width: 3;
+        }
+
+        .instructions li span {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .tip, .warning, .danger {
+            display: flex;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            border-radius: 16px;
+            margin-top: 2rem;
+            border: 1px solid;
+            backdrop-filter: blur(12px);
+        }
+
+        .tip {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .tip-icon, .warning-icon, .danger-icon {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .tip-icon { color: var(--primary); }
+        .warning-icon { color: var(--warning); }
+        .danger-icon { color: var(--danger); }
+
+        .tip-content {
+            font-size: 0.9375rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .tip-content strong {
+            font-weight: 700;
+        }
+
+        .tip .tip-content strong { color: var(--primary); }
+        .warning .tip-content strong { color: var(--warning); }
+        .danger .tip-content strong { color: var(--danger); }
+
+        .completion {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 2px solid rgba(59, 130, 246, 0.4);
+            border-radius: 24px;
+            padding: 4rem;
+            text-align: center;
+            margin-top: 3rem;
+            animation: fadeIn 0.8s ease-out 0.8s both;
+            box-shadow: 0 20px 80px var(--shadow);
+        }
+
+        .completion-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            box-shadow: 0 20px 80px var(--accent-glow);
+            animation: pulse-completion 2s ease-in-out infinite;
+            position: relative;
+        }
+
+        .completion-icon::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.3;
+            animation: pulse-ring 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-completion {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.1; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+
+        .completion h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .completion p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 1.125rem;
+            line-height: 1.7;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px var(--primary-glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 48px var(--primary-glow);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: 0 8px 32px var(--shadow);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent);
+            transform: scale(1.1);
+            box-shadow: 0 12px 48px var(--shadow), 0 0 0 4px var(--accent-glow);
+        }
+
+        .theme-toggle svg {
+            width: 28px;
+            height: 28px;
+            color: var(--text);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover svg {
+            transform: rotate(20deg);
+        }
+
+        @media print {
+            .bg-pattern, .theme-toggle { display: none; }
+            body { background: white; color: black; }
+            .step { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 2rem 1rem; }
+            h1 { font-size: 2.25rem; }
+            .step { padding: 2rem; }
+            .step-header { flex-direction: column; gap: 1rem; }
+            .info-cards { grid-template-columns: 1fr; }
+            .component-grid { grid-template-columns: repeat(2, 1fr); }
+            .sensors-grid { grid-template-columns: 1fr; }
+            .completion { padding: 3rem 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+
+    <button class="theme-toggle" onclick="toggleTheme()" title="Schimba tema">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+    </button>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <path d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M12 12v.01"/>
+                        <circle cx="12" cy="12" r="2"/>
+                    </svg>
+                </div>
+                AgriOne
+            </div>
+            <div class="badge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                    <rect x="9" y="9" width="6" height="6"/>
+                    <line x1="9" y1="1" x2="9" y2="4"/>
+                    <line x1="15" y1="1" x2="15" y2="4"/>
+                    <line x1="9" y1="20" x2="9" y2="23"/>
+                    <line x1="15" y1="20" x2="15" y2="23"/>
+                    <line x1="20" y1="9" x2="23" y2="9"/>
+                    <line x1="20" y1="14" x2="23" y2="14"/>
+                    <line x1="1" y1="9" x2="4" y2="9"/>
+                    <line x1="1" y1="14" x2="4" y2="14"/>
+                </svg>
+                Ghid Tehnic IoT
+            </div>
+            <span class="badge badge-intermediate">Nivel Intermediar</span>
+            <h1>Configurare Senzori <span>IoT</span></h1>
+            <p class="subtitle">Ghid complet pentru instalarea si configurarea senzorilor ESP32/Arduino pentru monitorizarea avansata a terenurilor agricole cu conectivitate WiFi si transmisie de date in timp real.</p>
+
+            <div class="info-cards">
+                <div class="info-card">
+                    <div class="info-card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                    </div>
+                    <div class="info-card-label">Durata estimata</div>
+                    <div class="info-card-value">45 minute</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                        </svg>
+                    </div>
+                    <div class="info-card-label">Nivel dificultate</div>
+                    <div class="info-card-value">Intermediar</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                            <rect x="9" y="9" width="6" height="6"/>
+                        </svg>
+                    </div>
+                    <div class="info-card-label">Componente necesare</div>
+                    <div class="info-card-value">5 piese + accesorii</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span class="progress-title">Progresul tau</span>
+                <span class="progress-text"><span id="completed">0</span> din 4 pasi completati</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="steps">
+            <!-- Step 1 -->
+            <div class="step" data-step="1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div>
+                        <h3 class="step-title">Componentele Necesare</h3>
+                        <span class="step-duration">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            10 minute
+                        </span>
+                    </div>
+                </div>
+                <p class="step-content">
+                    Pentru a construi un senzor IoT compatibil cu AgriOne, vei avea nevoie de componentele de mai jos. Toate pot fi achizitionate online de pe eMag, Altex sau magazinele de electronica specializate.
+                </p>
+
+                <div class="component-grid">
+                    <div class="component-item">
+                        <div class="component-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </div>
+                        <div class="component-name">ESP32 DevKit</div>
+                        <div class="component-desc">Microcontroller cu WiFi integrat, 30-40 lei</div>
+                    </div>
+                    <div class="component-item">
+                        <div class="component-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 4v10.54a4 4 0 11-4 0V4a2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <div class="component-name">DHT22</div>
+                        <div class="component-desc">Senzor temperatura + umiditate aer, 15-20 lei</div>
+                    </div>
+                    <div class="component-item">
+                        <div class="component-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+                            </svg>
+                        </div>
+                        <div class="component-name">Soil Moisture</div>
+                        <div class="component-desc">Senzor umiditate sol capacitiv, 10-15 lei</div>
+                    </div>
+                    <div class="component-item">
+                        <div class="component-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"/>
+                                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                            </svg>
+                        </div>
+                        <div class="component-name">LDR GL5528</div>
+                        <div class="component-desc">Senzor intensitate lumina, 2-5 lei</div>
+                    </div>
+                    <div class="component-item">
+                        <div class="component-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <path d="M8 12h8M8 16h8M8 8h8"/>
+                            </svg>
+                        </div>
+                        <div class="component-name">Breadboard</div>
+                        <div class="component-desc">Placa test + fire jumper, 10-15 lei</div>
+                    </div>
+                    <div class="component-item">
+                        <div class="component-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 18.5L5 12l7-6.5L19 12l-7 6.5z"/>
+                                <path d="M12 12v6.5"/>
+                            </svg>
+                        </div>
+                        <div class="component-name">Rezistor 10kΩ</div>
+                        <div class="component-desc">Pentru divizor tensiune LDR, <1 leu</div>
+                    </div>
+                </div>
+
+                <ul class="instructions">
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span><strong>Cablu USB-C sau Micro-USB</strong> pentru programarea ESP32 si alimentare in teste</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span><strong>Fire jumper</strong> mascul-mascul si mascul-femela pentru conexiuni pe breadboard</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Optional: <strong>carcasa waterproof IP65</strong> pentru instalare in exterior (20-30 lei)</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Optional: <strong>baterie LiPo 3.7V</strong> si modul incarcare pentru autonomie (40-50 lei)</span>
+                    </li>
+                </ul>
+
+                <div class="tip">
+                    <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                    <div class="tip-content">
+                        <strong>Recomandare:</strong> Alege senzori capacitivi pentru umiditatea solului - sunt mai durabili decat cei cu sonde metalice si nu se corodeaza in timp. Cost total estimat: 100-150 lei.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step" data-step="2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div>
+                        <h3 class="step-title">Asamblarea Hardware</h3>
+                        <span class="step-duration">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            15 minute
+                        </span>
+                    </div>
+                </div>
+                <p class="step-content">
+                    Conecteaza componentele la ESP32 conform schemei electronice de mai jos. Verifica toate conexiunile de doua ori inainte de alimentare pentru a evita deteriorarea componentelor.
+                </p>
+
+                <div class="circuit-diagram">
+                    <div class="circuit-board">
+                        <div class="esp32-board">
+                            ESP32 DevKit V1
+                        </div>
+                        <div class="sensors-grid">
+                            <div class="sensor-component">
+                                DHT22<br/>
+                                <small>VCC→3.3V<br/>DATA→GPIO4<br/>GND→GND</small>
+                            </div>
+                            <div class="sensor-component">
+                                Soil Moisture<br/>
+                                <small>VCC→3.3V<br/>AOUT→GPIO34<br/>GND→GND</small>
+                            </div>
+                            <div class="sensor-component">
+                                LDR + 10kΩ<br/>
+                                <small>Divizor tensiune<br/>OUTPUT→GPIO35<br/>GND→GND</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 1rem; color: var(--text-muted); font-size: 0.875rem;">
+                        ⚡ Schema de conexiuni pentru senzori AgriOne IoT
+                    </div>
+                </div>
+
+                <ul class="instructions">
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span><strong>DHT22:</strong> Pinul VCC la 3.3V, pinul GND la GND, pinul DATA la GPIO4 pe ESP32</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span><strong>Soil Moisture:</strong> VCC la 3.3V, GND la GND, AOUT (analog out) la GPIO34</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span><strong>LDR:</strong> Un terminal la 3.3V prin rezistor 10kΩ, celalalt terminal la GPIO35 si GND</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Verifica toate conexiunile cu multimetrul inainte de a conecta ESP32 la alimentare</span>
+                    </li>
+                </ul>
+
+                <div class="danger">
+                    <svg class="danger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <div class="tip-content">
+                        <strong>Foarte Important:</strong> Nu conecta nimic la 5V! ESP32 functioneaza exclusiv la 3.3V. Tensiunea de 5V poate distruge definitiv microcontrollerul si senzorii conectati.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step" data-step="3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div>
+                        <h3 class="step-title">Programarea Firmware</h3>
+                        <span class="step-duration">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            15 minute
+                        </span>
+                    </div>
+                </div>
+                <p class="step-content">
+                    Incarca firmware-ul AgriOne pe ESP32 folosind Arduino IDE. Codul trimite automat datele catre API-ul AgriOne la fiecare 5 minute si intra in modul sleep pentru economisirea bateriei.
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">C++ / Arduino IDE</span>
+                        <button class="code-copy" onclick="copyCode(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                            </svg>
+                            Copiaza codul
+                        </button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="comment">/*
+ * AgriOne IoT Sensor Firmware v2.1
+ * Compatible cu ESP32 DevKit V1 si senzori DHT22, Soil Moisture, LDR
+ * Transmisie automata la fiecare 5 minute cu deep sleep
+ */</span>
+
+<span class="keyword">#include</span> <span class="string">&lt;WiFi.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;HTTPClient.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;ArduinoJson.h&gt;</span>
+<span class="keyword">#include</span> <span class="string">&lt;DHT.h&gt;</span>
+
+<span class="comment">// Configuratie retea WiFi</span>
+<span class="keyword">const char*</span> ssid = <span class="string">"NUMELE_WIFI_TAU"</span>;
+<span class="keyword">const char*</span> password = <span class="string">"PAROLA_WIFI_TAU"</span>;
+
+<span class="comment">// API Key din AgriOne > Profil > Senzori</span>
+<span class="keyword">const char*</span> apiKey = <span class="string">"agrione_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span>;
+<span class="keyword">const char*</span> sensorId = <span class="string">"sensor_001"</span>; <span class="comment">// ID unic pentru acest senzor</span>
+
+<span class="comment">// Definire pini senzori conform schemei</span>
+<span class="keyword">#define</span> DHT_PIN <span class="number">4</span>       <span class="comment">// GPIO4 pentru DHT22</span>
+<span class="keyword">#define</span> SOIL_PIN <span class="number">34</span>     <span class="comment">// GPIO34 pentru soil moisture (analog)</span>
+<span class="keyword">#define</span> LDR_PIN <span class="number">35</span>      <span class="comment">// GPIO35 pentru LDR (analog)</span>
+
+<span class="comment">// Initializare senzor DHT22</span>
+DHT <span class="function">dht</span>(DHT_PIN, DHT22);
+
+<span class="comment">// Configurare deep sleep (5 minute = 300 secunde)</span>
+<span class="keyword">#define</span> SLEEP_TIME_US <span class="number">300000000ULL</span> <span class="comment">// 5 minute in microsecunde</span>
+
+<span class="keyword">void</span> <span class="function">setup</span>() {
+  Serial.<span class="function">begin</span>(<span class="number">115200</span>);
+  <span class="function">delay</span>(<span class="number">1000</span>);
+
+  Serial.<span class="function">println</span>(<span class="string">"AgriOne IoT Sensor v2.1"</span>);
+  Serial.<span class="function">println</span>(<span class="string">"Initializare senzori..."</span>);
+
+  <span class="comment">// Initializare senzori</span>
+  dht.<span class="function">begin</span>();
+
+  <span class="comment">// Conectare la WiFi</span>
+  <span class="function">connectWiFi</span>();
+
+  <span class="comment">// Citire si trimitere date</span>
+  <span class="function">readAndSendData</span>();
+
+  <span class="comment">// Intrare in deep sleep pentru economisirea bateriei</span>
+  Serial.<span class="function">println</span>(<span class="string">"Intrare in sleep mode pentru 5 minute..."</span>);
+  esp_sleep_enable_timer_wakeup(SLEEP_TIME_US);
+  esp_deep_sleep_start();
+}
+
+<span class="keyword">void</span> <span class="function">loop</span>() {
+  <span class="comment">// Nu se executa niciodata datorita deep sleep</span>
+}
+
+<span class="keyword">void</span> <span class="function">connectWiFi</span>() {
+  WiFi.<span class="function">begin</span>(ssid, password);
+  Serial.<span class="function">print</span>(<span class="string">"Conectare la WiFi"</span>);
+
+  <span class="keyword">int</span> attempts = <span class="number">0</span>;
+  <span class="keyword">while</span> (WiFi.<span class="function">status</span>() != WL_CONNECTED && attempts < <span class="number">20</span>) {
+    <span class="function">delay</span>(<span class="number">500</span>);
+    Serial.<span class="function">print</span>(<span class="string">"."</span>);
+    attempts++;
+  }
+
+  <span class="keyword">if</span> (WiFi.<span class="function">status</span>() == WL_CONNECTED) {
+    Serial.<span class="function">println</span>();
+    Serial.<span class="function">println</span>(<span class="string">"WiFi conectat!"</span>);
+    Serial.<span class="function">print</span>(<span class="string">"IP: "</span>);
+    Serial.<span class="function">println</span>(WiFi.<span class="function">localIP</span>());
+  } <span class="keyword">else</span> {
+    Serial.<span class="function">println</span>(<span class="string">"Eroare conectare WiFi!"</span>);
+  }
+}
+
+<span class="keyword">void</span> <span class="function">readAndSendData</span>() {
+  <span class="comment">// Citire senzor DHT22</span>
+  <span class="keyword">float</span> temperature = dht.<span class="function">readTemperature</span>();
+  <span class="keyword">float</span> airHumidity = dht.<span class="function">readHumidity</span>();
+
+  <span class="comment">// Citire senzor umiditate sol</span>
+  <span class="keyword">int</span> soilRaw = <span class="function">analogRead</span>(SOIL_PIN);
+  <span class="keyword">float</span> soilMoisture = <span class="function">map</span>(soilRaw, <span class="number">0</span>, <span class="number">4095</span>, <span class="number">100</span>, <span class="number">0</span>); <span class="comment">// Conversie la procent</span>
+
+  <span class="comment">// Citire senzor lumina LDR</span>
+  <span class="keyword">int</span> ldrRaw = <span class="function">analogRead</span>(LDR_PIN);
+  <span class="keyword">float</span> lightLevel = <span class="function">map</span>(ldrRaw, <span class="number">0</span>, <span class="number">4095</span>, <span class="number">0</span>, <span class="number">100000</span>); <span class="comment">// Conversie la lux (aproximativ)</span>
+
+  <span class="comment">// Afisare date in Serial Monitor pentru debug</span>
+  Serial.<span class="function">println</span>(<span class="string">"=== Date Senzori ==="</span>);
+  Serial.<span class="function">print</span>(<span class="string">"Temperatura: "</span>); Serial.<span class="function">print</span>(temperature); Serial.<span class="function">println</span>(<span class="string">"°C"</span>);
+  Serial.<span class="function">print</span>(<span class="string">"Umiditate aer: "</span>); Serial.<span class="function">print</span>(airHumidity); Serial.<span class="function">println</span>(<span class="string">"%"</span>);
+  Serial.<span class="function">print</span>(<span class="string">"Umiditate sol: "</span>); Serial.<span class="function">print</span>(soilMoisture); Serial.<span class="function">println</span>(<span class="string">"%"</span>);
+  Serial.<span class="function">print</span>(<span class="string">"Intensitate lumina: "</span>); Serial.<span class="function">print</span>(lightLevel); Serial.<span class="function">println</span>(<span class="string">" lux"</span>);
+
+  <span class="comment">// Trimitere date la AgriOne API</span>
+  <span class="function">sendToAgriOne</span>(temperature, airHumidity, soilMoisture, lightLevel);
+}
+
+<span class="keyword">void</span> <span class="function">sendToAgriOne</span>(<span class="keyword">float</span> temp, <span class="keyword">float</span> airHum, <span class="keyword">float</span> soilMoist, <span class="keyword">float</span> light) {
+  <span class="keyword">if</span> (WiFi.<span class="function">status</span>() == WL_CONNECTED) {
+    HTTPClient http;
+    http.<span class="function">begin</span>(<span class="string">"https://api.agri-one.com/v1/sensors/readings"</span>);
+    http.<span class="function">addHeader</span>(<span class="string">"Content-Type"</span>, <span class="string">"application/json"</span>);
+    http.<span class="function">addHeader</span>(<span class="string">"Authorization"</span>, <span class="string">"Bearer "</span> + String(apiKey));
+
+    <span class="comment">// Creare JSON payload</span>
+    DynamicJsonDocument doc(<span class="number">512</span>);
+    doc[<span class="string">"sensor_id"</span>] = sensorId;
+    doc[<span class="string">"temperature"</span>] = temp;
+    doc[<span class="string">"air_humidity"</span>] = airHum;
+    doc[<span class="string">"soil_moisture"</span>] = soilMoist;
+    doc[<span class="string">"light_level"</span>] = light;
+    doc[<span class="string">"battery_level"</span>] = <span class="number">85</span>; <span class="comment">// Placeholder pentru citire baterie</span>
+    doc[<span class="string">"timestamp"</span>] = <span class="function">millis</span>();
+
+    String payload;
+    <span class="function">serializeJson</span>(doc, payload);
+
+    <span class="keyword">int</span> httpCode = http.<span class="function">POST</span>(payload);
+
+    <span class="keyword">if</span> (httpCode > <span class="number">0</span>) {
+      String response = http.<span class="function">getString</span>();
+      Serial.<span class="function">print</span>(<span class="string">"HTTP Response: "</span>);
+      Serial.<span class="function">println</span>(httpCode);
+      Serial.<span class="function">println</span>(response);
+    } <span class="keyword">else</span> {
+      Serial.<span class="function">print</span>(<span class="string">"Eroare HTTP: "</span>);
+      Serial.<span class="function">println</span>(httpCode);
+    }
+
+    http.<span class="function">end</span>();
+  } <span class="keyword">else</span> {
+    Serial.<span class="function">println</span>(<span class="string">"WiFi deconectat!"</span>);
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <ul class="instructions">
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Instaleaza <strong>Arduino IDE</strong> si adauga board-ul ESP32 din Board Manager</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Instaleaza librariile: <strong>DHT sensor library</strong> si <strong>ArduinoJson</strong> din Library Manager</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Inlocuieste <strong>NUMELE_WIFI_TAU</strong> si <strong>PAROLA_WIFI_TAU</strong> cu datele retelei tale</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Copiaza <strong>API Key</strong> din AgriOne > Profil > Senzori si introdu-l in cod</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Selecteaza <strong>ESP32 Dev Module</strong>, portul corect si apasa <strong>Upload</strong></span>
+                    </li>
+                </ul>
+
+                <div class="tip">
+                    <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                    <div class="tip-content">
+                        <strong>Cod complet disponibil:</strong> Descarci codul complet cu toate functiile avansate de pe <strong>github.com/agrione/esp32-firmware</strong>. Include gestionare erori, calibrare automata si optimizari baterie.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step" data-step="4">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div>
+                        <h3 class="step-title">Calibrarea si Testare</h3>
+                        <span class="step-duration">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            10 minute
+                        </span>
+                    </div>
+                </div>
+                <p class="step-content">
+                    Dupa instalarea firmware-ului, calibreaza senzorii pentru a obtine citiri precise si testeaza transmisia datelor in AgriOne dashboard. Acest proces asigura monitorizarea corecta a conditiilor.
+                </p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Serial Monitor Output</span>
+                        <button class="code-copy" onclick="copyCode(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                            </svg>
+                            Copiaza output
+                        </button>
+                    </div>
+                    <div class="code-content">
+                        <pre><span class="comment">AgriOne IoT Sensor v2.1</span>
+<span class="comment">Initializare senzori...</span>
+<span class="string">Conectare la WiFi..........</span>
+<span class="keyword">WiFi conectat!</span>
+<span class="string">IP: 192.168.1.105</span>
+
+<span class="keyword">=== Date Senzori ===</span>
+<span class="function">Temperatura: 22.5°C</span>
+<span class="function">Umiditate aer: 65.2%</span>
+<span class="function">Umiditate sol: 45.8%</span>
+<span class="function">Intensitate lumina: 35200 lux</span>
+
+<span class="keyword">HTTP Response: 200</span>
+<span class="string">{"status":"success","message":"Data received","sensor_id":"sensor_001"}</span>
+
+<span class="comment">Intrare in sleep mode pentru 5 minute...</span></pre>
+                    </div>
+                </div>
+
+                <ul class="instructions">
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Deschide <strong>Serial Monitor</strong> (115200 baud) pentru a verifica functionarea senzorului</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Pentru calibrarea solului: plaseaza senzorul in <strong>sol uscat</strong> si noteaza valoarea minima</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Plaseaza senzorul in <strong>sol saturat cu apa</strong> si noteaza valoarea maxima</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>In AgriOne > Senzori > Calibrare, introdu valorile <strong>min/max</strong> pentru mapare corecta</span>
+                    </li>
+                    <li>
+                        <div class="check-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <span>Verifica in <strong>Dashboard</strong> ca datele apar si sunt realiste (HTTP Response 200)</span>
+                    </li>
+                </ul>
+
+                <div class="warning">
+                    <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <div class="tip-content">
+                        <strong>IMPORTANT:</strong> Recalibreaza senzorii de umiditate la schimbarea locatiei, tipului de sol sau sezonului pentru rezultate optime. Senzorii pot deriva in timp.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completion -->
+        <div class="completion">
+            <div class="completion-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <path d="M22 4L12 14.01l-3-3"/>
+                </svg>
+            </div>
+            <h2>🚀 Senzorul tau IoT este operational!</h2>
+            <p>Felicitari! Acum ai un sistem complet de monitorizare agriculturala IoT. Datele vor fi transmise automat la fiecare 5 minute in dashboard-ul AgriOne pentru analiza in timp real.</p>
+            <a href="/" class="btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Inapoi la Dashboard AgriOne
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            const theme = document.body.classList.contains('light') ? 'light' : 'dark';
+            localStorage.setItem('tutorial-theme', theme);
+        }
+
+        // Load saved theme
+        if (localStorage.getItem('tutorial-theme') === 'light') {
+            document.body.classList.add('light');
+        }
+
+        function copyCode(btn) {
+            const codeBlock = btn.closest('.code-block').querySelector('pre');
+            const code = codeBlock.textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copiat!';
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                }, 2000);
+            });
+        }
+
+        // Enhanced progress tracking
+        const steps = document.querySelectorAll('.step');
+        let completedSteps = 0;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const stepNum = parseInt(entry.target.dataset.step);
+                    if (stepNum > completedSteps) {
+                        completedSteps = stepNum;
+                        updateProgress();
+                    }
+                }
+            });
+        }, { threshold: 0.3 });
+
+        steps.forEach(step => observer.observe(step));
+
+        function updateProgress() {
+            const percentage = (completedSteps / steps.length) * 100;
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('completed').textContent = completedSteps;
+        }
+
+        // Add smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add subtle parallax effect to background
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const rate = scrolled * -0.5;
+            document.querySelector('.bg-pattern').style.transform = `translateY(${rate}px)`;
+        });
+    </script>
+</body>
+</html>

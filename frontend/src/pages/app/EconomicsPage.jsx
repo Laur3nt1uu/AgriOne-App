@@ -9,6 +9,7 @@ import { EconomicsSkeleton } from "../../ui/skeleton";
 import { ArrowDownRight, ArrowUpRight, Calendar, ChartLine, ReceiptText, Target, TrendingDown, TrendingUp, Wallet, X } from "lucide-react";
 import { authStore } from "../../auth/auth.store";
 import { useConfirm } from "../../components/confirm/ConfirmProvider";
+import PremiumFeatureGate from "../../components/PremiumFeatureGate";
 
 function money(x) {
   const n = Number(x || 0);
@@ -292,9 +293,14 @@ export default function EconomicsPage() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button onClick={() => load()} variant="ghost" size="sm">Actualizează</Button>
-            <Button onClick={() => setExportOpen(true)} variant="ghost" size="sm" disabled={exporting}>
-              {exporting ? "Export..." : "Exportă"}
-            </Button>
+            <PremiumFeatureGate
+              feature="pdf_exports"
+              customMessage="Exportul PDF este disponibil în planul Pro pentru rapoarte profesionale."
+            >
+              <Button onClick={() => setExportOpen(true)} variant="ghost" size="sm" disabled={exporting}>
+                {exporting ? "Export..." : "Exportă"}
+              </Button>
+            </PremiumFeatureGate>
             <span className="icon-chip hidden sm:inline-flex" title="Economie">
               <Wallet size={20} className="text-muted-foreground" />
             </span>

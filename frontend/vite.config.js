@@ -91,6 +91,9 @@ export default defineConfig({
         // Cache static assets pentru performanță
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
 
+        // Exclude tutorial HTML files from precache (serve them directly)
+        globIgnores: ['**/tutorials/**'],
+
         // Runtime caching strategies
         runtimeCaching: [
           {
@@ -162,7 +165,7 @@ export default defineConfig({
 
         // Navigare offline
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/],
+        navigateFallbackDenylist: [/^\/api/, /^\/tutorials/],
 
         // Skip waiting pentru update instant
         skipWaiting: true,

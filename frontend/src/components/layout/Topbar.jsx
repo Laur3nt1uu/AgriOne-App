@@ -6,6 +6,7 @@ import { authStore } from "../../auth/auth.store";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Badge } from "../../ui/badge";
 import { StatusBadge } from "../agri/StatusBadge";
+import { useTranslation } from "react-i18next";
 
 const titleMap = {
   "/app/dashboard": "Dashboard",
@@ -22,6 +23,7 @@ export default function Topbar({ onMenuClick }) {
   const loc = useLocation();
   const nav = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
 
   const pathParts = loc.pathname.split("/");
   const base = pathParts.length >= 3 && pathParts[1] === "app" ?
@@ -94,7 +96,7 @@ export default function Topbar({ onMenuClick }) {
             whileTap={{ scale: 0.95 }}
             onClick={toggleTheme}
             className="p-2 rounded-xl hover:bg-card/60 transition-colors"
-            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            title={theme === 'light' ? t('ui.theme.switchToDark') : t('ui.theme.switchToLight')}
           >
             {theme === 'light' ? (
               <Moon className="w-5 h-5 text-foreground" />
@@ -128,7 +130,7 @@ export default function Topbar({ onMenuClick }) {
               <DropdownMenu.Content
                 align="end"
                 sideOffset={10}
-                className="z-50 w-[260px] rounded-2xl border border-border/30 bg-card backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] p-1.5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
+                className="z-50 w-64 max-w-[90vw] rounded-2xl border border-border/30 bg-card backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.25)] p-1.5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
               >
                 {/* User info header */}
                 <div className="px-3.5 py-3 rounded-xl bg-gradient-to-br from-primary/8 via-primary/4 to-transparent">
@@ -163,7 +165,7 @@ export default function Topbar({ onMenuClick }) {
                   className="px-3.5 py-2.5 rounded-xl cursor-pointer outline-none hover:bg-foreground/5 data-[highlighted]:bg-foreground/5 flex items-center gap-3 transition-colors"
                 >
                   <Globe size={16} className="text-muted-foreground" />
-                  <span className="text-sm font-medium">Landing Page</span>
+                  <span className="text-sm font-medium">{t('ui.navigation.landingPage')}</span>
                 </DropdownMenu.Item>
 
                 <DropdownMenu.Item

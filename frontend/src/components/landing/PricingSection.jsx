@@ -6,6 +6,9 @@ import { authStore } from "../../auth/auth.store";
 import { useLanguage } from "../../i18n/LanguageProvider";
 import { Button } from "../../ui/button";
 import ContactModal from "../ContactModal";
+import PaymentSimulationModal from "../PaymentSimulationModal";
+import { api } from "../../api/endpoints";
+import { toastSuccess, toastError } from "../../utils/toast";
 
 const PLAN_ORDER = { STARTER: 0, PRO: 1, ENTERPRISE: 2 };
 
@@ -13,8 +16,11 @@ export default function PricingSection() {
   const navigate = useNavigate();
   const isAuthenticated = authStore.isAuthed();
   const userPlan = authStore.getUser()?.plan || "STARTER";
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [contactOpen, setContactOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const tiers = [
     { key: "starter", planKey: "STARTER", popular: false },
@@ -35,7 +41,26 @@ export default function PricingSection() {
     return { text: t("pricing.ctaChangePlan"), disabled: false };
   };
 
-  const handleCTA = (tier) => {
+  const handlePaymentSuccess = async (plan) => {
+    try {
+      const res = await api.payments.simulate({ plan });
+      if (res.ok) {
+        const newUser = res.user || { ...authStore.getUser(), plan };
+        authStore.updateUser(newUser);
+        toastSuccess(language === 'ro' ? `Bine ai venit în planul ${plan}!` : `Welcome to ${plan} plan!`);
+        // Redirect to dashboard after successful payment
+        setTimeout(() => {
+          navigate("/app/dashboard");
+        }, 500);
+      }
+    } catch (err) {
+      toastError(err);
+    }
+    setPaymentModalOpen(false);
+    setSelectedPlan(null);
+  };
+
+  const handleCTA = async (tier) => {
     if (tier.planKey === "ENTERPRISE") {
       setContactOpen(true);
       return;
@@ -43,7 +68,13 @@ export default function PricingSection() {
     if (!isAuthenticated) {
       navigate("/auth/register");
     } else {
-      navigate("/app/plan");
+      // Open payment modal for PRO upgrade
+      if (tier.planKey === "PRO" && userPlan !== "PRO") {
+        setSelectedPlan(tier.planKey);
+        setPaymentModalOpen(true);
+      } else {
+        navigate("/app/plan");
+      }
     }
   };
 
@@ -206,12 +237,12 @@ export default function PricingSection() {
                       whileTap={cta.disabled ? {} : { scale: 0.97 }}
                     >
                       <Button
-                        onClick={() => !cta.disabled && handleCTA(tier)}
+                        onClick={() => !cta.disabled && !loading && handleCTA(tier)}
                         variant={isCurrent ? "outline" : isPro ? "primary" : "outline"}
-                        className={`w-full font-semibold py-3 ${cta.disabled ? "opacity-60 cursor-default" : ""}`}
-                        disabled={cta.disabled}
+                        className={`w-full font-semibold py-3 ${cta.disabled || loading ? "opacity-60 cursor-default" : ""}`}
+                        disabled={cta.disabled || loading}
                       >
-                        {cta.text}
+                        {loading && tier.planKey === "PRO" ? "Processing..." : cta.text}
                       </Button>
                     </Motion.div>
                   </div>
@@ -221,6 +252,18 @@ export default function PricingSection() {
           })}
         </div>
       </div>
+
+      {/* Payment Simulation Modal */}
+      <PaymentSimulationModal
+        isOpen={paymentModalOpen}
+        onClose={() => {
+          setPaymentModalOpen(false);
+          setSelectedPlan(null);
+        }}
+        plan={selectedPlan}
+        onPaymentSuccess={handlePaymentSuccess}
+        language={language}
+      />
 
       {/* Enterprise Contact Modal */}
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />

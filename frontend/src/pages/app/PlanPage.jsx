@@ -8,17 +8,20 @@ import { useLanguage } from "../../i18n/LanguageProvider";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import ContactModal from "../../components/ContactModal";
+import PaymentSimulationModal from "../../components/PaymentSimulationModal";
 
 const PLAN_ORDER = { STARTER: 0, PRO: 1, ENTERPRISE: 2 };
 const PLAN_ICONS = { STARTER: Sparkles, PRO: Crown, ENTERPRISE: Building2 };
 
 export default function PlanPage() {
   const nav = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [currentPlan, setCurrentPlan] = useState(authStore.getPlan());
   const [confirming, setConfirming] = useState(null);
   const [loading, setLoading] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState(null);
 
   const tiers = [
     { key: "starter", planKey: "STARTER", popular: false },
@@ -26,8 +29,35 @@ export default function PlanPage() {
     { key: "enterprise", planKey: "ENTERPRISE", popular: false },
   ];
 
+  const handlePaymentSuccess = async (plan) => {
+    try {
+      // Call the simulate endpoint to update the plan in database
+      const res = await api.payments.simulate({ plan });
+      if (res.ok) {
+        const newUser = res.user || { ...authStore.getUser(), plan };
+        authStore.updateUser(newUser);
+        setCurrentPlan(plan);
+        toastSuccess(language === 'ro' ? `Bine ai venit în planul ${plan}!` : `Welcome to ${plan} plan!`);
+      }
+    } catch (err) {
+      toastError(err);
+    }
+    setPaymentModalOpen(false);
+    setSelectedPlanForPayment(null);
+    setConfirming(null);
+  };
+
   const handleChange = async () => {
     if (!confirming) return;
+
+    // For paid plans, open payment modal
+    if (['PRO', 'ENTERPRISE'].includes(confirming)) {
+      setSelectedPlanForPayment(confirming);
+      setPaymentModalOpen(true);
+      return;
+    }
+
+    // For downgrade to STARTER, use direct API call
     setLoading(true);
     try {
       const res = await api.auth.changePlan({ plan: confirming });
@@ -195,6 +225,19 @@ export default function PlanPage() {
           </Motion.div>
         )}
       </AnimatePresence>
+
+      {/* Payment Simulation Modal */}
+      <PaymentSimulationModal
+        isOpen={paymentModalOpen}
+        onClose={() => {
+          setPaymentModalOpen(false);
+          setSelectedPlanForPayment(null);
+          setConfirming(null);
+        }}
+        plan={selectedPlanForPayment}
+        onPaymentSuccess={handlePaymentSuccess}
+        language={language}
+      />
 
       {/* Enterprise Contact Modal */}
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />

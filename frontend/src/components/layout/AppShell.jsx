@@ -7,6 +7,7 @@ import MobileNav from "./MobileNavigation";
 import NexusAtmosphere from "./NexusAtmosphere";
 import { ConfirmProvider } from "../confirm/ConfirmProvider";
 import LoadingScreen from "../LoadingScreen";
+import { AIChatWidget } from "../ai/AIChatWidget";
 
 export default function AppShell() {
   const loc = useLocation();
@@ -84,6 +85,9 @@ export default function AppShell() {
 
         {/* Bottom Navigation - Mobile */}
         <MobileNav />
+
+        {/* AI Chat Widget */}
+        <AIChatWidget />
       </div>
     </ConfirmProvider>
   );

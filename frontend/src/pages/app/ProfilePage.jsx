@@ -8,8 +8,9 @@ import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
-import { KeyRound, LogOut, MapPin, Shield, User as UserIcon, Sun, Moon, Crown } from "lucide-react";
+import { KeyRound, LogOut, MapPin, Shield, User as UserIcon, Sun, Moon, Crown, MessageSquare } from "lucide-react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
+import PremiumFeatureGate from "../../components/PremiumFeatureGate";
 
 export default function ProfilePage() {
   const nav = useNavigate();
@@ -259,6 +260,46 @@ export default function ProfilePage() {
             <span className="icon-chip" title="Parolă">
               <KeyRound size={18} className="text-muted-foreground" />
             </span>
+          </div>
+        </div>
+      </Motion.div>
+
+      {/* SMS Notifications */}
+      <Motion.div className="card p-5 agri-pattern" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+        <div className="text-xl font-bold">Notificări</div>
+
+        {/* SMS Settings - Pro Feature */}
+        <PremiumFeatureGate
+          feature="sms_alerts"
+          customMessage="Alertele SMS sunt disponibile în planul Pro pentru notificări instant pe telefon."
+        >
+          <div className="mt-3 card-soft p-4 flex items-center justify-between gap-3 transition-shadow hover:shadow-[0_8px_24px_rgba(16,185,129,0.1)]">
+            <div>
+              <div className="font-semibold">Alerte SMS</div>
+              <div className="text-sm muted">Primește notificări critice pe telefon</div>
+              <div className="text-xs muted mt-1">
+                Configurează numărul de telefon pentru alerte instant
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="primary" size="sm">
+                Configurează
+              </Button>
+              <span className="icon-chip" title="SMS">
+                <MessageSquare size={18} className="text-muted-foreground" />
+              </span>
+            </div>
+          </div>
+        </PremiumFeatureGate>
+
+        {/* Email Settings (always available) */}
+        <div className="mt-3 card-soft p-4 flex items-center justify-between gap-3">
+          <div>
+            <div className="font-semibold">Alerte Email</div>
+            <div className="text-sm muted">Notificări pe email pentru toate alertele</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="success">Activ</Badge>
           </div>
         </div>
       </Motion.div>

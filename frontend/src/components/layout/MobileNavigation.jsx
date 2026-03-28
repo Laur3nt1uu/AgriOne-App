@@ -94,7 +94,7 @@ export default function MobileNav() {
                 >
                   <Icon className="w-5 h-5" />
                 </Motion.div>
-                <span className="text-[10px] font-medium relative z-10">{item.label}</span>
+                <span className="text-xs font-medium relative z-10">{item.label}</span>
               </Motion.div>
             </NavLink>
           );

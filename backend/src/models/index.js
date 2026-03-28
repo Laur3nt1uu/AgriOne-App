@@ -79,6 +79,20 @@ const NewsletterSubscriber = NewsletterSubscriberModel(sequelize);
 const BlogModel = require("./blog.model");
 const Blog = BlogModel(sequelize);
 
+// AI Models
+const AiConversationModel = require("./aiConversation.model");
+const AiMessageModel = require("./aiMessage.model");
+
+const AiConversation = AiConversationModel(sequelize);
+const AiMessage = AiMessageModel(sequelize);
+
+// AI Associations
+User.hasMany(AiConversation, { foreignKey: "ownerId" });
+AiConversation.belongsTo(User, { foreignKey: "ownerId" });
+
+AiConversation.hasMany(AiMessage, { foreignKey: "conversationId", as: "messages" });
+AiMessage.belongsTo(AiConversation, { foreignKey: "conversationId" });
+
 module.exports = {
 	sequelize,
 	User,
@@ -93,4 +107,6 @@ module.exports = {
 	ApiaParcel,
 	NewsletterSubscriber,
 	Blog,
+	AiConversation,
+	AiMessage,
 };

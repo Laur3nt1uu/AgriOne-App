@@ -322,10 +322,10 @@ function AlertCard({ alert: a, index, isAdmin, onRemove, compact = false }) {
   const timestamp = pick(a, ["createdAt", "ts", "created_at"], "");
 
   const severityClasses = sev === "CRITICAL"
-    ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30"
+    ? "bg-destructive/15 border-destructive/40 shadow-destructive/20"
     : sev === "WARNING"
-      ? "bg-gradient-to-br from-warn/10 to-warn/5 border-warn/30"
-      : "border-border/25";
+      ? "bg-warn/15 border-warn/40 shadow-warn/20"
+      : "border-border/30";
   const badgeVariant = sev === "CRITICAL" ? "danger" : "warn";
   const SevIcon = sev === "CRITICAL" ? ShieldAlert : TriangleAlert;
   const iconColor = sev === "CRITICAL" ? "text-destructive" : "text-warn";

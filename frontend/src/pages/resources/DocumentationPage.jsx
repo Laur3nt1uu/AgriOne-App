@@ -18,9 +18,6 @@ import {
   Zap,
   ChevronRight,
   ArrowLeft,
-  CheckCircle2,
-  Copy,
-  Terminal,
 } from "lucide-react";
 import LandingLayout from "../../components/landing/LandingLayout";
 import LandingNavbar from "../../components/landing/LandingNavbar";
@@ -35,6 +32,7 @@ const docSections = [
     icon: Play,
     title: { ro: "Primii Pași", en: "Getting Started" },
     description: { ro: "Creează cont și configurează primul teren", en: "Create account and set up your first land" },
+    tutorialId: "getting-started",
     articles: [
       { title: { ro: "Crearea contului", en: "Creating your account" }, time: "2 min" },
       { title: { ro: "Adăugarea primului teren", en: "Adding your first land" }, time: "5 min" },
@@ -47,6 +45,7 @@ const docSections = [
     icon: Cpu,
     title: { ro: "Configurare Senzori", en: "Sensor Setup" },
     description: { ro: "Conectează și configurează senzorii IoT", en: "Connect and configure IoT sensors" },
+    tutorialId: "iot-setup",
     articles: [
       { title: { ro: "Tipuri de senzori compatibili", en: "Compatible sensor types" }, time: "4 min" },
       { title: { ro: "Conectarea senzorului la WiFi", en: "Connecting sensor to WiFi" }, time: "6 min" },
@@ -79,18 +78,6 @@ const docSections = [
     ],
   },
   {
-    id: "api",
-    icon: Code2,
-    title: { ro: "Documentație API", en: "API Documentation" },
-    description: { ro: "Integrare pentru dezvoltatori", en: "Integration for developers" },
-    articles: [
-      { title: { ro: "Autentificare API", en: "API Authentication" }, time: "5 min" },
-      { title: { ro: "Endpoint-uri disponibile", en: "Available endpoints" }, time: "10 min" },
-      { title: { ro: "Exemple de cod", en: "Code examples" }, time: "8 min" },
-      { title: { ro: "Rate limiting", en: "Rate limiting" }, time: "3 min" },
-    ],
-  },
-  {
     id: "troubleshooting",
     icon: HelpCircle,
     title: { ro: "Depanare", en: "Troubleshooting" },
@@ -106,37 +93,8 @@ const docSections = [
 
 const quickLinks = [
   { icon: Download, label: { ro: "Descarcă firmware", en: "Download firmware" }, href: "#" },
-  { icon: Terminal, label: { ro: "CLI pentru senzori", en: "Sensor CLI tool" }, href: "#" },
   { icon: Layers, label: { ro: "Diagrame arhitectură", en: "Architecture diagrams" }, href: "#" },
 ];
-
-function CodeBlock({ code, language = "bash" }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="relative rounded-xl bg-card/80 border border-border/30 overflow-hidden group">
-      <div className="flex items-center justify-between px-4 py-2 bg-secondary/30 border-b border-border/20">
-        <span className="text-xs text-muted-foreground font-mono">{language}</span>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
-        >
-          {copied ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
-          {copied ? "Copiat!" : "Copiază"}
-        </button>
-      </div>
-      <pre className="p-4 overflow-x-auto text-sm font-mono text-foreground/90">
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
-}
 
 export default function DocumentationPage() {
   const navigate = useNavigate();
@@ -145,6 +103,20 @@ export default function DocumentationPage() {
   const [activeSection, setActiveSection] = useState("getting-started");
 
   const getText = (obj) => obj[language] || obj.en;
+
+  const handleArticleClick = (section, articleIndex) => {
+    // If section has a corresponding tutorial, open it
+    if (section.tutorialId) {
+      const tutorialPath = section.tutorialId === 'getting-started'
+        ? '/tutorials/getting-started-guide.html'
+        : '/tutorials/iot-sensor-setup.html';
+
+      window.open(tutorialPath, '_blank', 'noopener,noreferrer');
+    } else {
+      // For sections without tutorials, navigate to Help Center
+      navigate('/help');
+    }
+  };
 
   const filteredSections = docSections.filter(section => {
     if (!searchQuery) return true;
@@ -306,6 +278,7 @@ export default function DocumentationPage() {
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
+                          onClick={() => handleArticleClick(section, index)}
                           className="flex items-center justify-between p-4 rounded-xl hover:bg-secondary/40 transition-colors group cursor-pointer border border-transparent hover:border-border/30"
                         >
                           <div className="flex items-center gap-3">
@@ -315,27 +288,28 @@ export default function DocumentationPage() {
                             <span className="font-medium group-hover:text-primary transition-colors">
                               {getText(article.title)}
                             </span>
+                            {section.tutorialId && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {language === "ro" ? "Tutorial" : "Tutorial"}
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock size={12} />
                               {article.time}
                             </span>
-                            <ChevronRight size={14} className="group-hover:text-primary transition-colors" />
+                            {section.tutorialId ? (
+                              <ExternalLink size={14} className="group-hover:text-primary transition-colors" />
+                            ) : (
+                              <ChevronRight size={14} className="group-hover:text-primary transition-colors" />
+                            )}
                           </div>
                         </Motion.div>
                       ))}
                     </div>
 
                     {/* Section-specific CTA */}
-                    {section.id === "api" && (
-                      <div className="pt-4 border-t border-border/20">
-                        <Button onClick={() => navigate("/api-docs")} variant="primary">
-                          <Code2 size={16} className="mr-2" />
-                          {language === "ro" ? "Deschide documentația API completă" : "Open full API documentation"}
-                        </Button>
-                      </div>
-                    )}
                     {section.id === "troubleshooting" && (
                       <div className="pt-4 border-t border-border/20">
                         <Button onClick={() => navigate("/help")} variant="primary">
@@ -347,65 +321,6 @@ export default function DocumentationPage() {
                   </Motion.div>
                 );
               })()}
-            </div>
-          </div>
-        </section>
-
-        {/* API Quick Start */}
-        <section className="py-16 lg:py-24 bg-card/30 border-y border-border/30">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <Motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-12"
-            >
-              <Badge variant="primary" className="mb-4">
-                <Code2 size={14} className="mr-1" />
-                API
-              </Badge>
-              <h2 className="text-3xl font-extrabold mb-4">
-                {language === "ro" ? "Start rapid cu " : "Quick start with "}
-                <span className="text-primary">API</span>
-              </h2>
-              <p className="text-muted-foreground">
-                {language === "ro"
-                  ? "Integrează AgriOne în aplicația ta în câteva minute"
-                  : "Integrate AgriOne into your application in minutes"}
-              </p>
-            </Motion.div>
-
-            <div className="space-y-6">
-              <CodeBlock
-                language="bash"
-                code={`# Get your API token from /app/profile
-curl -X GET "https://api.agri-one.com/v1/lands" \\
-  -H "Authorization: Bearer YOUR_API_TOKEN" \\
-  -H "Content-Type: application/json"`}
-              />
-
-              <CodeBlock
-                language="javascript"
-                code={`// Fetch sensor readings for a land
-const response = await fetch(
-  'https://api.agri-one.com/v1/readings/land/123',
-  {
-    headers: {
-      'Authorization': 'Bearer YOUR_API_TOKEN'
-    }
-  }
-);
-
-const readings = await response.json();
-console.log(readings);`}
-              />
-            </div>
-
-            <div className="text-center mt-8">
-              <Button onClick={() => navigate("/api-docs")} variant="primary">
-                <Code2 size={16} className="mr-2" />
-                {language === "ro" ? "Vezi documentația completă API" : "View full API documentation"}
-              </Button>
             </div>
           </div>
         </section>

@@ -195,6 +195,21 @@ export const api = {
     exportPdf: () => apiClient.get("/api/apia/export/pdf", { responseType: "blob" }).then(r => r.data),
   },
 
+  payments: {
+    createSession: (data) => apiClient.post("/api/payments/create-session", data).then(r => r.data),
+    verify: (data) => apiClient.post("/api/payments/verify", data).then(r => r.data),
+    simulate: (data) => apiClient.post("/api/payments/simulate", data).then(r => r.data),
+  },
 
-  
+  ai: {
+    chat: (data) => apiClient.post("/api/ai/chat", data).then(r => r.data),
+    analyzeImage: (data) => apiClient.post("/api/ai/analyze-image", data).then(r => r.data),
+    listConversations: (page = 1, limit = 20) =>
+      apiClient.get("/api/ai/conversations", { params: { page, limit } }).then(r => r.data),
+    getConversation: (id) => apiClient.get(`/api/ai/conversations/${id}`).then(r => r.data),
+    deleteConversation: (id) => apiClient.delete(`/api/ai/conversations/${id}`).then(r => r.data),
+    getUsage: () => apiClient.get("/api/ai/usage").then(r => r.data),
+    getQuickActions: () => apiClient.get("/api/ai/quick-actions").then(r => r.data),
+  },
+
 };

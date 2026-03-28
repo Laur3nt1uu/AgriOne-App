@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriOne - Sistem de Alerte</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: rgba(24, 24, 27, 0.85);
+            --bg-secondary: rgba(39, 39, 42, 0.6);
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --primary: #22c55e;
+            --primary-dark: #16a34a;
+            --primary-glow: rgba(34, 197, 94, 0.4);
+            --accent: #3b82f6;
+            --accent-dark: #2563eb;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --border: rgba(63, 63, 70, 0.5);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        .light {
+            --bg: #fafafa;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-secondary: rgba(244, 244, 245, 0.9);
+            --text: #18181b;
+            --text-muted: #71717a;
+            --border: rgba(228, 228, 231, 0.9);
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+            font-weight: 400;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px var(--shadow);
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .header h1 span {
+            color: #fff;
+            -webkit-text-fill-color: #fff;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            color: #fff;
+        }
+
+        .step {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px var(--shadow);
+            transition: all 0.4s ease;
+        }
+
+        .step:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px var(--shadow);
+        }
+
+        .step-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            box-shadow: 0 5px 15px var(--primary-glow);
+        }
+
+        .step-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .mockup {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .alert-rule-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .alert-status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .status-active {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status-triggered {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .form-group {
+            margin: 1.5rem 0;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--primary-glow);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .notification-example {
+            background: var(--bg-card);
+            border: 1px solid var(--warning);
+            border-left: 4px solid var(--warning);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .notification-icon {
+            display: inline-block;
+            margin-right: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .highlight {
+            background: linear-gradient(135deg, var(--primary-glow), var(--accent-glow));
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .highlight h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+
+        .highlight p {
+            font-size: 1.125rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .pro-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #000;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .step {
+                padding: 2rem;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistemul de <span>Alerte</span></h1>
+            <p>Configurează alerte inteligente pentru a fi notificat în timp real despre condițiile din culturile tale</p>
+        </div>
+
+        <div class="step">
+            <h3 class="step-title">
+                <span class="step-number">1</span>
+                Crearea Unei Reguli de Alertă
+            </h3>
+            <div class="step-content">
+                Pentru a începe să primești notificări automate, primul pas este să creezi o regulă de alertă. Aceasta va monitoriza anumite condiții și te va anunța când sunt îndeplinite.
+            </div>
+
+            <div class="mockup">
+                <div style="background: var(--bg-card); border-radius: 12px; padding: 2rem; border: 1px solid var(--border);">
+                    <h3 style="color: var(--text); margin-bottom: 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                        🔔 Creează Regulă de Alertă
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Numele Regulii</label>
+                        <input type="text" class="form-input" placeholder="ex: Deficit de Apă - Grâu" value="Temperatură Critică - Roșii">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Terenul Monitorizat</label>
+                        <select class="form-select">
+                            <option>Seră Roșii - Sector A</option>
+                            <option>Câmp Grâu - Parcelă 1</option>
+                            <option>Livadă Mere - Zona Nord</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tipul de Alertă</label>
+                        <select class="form-select">
+                            <option>Temperatură</option>
+                            <option>Umiditatea Solului</option>
+                            <option>Umiditatea Aerului</option>
+                            <option>Presiunea Atmosferică</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">Valoarea Minimă (°C)</label>
+                            <input type="number" class="form-input" placeholder="15" value="12">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Valoarea Maximă (°C)</label>
+                            <input type="number" class="form-input" placeholder="35" value="30">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Metoda de Notificare</label>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" checked style="accent-color: var(--primary);"> Email
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" style="accent-color: var(--primary);"> SMS <span class="pro-badge">Pro</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" checked style="accent-color: var(--primary);"> Browser
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="margin-top: 1rem;">
+                        ✅ Salvează Regula
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3 class="step-title">
+                <span class="step-number">2</span>
+                Configurarea Notificărilor Email
+            </h3>
+            <div class="step-content">
+                Configurează adresele de email care vor primi alertele și personalizează mesajele pentru diferite tipuri de alerte.
+            </div>
+
+            <div class="mockup">
+                <div style="background: var(--bg-card); border-radius: 12px; padding: 2rem; border: 1px solid var(--border);">
+                    <h3 style="color: var(--text); margin-bottom: 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                        📧 Configurare Email
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Principal</label>
+                        <input type="email" class="form-input" placeholder="numele@email.com" value="adrian.fermier@gmail.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Emailuri Secundare (opțional)</label>
+                        <input type="email" class="form-input" placeholder="manager@ferma.ro" value="asistent@ferma.ro">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Frecvența Emailurilor</label>
+                        <select class="form-select">
+                            <option>Instant (Recomandat)</option>
+                            <option>La fiecare 15 minute</option>
+                            <option>La fiecare oră</option>
+                            <option>Rezumat zilnic</option>
+                        </select>
+                    </div>
+
+                    <div class="notification-example">
+                        <div class="notification-icon">⚠️</div>
+                        <strong>Exemplu de notificare:</strong><br>
+                        <em>Alertă AgriOne: Temperatura în Seră Roșii - Sector A a depășit limitele stabilite (32°C). Verifică imediat sistemul de ventilație!</em>
+                    </div>
+
+                    <button class="btn btn-primary">
+                        💾 Salvează Configurarea
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3 class="step-title">
+                <span class="step-number">3</span>
+                Gestionarea Alertelor Active
+            </h3>
+            <div class="step-content">
+                Monitorizează toate alertele active și manageriază notificările în timp real din panoul de control dedicat.
+            </div>
+
+            <div class="mockup">
+                <div style="background: var(--bg-card); border-radius: 12px; padding: 2rem; border: 1px solid var(--border);">
+                    <h3 style="color: var(--text); margin-bottom: 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                        🎯 Centrul de Alerte
+                    </h3>
+
+                    <div class="alert-rule-card">
+                        <div class="alert-status status-triggered">🔥 Activă - Critică</div>
+                        <h4 style="color: var(--text); margin-bottom: 0.5rem; font-weight: 600;">Temperatură Critică - Roșii</h4>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">Seră Roșii - Sector A • Declanșată: acum 5 min</p>
+                        <p style="color: var(--danger); margin-bottom: 1rem;">⚠️ Valoare actuală: 32.5°C (Limita: 30°C)</p>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn" style="background: var(--success); color: white; padding: 0.5rem 1rem; font-size: 0.875rem;">✅ Rezolvată</button>
+                            <button class="btn" style="background: var(--bg-secondary); color: var(--text); padding: 0.5rem 1rem; font-size: 0.875rem;">⏰ Amână 1h</button>
+                        </div>
+                    </div>
+
+                    <div class="alert-rule-card">
+                        <div class="alert-status status-warning">⚠️ Atenționare</div>
+                        <h4 style="color: var(--text); margin-bottom: 0.5rem; font-weight: 600;">Umiditate Scăzută - Grâu</h4>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">Câmp Grâu - Parcelă 1 • Declanșată: acum 2h</p>
+                        <p style="color: var(--warning); margin-bottom: 1rem;">⚠️ Valoare actuală: 22% (Limita: 25%)</p>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn" style="background: var(--success); color: white; padding: 0.5rem 1rem; font-size: 0.875rem;">✅ Rezolvată</button>
+                            <button class="btn" style="background: var(--bg-secondary); color: var(--text); padding: 0.5rem 1rem; font-size: 0.875rem;">🔧 Editează</button>
+                        </div>
+                    </div>
+
+                    <div class="alert-rule-card">
+                        <div class="alert-status status-active">✅ Monitorizare</div>
+                        <h4 style="color: var(--text); margin-bottom: 0.5rem; font-weight: 600;">Nivel Optim - Mere</h4>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">Livadă Mere - Zona Nord • Toate parametrii normali</p>
+                        <p style="color: var(--success); margin-bottom: 1rem;">✅ Temperatura: 24°C, Umiditate: 45%</p>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn" style="background: var(--bg-secondary); color: var(--text); padding: 0.5rem 1rem; font-size: 0.875rem;">📊 Vezi Detalii</button>
+                            <button class="btn" style="background: var(--bg-secondary); color: var(--text); padding: 0.5rem 1rem; font-size: 0.875rem;">🔧 Editează</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3 class="step-title">
+                <span class="step-number">4</span>
+                Notificări SMS și Push <span class="pro-badge">Pro Plan</span>
+            </h3>
+            <div class="step-content">
+                Pentru utilizatorii cu planul Pro sau Enterprise, sunt disponibile notificări SMS și push pentru alertele critice, asigurând că nu ratezi nicio situație urgentă.
+            </div>
+
+            <div class="mockup">
+                <div style="background: var(--bg-card); border-radius: 12px; padding: 2rem; border: 1px solid var(--border);">
+                    <h3 style="color: var(--text); margin-bottom: 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                        📱 Notificări Avansate <span class="pro-badge">Pro</span>
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Numărul de Telefon</label>
+                        <input type="tel" class="form-input" placeholder="+40 723 456 789" value="+40 723 456 789">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Alerte SMS pentru</label>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" checked style="accent-color: var(--primary);"> Alerte Critice (Temp > 35°C)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" style="accent-color: var(--primary);"> Toate Alertele
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" checked style="accent-color: var(--primary);"> Probleme de Conectivitate Senzori
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="notification-example">
+                        <div class="notification-icon">📱</div>
+                        <strong>SMS Exemplu:</strong><br>
+                        <em>🚨 AgriOne Alert: Temp CRITICĂ 36°C în Seră Roșii! Acționează ACUM! Detalii: app.agrione.ro</em>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Program Notificări</label>
+                        <select class="form-select">
+                            <option>24/7 - Oricând</option>
+                            <option>Program de Lucru (8:00 - 18:00)</option>
+                            <option>Doar Urgențe Nocturne</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary">
+                        📲 Activează SMS
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight">
+            <h2>🎉 Sistemul de Alerte este Configurat!</h2>
+            <p>Acum vei fi notificat instant despre orice schimbare importantă din culturile tale. Monitorizarea inteligentă îți va economisi timp și va proteja investițiile!</p>
+        </div>
+    </div>
+</body>
+</html>

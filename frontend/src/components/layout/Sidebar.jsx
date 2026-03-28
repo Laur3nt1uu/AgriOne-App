@@ -19,6 +19,7 @@ import {
 import { authStore } from "../../auth/auth.store";
 import logo from "../../assets/agrione.png";
 import { prefetchByPath } from "../../router/chunks";
+import { useTranslation } from "react-i18next";
 
 const navItems = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -40,6 +41,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   const isAdmin = user?.role === "ADMIN";
   const location = useLocation();
   const [isDesktop, setIsDesktop] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 768);
@@ -237,7 +239,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
               className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all cursor-pointer"
             >
               <Globe className="w-4 h-4" />
-              <span className="text-sm font-medium">Landing Page</span>
+              <span className="text-sm font-medium">{t('ui.navigation.landingPage')}</span>
             </Motion.a>
             <Motion.div
               whileHover={{ scale: 1.02 }}

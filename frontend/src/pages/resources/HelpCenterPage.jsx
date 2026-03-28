@@ -29,6 +29,7 @@ import {
 import LandingLayout from "../../components/landing/LandingLayout";
 import LandingNavbar from "../../components/landing/LandingNavbar";
 import LandingFooter from "../../components/landing/LandingFooter";
+import TutorialLibrary from "../../components/documentation/TutorialLibrary";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { useLanguage } from "../../i18n/LanguageProvider";
@@ -337,6 +338,41 @@ export default function HelpCenterPage() {
                 );
               })}
             </div>
+          </div>
+        </section>
+
+        {/* Tutorials Section */}
+        <section className="py-16 lg:py-24 bg-card/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <Badge variant="primary" className="mb-4">
+                <BookOpen size={14} className="mr-1" />
+                {language === "ro" ? "Tutoriale" : "Tutorials"}
+              </Badge>
+              <h2 className="text-3xl lg:text-4xl font-extrabold mb-4">
+                {language === "ro" ? "Ghiduri " : "Step-by-step "}
+                <span className="text-primary">{language === "ro" ? "pas cu pas" : "guides"}</span>
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                {language === "ro"
+                  ? "Învață să folosești AgriOne eficient cu ghidurile noastre detaliate, complete cu capturi de ecran și exemple practice."
+                  : "Learn to use AgriOne efficiently with our detailed guides, complete with screenshots and practical examples."}
+              </p>
+            </Motion.div>
+
+            <Motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <TutorialLibrary language={language} />
+            </Motion.div>
           </div>
         </section>
 
