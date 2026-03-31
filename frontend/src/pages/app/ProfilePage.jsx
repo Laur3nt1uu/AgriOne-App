@@ -186,9 +186,16 @@ export default function ProfilePage() {
     }
   }
 
-  function logout() {
-    authStore.logout();
-    nav("/auth/login", { replace: true });
+  async function logout() {
+    try {
+      const refreshToken = authStore.getRefreshToken();
+      if (refreshToken) {
+        await api.auth.logout({ refreshToken }).catch(() => {});
+      }
+    } finally {
+      authStore.logout();
+      nav("/auth/login", { replace: true });
+    }
   }
 
   return (

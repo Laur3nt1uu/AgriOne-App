@@ -47,6 +47,7 @@ async function listReadingsByLand(actor, landId, range = "24h") {
       recordedAt: r.recordedAt,
       temperatureC: Number(r.temperatureC) + tempOffset,
       humidityPct: Number(r.humidityPct) + humOffset,
+      soilMoisturePct: r.soilMoisturePct != null ? Number(r.soilMoisturePct) : null,
     })),
   };
 }

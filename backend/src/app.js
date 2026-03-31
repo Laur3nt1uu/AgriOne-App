@@ -7,20 +7,44 @@ const env = require("./config/env");
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(helmet({
+  contentSecurityPolicy: false, // allow inline scripts for development
+  crossOriginEmbedderPolicy: false,
+}));
+// Support comma-separated CORS origins (e.g. "http://localhost:5173,https://agrione.ro")
+const corsOrigins = (env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+app.use(cors({
+  origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+  credentials: true,
+}));
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 app.use(rateLimit({ windowMs: 60_000, max: 120 }));
 
 const iotLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120, // 120 req/min (safe)
+  max: 120,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
+// Stricter rate limit for auth endpoints (brute force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 requests per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many authentication attempts. Please try again later.", code: "AUTH_RATE_LIMIT" },
+});
+
 app.use("/api/iot", iotLimiter);
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/auth/google", authLimiter);
+app.use("/api/auth/forgot-password", authLimiter);
 app.get("/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 
 

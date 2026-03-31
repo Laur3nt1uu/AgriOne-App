@@ -86,6 +86,8 @@ export const api = {
     updatePreferences: (data) => apiClient.put("/api/auth/preferences", data).then((r) => r.data?.preferences || r.data),
     changePassword: (data) => apiClient.put("/api/auth/password", data).then((r) => r.data),
     changePlan: (data) => apiClient.put("/api/auth/plan", data).then((r) => r.data),
+    refresh: (data) => apiClient.post("/api/auth/refresh", data).then(r => r.data),
+    logout: (data) => apiClient.post("/api/auth/logout", data).then(r => r.data),
     forgotPassword: (data) => apiClient.post("/api/auth/forgot-password", data).then(r => r.data),
     resetPassword: (data) => apiClient.post("/api/auth/reset-password", data).then(r => r.data),
   },
@@ -203,6 +205,7 @@ export const api = {
 
   ai: {
     chat: (data) => apiClient.post("/api/ai/chat", data).then(r => r.data),
+    publicChat: (data) => apiClient.post("/api/ai/public-chat", data).then(r => r.data),
     analyzeImage: (data) => apiClient.post("/api/ai/analyze-image", data).then(r => r.data),
     listConversations: (page = 1, limit = 20) =>
       apiClient.get("/api/ai/conversations", { params: { page, limit } }).then(r => r.data),

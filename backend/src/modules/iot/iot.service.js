@@ -3,7 +3,7 @@ const { Sensor, Reading, Land } = require("../../models");
 const { Op } = require("sequelize");
 const { checkSensorLimit } = require("../sensors/sensors.service");
 
-async function ingest({ sensorCode, temperatureC, humidityPct, recordedAt }) {
+async function ingest({ sensorCode, temperatureC, humidityPct, soilMoisturePct, recordedAt }) {
   const sensor = await Sensor.findOne({ where: { sensorCode } });
   if (!sensor) throw new ApiError(404, "Sensor not registered", null, "SENSOR_NOT_REGISTERED");
 
@@ -13,6 +13,7 @@ async function ingest({ sensorCode, temperatureC, humidityPct, recordedAt }) {
     sensorId: sensor.id,
     temperatureC,
     humidityPct,
+    soilMoisturePct: soilMoisturePct ?? null,
     recordedAt: ts,
   });
 

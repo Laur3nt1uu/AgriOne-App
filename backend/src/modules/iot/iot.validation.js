@@ -30,6 +30,13 @@ const ingestSchema = z.object({
       .min(0, "Umiditatea nu poate fi sub 0%.")
       .max(100, "Umiditatea nu poate depăși 100%.")
   ),
+  soilMoisturePct: numberField(
+    "Umiditatea solului trebuie să fie număr.",
+    z
+      .number({ message: "Umiditatea solului trebuie să fie număr." })
+      .min(0, "Umiditatea solului nu poate fi sub 0%.")
+      .max(100, "Umiditatea solului nu poate depăși 100%.")
+  ).optional(),
   recordedAt: z.string().datetime({ message: "Data/ora este invalidă." }).optional(), // ISO
 });
 

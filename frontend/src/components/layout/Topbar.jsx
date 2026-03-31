@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown, LogOut, Menu, User as UserIcon, Sun, Moon, Globe, Crown } from "lucide-react";
+import { api } from "../../api/endpoints";
 import { authStore } from "../../auth/auth.store";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Badge } from "../../ui/badge";
@@ -39,9 +40,16 @@ export default function Topbar({ onMenuClick }) {
     (user?.role === "ADMIN" ? "Administrator" : "Utilizator");
   const initial = (displayName || "U")[0]?.toUpperCase?.() || "U";
 
-  const handleLogout = () => {
-    authStore.logout();
-    nav("/", { replace: true });
+  const handleLogout = async () => {
+    try {
+      const refreshToken = authStore.getRefreshToken();
+      if (refreshToken) {
+        await api.auth.logout({ refreshToken }).catch(() => {});
+      }
+    } finally {
+      authStore.logout();
+      nav("/", { replace: true });
+    }
   };
 
   return (

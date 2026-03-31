@@ -38,4 +38,7 @@ module.exports = {
   // Fallback location for global weather/recommendations (Romania center by default)
   WEATHER_DEFAULT_LAT: process.env.WEATHER_DEFAULT_LAT ? Number(process.env.WEATHER_DEFAULT_LAT) : 45.9432,
   WEATHER_DEFAULT_LNG: process.env.WEATHER_DEFAULT_LNG ? Number(process.env.WEATHER_DEFAULT_LNG) : 24.9668,
+
+  // Google OAuth
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
 };

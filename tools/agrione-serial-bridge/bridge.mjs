@@ -8,7 +8,7 @@ function getArg(name, fallback) {
 }
 
 const portPath = getArg("--port", null);
-const baudRate = Number(getArg("--baud", "115200"));
+const baudRate = Number(getArg("--baud", "9600"));
 const url = getArg("--url", "http://localhost:5000/api/iot/ingest");
 const iotKey = getArg("--key", null);
 

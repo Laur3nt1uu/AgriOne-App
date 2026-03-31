@@ -10,6 +10,7 @@ import AboutSection from "../components/landing/AboutSection";
 import FAQSection from "../components/landing/FAQSection";
 import CTABannerSection from "../components/landing/CTABannerSection";
 import LandingFooter from "../components/landing/LandingFooter";
+import LandingChatWidget from "../components/landing/LandingChatWidget";
 
 export default function LandingPage() {
   return (
@@ -32,6 +33,9 @@ export default function LandingPage() {
 
       {/* Footer */}
       <LandingFooter />
+
+      {/* AI Chat Widget */}
+      <LandingChatWidget />
     </LandingLayout>
   );
 }

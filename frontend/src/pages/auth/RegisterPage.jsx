@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import { Eye, EyeOff, Lock, Mail, Sparkles, User, UserCircle } from "lucide-react";
 import { api } from "../../api/endpoints";
+import { authStore } from "../../auth/auth.store";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
@@ -51,9 +52,21 @@ export default function RegisterPage() {
         username: username.trim() || undefined,
         name: name.trim() || undefined,
       };
-      await api.auth.register(payload);
-      toastSuccess("Account created. You can sign in now.");
-      nav("/auth/login", { replace: true });
+      const data = await api.auth.register(payload);
+
+      // Backend returns tokens on register — auto-login the user
+      const token = data.token || data.accessToken || data.jwt || data?.data?.token;
+      const user = data.user || data.profile || data?.data?.user || { email };
+      const refreshToken = data.refreshToken || data?.data?.refreshToken;
+
+      if (token) {
+        authStore.setAuth({ token, user, refreshToken });
+        toastSuccess("Account created successfully!");
+        nav("/app/dashboard", { replace: true });
+      } else {
+        toastSuccess("Account created. You can sign in now.");
+        nav("/auth/login", { replace: true });
+      }
     } catch (e2) {
       setError("Registration failed. Please try again.");
       toastError(e2, "Registration failed.");

@@ -12,7 +12,23 @@ const {
   analyzeImageSchema,
   getConversationSchema,
   paginationSchema,
+  publicChatSchema,
 } = require("./ai.validation");
+
+/**
+ * POST /api/ai/public-chat
+ * Public chat endpoint for landing page (no auth, rate-limited, app Q&A only)
+ */
+const publicChat = asyncHandler(async (req, res) => {
+  const parsed = publicChatSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new ApiError(400, "Date invalide", parsed.error.flatten(), "VALIDATION_ERROR");
+  }
+
+  const { message, sessionId } = parsed.data;
+  const result = await aiService.publicChat(message, sessionId, req.ip);
+  return res.status(200).json(result);
+});
 
 /**
  * POST /api/ai/chat
@@ -140,6 +156,7 @@ const getQuickActions = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  publicChat,
   chat,
   analyzeImage,
   listConversations,

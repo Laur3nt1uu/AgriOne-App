@@ -9,6 +9,7 @@ module.exports = (sequelize) =>
       sensorId: { type: DataTypes.UUID, allowNull: false, field: "sensor_id" },
       temperatureC: { type: DataTypes.DOUBLE, allowNull: false, field: "temperature_c" },
       humidityPct: { type: DataTypes.DOUBLE, allowNull: false, field: "humidity_pct" },
+      soilMoisturePct: { type: DataTypes.DOUBLE, allowNull: true, field: "soil_moisture_pct" },
       recordedAt: { type: DataTypes.DATE, allowNull: false, field: "recorded_at" },
     },
     {

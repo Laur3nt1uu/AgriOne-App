@@ -10,15 +10,29 @@ const { buildUserContext, getQuickContextSummary } = require("./ai.context");
 const { PLAN_LIMITS } = require("../../config/planLimits");
 const ApiError = require("../../utils/ApiError");
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client (lazy — checked before each call)
+let openai = null;
 
-// Model configurations
+function getOpenAIClient() {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    throw new ApiError(
+      503,
+      "Cheia API OpenAI nu este configurată. Adaugă OPENAI_API_KEY în fișierul .env al backend-ului.",
+      null,
+      "AI_NOT_CONFIGURED"
+    );
+  }
+  if (!openai) {
+    openai = new OpenAI({ apiKey: key });
+  }
+  return openai;
+}
+
+// Model configurations — use current stable models
 const MODELS = {
-  chat: "gpt-4-turbo-preview",
-  vision: "gpt-4-turbo",
+  chat: process.env.OPENAI_MODEL || "gpt-4o",
+  vision: process.env.OPENAI_VISION_MODEL || "gpt-4o",
 };
 
 const MAX_HISTORY_MESSAGES = 10;
@@ -132,8 +146,10 @@ async function chat(userId, userPlan, conversationId, message, contextOptions = 
   });
 
   try {
+    const client = getOpenAIClient();
+
     // Call OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODELS.chat,
       messages: [
         { role: "system", content: systemPrompt },
@@ -170,13 +186,31 @@ async function chat(userId, userPlan, conversationId, message, contextOptions = 
       },
     };
   } catch (error) {
-    console.error("OpenAI API Error:", error);
+    // Re-throw ApiError (e.g. from getOpenAIClient)
+    if (error instanceof ApiError) throw error;
 
-    if (error.code === "insufficient_quota") {
-      throw new ApiError(503, "Serviciul AI este temporar indisponibil. Vă rugăm încercați mai târziu.", null, "AI_SERVICE_UNAVAILABLE");
-    }
+    console.error("OpenAI API Error:", error?.message || error);
 
-    throw new ApiError(500, "Eroare la procesarea mesajului AI", null, "AI_PROCESSING_ERROR");
+    // Save a fallback assistant message so the conversation isn't broken
+    const fallbackContent = "Serviciul AI nu este disponibil momentan. Administratorul trebuie să configureze cheia OPENAI_API_KEY. Între timp, poți folosi celelalte funcții ale platformei.";
+    const savedFallback = await AiMessage.create({
+      conversationId: conversation.id,
+      role: "assistant",
+      content: fallbackContent,
+      tokensUsed: 0,
+    });
+
+    return {
+      conversationId: conversation.id,
+      conversationTitle: conversation.title,
+      message: {
+        id: savedFallback.id,
+        role: "assistant",
+        content: fallbackContent,
+        tokensUsed: 0,
+        createdAt: savedFallback.createdAt,
+      },
+    };
   }
 }
 
@@ -203,8 +237,10 @@ async function analyzeImage(userId, userPlan, conversationId, imageUrl, question
   });
 
   try {
+    const client = getOpenAIClient();
+
     // Call OpenAI Vision
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: MODELS.vision,
       messages: [
         { role: "system", content: systemPrompt + "\n\n" + IMAGE_ANALYSIS_PROMPT },
@@ -245,8 +281,9 @@ async function analyzeImage(userId, userPlan, conversationId, imageUrl, question
       },
     };
   } catch (error) {
-    console.error("OpenAI Vision API Error:", error);
-    throw new ApiError(500, "Eroare la analiza imaginii", null, "AI_VISION_ERROR");
+    if (error instanceof ApiError) throw error;
+    console.error("OpenAI Vision API Error:", error?.message || error);
+    throw new ApiError(500, "Eroare la analiza imaginii. Verifică logurile serverului.", null, "AI_VISION_ERROR");
   }
 }
 
@@ -342,7 +379,242 @@ async function getUsageStats(userId, userPlan) {
   };
 }
 
+// In-memory rate limit for public chat (per IP, simple approach)
+const publicChatRateMap = new Map();
+const PUBLIC_CHAT_LIMIT = 10; // max 10 messages per hour per IP
+const PUBLIC_CHAT_WINDOW = 60 * 60 * 1000;
+
+// Conversation history for public chat sessions (in-memory, simple)
+const publicChatSessions = new Map();
+const PUBLIC_SESSION_MAX_MESSAGES = 6;
+
+/**
+ * FAQ fallback for when OpenAI API key is not configured.
+ * Matches user questions to curated answers so the landing page widget
+ * always works, even without an API key.
+ */
+const FAQ_ENTRIES = [
+  {
+    keywords: ["ce este", "what is", "agrione", "platformă", "platform", "despre"],
+    answer: "**AgriOne** este o platformă completă de management agricol inteligent. Oferă monitorizare IoT în timp real, dashboard cu date meteo, alerte automate, management financiar, rapoarte APIA și un asistent AI dedicat. Creează un cont gratuit pentru a începe! 🌱",
+  },
+  {
+    keywords: ["preț", "pret", "cost", "tarif", "price", "plan", "gratuit", "free", "abonament"],
+    answer: "AgriOne oferă **3 planuri**:\n\n• **Starter** (gratuit) — 2 terenuri, 5 senzori, funcții de bază\n• **Pro** — Terenuri nelimitate, 50 senzori, AI avansat, analize\n• **Enterprise** — Tot nelimitat, suport dedicat, integrări custom\n\nPoți începe gratuit și face upgrade oricând!",
+  },
+  {
+    keywords: ["senzor", "sensor", "iot", "arduino", "temperatur", "umiditate", "humidity"],
+    answer: "AgriOne se conectează la **senzori IoT** (Arduino) care măsoară temperatura și umiditatea solului în timp real. Datele sunt afișate pe dashboard cu grafice și poți seta **alerte automate** când valorile depășesc pragurile dorite. 📡",
+  },
+  {
+    keywords: ["meteo", "vreme", "weather", "prognoz", "forecast"],
+    answer: "Platforma integrează **OpenWeather API** pentru prognoză meteo localizată pe terenurile tale. Primești date despre temperatură, precipitații, vânt și umiditate, cu predicții pe 5 zile. ☀️🌧️",
+  },
+  {
+    keywords: ["alert", "notificar", "notification"],
+    answer: "Sistemul de **alerte** te notifică automat când:\n\n• Temperatura sau umiditatea depășesc pragurile setate\n• Condițiile meteo sunt nefavorabile\n• Senzorii nu mai trimit date\n\nPoți configura reguli personalizate pentru fiecare teren.",
+  },
+  {
+    keywords: ["apia", "subvenți", "subventii", "raport", "report", "document"],
+    answer: "AgriOne generează automat **rapoarte compatibile APIA** pentru subvenții agricole. Include date despre terenuri, parcele, culturi și suprafețe, exportabile în format PDF. 📄",
+  },
+  {
+    keywords: ["financiar", "bani", "money", "cheltuial", "venit", "tranzacți", "tranzactii", "economic"],
+    answer: "Modulul de **management financiar** urmărește veniturile, cheltuielile și tranzacțiile fermei. Oferă grafice, rapoarte și export CSV/PDF pentru o evidență completă a activității economice. 💰",
+  },
+  {
+    keywords: ["cont", "înregistr", "inregistr", "register", "signup", "sign up", "cum încep", "cum incep", "start"],
+    answer: "Crearea unui cont este **simplă și gratuită**:\n\n1. Apasă butonul **Creează cont** din pagina principală\n2. Completează formularul sau conectează-te cu **Google**\n3. Adaugă primul teren și opțional conectează senzori\n\nÎn câteva minute ești gata! 🚀",
+  },
+  {
+    keywords: ["ai", "inteligență", "inteligenta", "artificial", "asistent", "chat", "gpt"],
+    answer: "AgriOne include un **asistent AI** bazat pe GPT-4 care te ajută cu:\n\n• Sfaturi personalizate pentru culturi\n• Analiza imaginilor cu plante\n• Recomandări bazate pe datele senzorilor\n• Întrebări generale despre agricultură\n\nDisponibil în planurile Pro și Enterprise (bază în Starter).",
+  },
+  {
+    keywords: ["teren", "land", "parcel", "fermă", "ferma", "farm"],
+    answer: "Poți gestiona **multiple terenuri** în AgriOne:\n\n• Adaugă terenuri cu coordonate GPS\n• Definește parcele și culturi\n• Monitorizează fiecare teren separat\n• Generează rapoarte per teren\n\nPlanul Starter permite 2 terenuri, Pro și Enterprise — nelimitat.",
+  },
+  {
+    keywords: ["export", "pdf", "csv", "descărc", "descarc", "download"],
+    answer: "AgriOne permite **export** în mai multe formate:\n\n• **PDF** — Rapoarte detaliate, documente APIA\n• **CSV** — Date brute pentru analiză externă\n\nExportul este disponibil pentru date senzori, tranzacții financiare și rapoarte agricole.",
+  },
+  {
+    keywords: ["sigur", "securit", "security", "safe", "date person", "gdpr", "privacy"],
+    answer: "Securitatea datelor este prioritară:\n\n• Autentificare **JWT** cu refresh tokens\n• Suport **Google OAuth** \n• Criptare parole cu bcrypt\n• Rate limiting pe endpoints\n• Standarde GDPR\n\nDatele tale agricole sunt în siguranță. 🔒",
+  },
+];
+
+/**
+ * Find the best FAQ match for a user message.
+ * Returns the answer string or null if no match.
+ */
+function matchFAQ(message) {
+  const lower = message.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for (const faq of FAQ_ENTRIES) {
+    let score = 0;
+    for (const kw of faq.keywords) {
+      const kwNorm = kw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (lower.includes(kwNorm)) score++;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = faq;
+    }
+  }
+
+  return bestScore > 0 ? bestMatch.answer : null;
+}
+
+const FAQ_DEFAULT_ANSWER = `Bună! 👋 Sunt asistentul AgriOne. Pot să te ajut cu informații despre:
+
+• **Ce este AgriOne** — platformă de agricultură inteligentă
+• **Planuri și prețuri** — Starter (gratuit), Pro, Enterprise
+• **Senzori IoT** — monitorizare temperatură și umiditate
+• **Funcționalități** — alerte, meteo, AI, rapoarte APIA, finanțe
+
+Creează un cont gratuit pentru a explora toate funcțiile! 🌱`;
+
+const LANDING_SYSTEM_PROMPT = `Ești **AgriOne Assistant** - un asistent virtual pentru platforma AgriOne de agricultură inteligentă.
+
+## DESPRE AGRIONE
+AgriOne este o platformă completă de management agricol care oferă:
+- **Monitorizare IoT**: Senzori de temperatură și umiditate conectați la Arduino
+- **Dashboard inteligent**: Vizualizare date în timp real cu grafice și KPI-uri
+- **Alerte automate**: Notificări când valorile depășesc pragurile setate
+- **Management terenuri**: Administrare multiplă a terenurilor agricole
+- **Prognoză meteo**: Integrare cu OpenWeather API
+- **Recomandări agricole**: Sfaturi bazate pe date și sezon
+- **Management financiar**: Urmărire tranzacții, venituri, cheltuieli
+- **Asistent AI**: Chat cu expert agricol bazat pe GPT-4
+- **Rapoarte APIA**: Generare documente pentru subvenții
+- **Export PDF/CSV**: Rapoarte detaliate pentru ferme
+
+## PLANURI DISPONIBILE
+- **Starter** (gratuit): 2 terenuri, 5 senzori, funcții de bază
+- **Pro**: Terenuri nelimitate, 50 senzori, analiză avansată, AI complet
+- **Enterprise**: Tot nelimitat, suport dedicat, integrări custom
+
+## REGULI
+1. Răspunde DOAR în limba română
+2. Fii concis și informativ (max 200 cuvinte)
+3. Concentrează-te pe funcționalitățile AgriOne
+4. Încurajează utilizatorul să creeze un cont gratuit
+5. Nu oferi sfaturi agricole detaliate - direcționează utilizatorul să folosească platforma
+6. Fii prietenos și profesional`;
+
+/**
+ * Public chat for landing page (no auth required)
+ * Simple, rate-limited, in-memory history
+ */
+async function publicChat(message, sessionId, clientIp) {
+  // Rate limit check
+  const ip = clientIp || "unknown";
+  const now = Date.now();
+  const ipEntry = publicChatRateMap.get(ip);
+
+  if (ipEntry) {
+    // Clean old entries
+    ipEntry.timestamps = ipEntry.timestamps.filter(t => now - t < PUBLIC_CHAT_WINDOW);
+    if (ipEntry.timestamps.length >= PUBLIC_CHAT_LIMIT) {
+      throw new ApiError(429, "Prea multe mesaje. Încercați mai târziu.", null, "PUBLIC_CHAT_RATE_LIMIT");
+    }
+    ipEntry.timestamps.push(now);
+  } else {
+    publicChatRateMap.set(ip, { timestamps: [now] });
+  }
+
+  // Build conversation history from session
+  const sid = sessionId || `anon-${ip}-${Date.now()}`;
+  const history = publicChatSessions.get(sid) || [];
+
+  // Add user message to history
+  history.push({ role: "user", content: message });
+
+  // Keep only last N messages
+  while (history.length > PUBLIC_SESSION_MAX_MESSAGES) history.shift();
+
+  // --- Check if OpenAI is available; if not, use FAQ fallback ---
+  const hasOpenAI = !!process.env.OPENAI_API_KEY;
+
+  if (!hasOpenAI) {
+    const faqAnswer = matchFAQ(message) || FAQ_DEFAULT_ANSWER;
+    history.push({ role: "assistant", content: faqAnswer });
+    publicChatSessions.set(sid, history);
+
+    return {
+      sessionId: sid,
+      message: {
+        role: "assistant",
+        content: faqAnswer,
+        createdAt: new Date().toISOString(),
+      },
+    };
+  }
+
+  try {
+    const client = getOpenAIClient();
+
+    const response = await client.chat.completions.create({
+      model: MODELS.chat,
+      messages: [
+        { role: "system", content: LANDING_SYSTEM_PROMPT },
+        ...history,
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
+
+    const reply = response.choices[0]?.message?.content || "Vă rugăm să încercați din nou.";
+
+    // Save assistant reply to session history
+    history.push({ role: "assistant", content: reply });
+    publicChatSessions.set(sid, history);
+
+    // Clean up old sessions periodically (every ~1% of calls)
+    if (Math.random() < 0.01) {
+      for (const [key] of publicChatSessions) {
+        if (publicChatSessions.size > 500) publicChatSessions.delete(key);
+      }
+      for (const [key, val] of publicChatRateMap) {
+        val.timestamps = val.timestamps.filter(t => Date.now() - t < PUBLIC_CHAT_WINDOW);
+        if (val.timestamps.length === 0) publicChatRateMap.delete(key);
+      }
+    }
+
+    return {
+      sessionId: sid,
+      message: {
+        role: "assistant",
+        content: reply,
+        createdAt: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    console.error("Public Chat OpenAI Error:", error?.message || error);
+
+    // Fallback to FAQ on any OpenAI error so the widget always works
+    const faqAnswer = matchFAQ(message) || FAQ_DEFAULT_ANSWER;
+    history.push({ role: "assistant", content: faqAnswer });
+    publicChatSessions.set(sid, history);
+
+    return {
+      sessionId: sid,
+      message: {
+        role: "assistant",
+        content: faqAnswer,
+        createdAt: new Date().toISOString(),
+      },
+    };
+  }
+}
+
 module.exports = {
+  publicChat,
   chat,
   analyzeImage,
   listConversations,

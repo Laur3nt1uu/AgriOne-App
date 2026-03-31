@@ -16,13 +16,16 @@ function fmtTime(iso) {
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
+  const soil = payload.find(p=>p.dataKey==="soilMoisture");
   return (
     <div className="card p-3 text-sm">
       <div className="font-bold">{fmtTime(label)}</div>
-      <div className="muted mt-1">
-        Temp.: <span className="text-foreground font-semibold">{payload.find(p=>p.dataKey==="temperature")?.value ?? "—"}°C</span>
-        {" • "}
-        Umid.: <span className="text-foreground font-semibold">{payload.find(p=>p.dataKey==="humidity")?.value ?? "—"}%</span>
+      <div className="muted mt-1 space-y-0.5">
+        <div>Temp.: <span className="text-foreground font-semibold">{payload.find(p=>p.dataKey==="temperature")?.value ?? "—"}°C</span></div>
+        <div>Umid. Aer: <span className="text-foreground font-semibold">{payload.find(p=>p.dataKey==="humidity")?.value ?? "—"}%</span></div>
+        {soil?.value != null && (
+          <div>Umid. Sol: <span className="text-foreground font-semibold">{soil.value}%</span></div>
+        )}
       </div>
     </div>
   );
@@ -50,10 +53,13 @@ function rgbaFromCssVar(varName, alpha, fallback) {
 }
 
 export default function ReadingsChart({ data }) {
+  const hasSoil = useMemo(() => data?.some(d => d.soilMoisture != null), [data]);
+
   const colors = useMemo(() => {
     return {
       tempStroke: rgbaFromCssVar("--primary", 0.95, "rgba(0,0,0,0.85)"),
       humStroke: rgbaFromCssVar("--accent", 0.95, "rgba(0,0,0,0.55)"),
+      soilStroke: "rgba(16, 185, 129, 0.85)", // emerald-500
       axisStroke: rgbaFromCssVar("--foreground", 0.35, "rgba(0,0,0,0.35)"),
       gridStroke: rgbaFromCssVar("--border", 0.10, "rgba(0,0,0,0.08)"),
     };
@@ -61,7 +67,14 @@ export default function ReadingsChart({ data }) {
 
   return (
     <div className="card-soft p-4 h-[340px]">
-      <div className="text-sm font-bold mb-3">Grafic citiri</div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm font-bold">Grafic citiri</div>
+        <div className="flex items-center gap-3 text-xs muted">
+          <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 rounded" style={{background: colors.tempStroke}} />Temp.</span>
+          <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 rounded" style={{background: colors.humStroke}} />Umid. Aer</span>
+          {hasSoil && <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 rounded" style={{background: colors.soilStroke}} />Umid. Sol</span>}
+        </div>
+      </div>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <CartesianGrid stroke={colors.gridStroke} />
@@ -87,6 +100,16 @@ export default function ReadingsChart({ data }) {
             strokeWidth={2}
             dot={false}
           />
+          {hasSoil && (
+            <Line
+              type="monotone"
+              dataKey="soilMoisture"
+              stroke={colors.soilStroke}
+              strokeWidth={2}
+              dot={false}
+              connectNulls
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>

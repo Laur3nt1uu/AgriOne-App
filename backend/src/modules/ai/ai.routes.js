@@ -9,7 +9,10 @@ const controller = require("./ai.controller");
 
 const router = Router();
 
-// All routes require authentication
+// Public chat endpoint (for landing page widget - no auth required)
+router.post("/public-chat", controller.publicChat);
+
+// All routes below require authentication
 router.use(requireAuth);
 
 // Chat endpoints

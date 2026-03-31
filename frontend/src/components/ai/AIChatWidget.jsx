@@ -15,8 +15,8 @@ export function AIChatWidget() {
   const { hasFeature, getUserPlan } = usePlanFeatures();
   const { t } = useLanguage();
 
-  // Check if user has AI access
-  const hasAiAccess = hasFeature('ai_assistant') || getUserPlan() !== 'STARTER';
+  // Check if user has AI access - all plans have some AI (even STARTER has basic AI)
+  const hasAiAccess = hasFeature('ai_assistant') || hasFeature('ai_assistant_basic');
 
   return (
     <>

@@ -17,19 +17,19 @@ export default {
       resourcesDesc: "Learn and grow",
       monitoring: {
         title: "Real-Time Monitoring",
-        desc: "Live data from IoT field sensors",
+        desc: "Live sensor data straight from the field",
       },
       alerts: {
         title: "Smart Alerts",
-        desc: "SMS and email notifications when something's off",
+        desc: "Get notified by SMS or email when things go off track",
       },
       mapping: {
         title: "Land Mapping",
-        desc: "Parcels visible on interactive GPS map",
+        desc: "View your parcels on an interactive GPS map",
       },
       financial: {
         title: "Financial Tracking",
-        desc: "Expenses and income for each crop",
+        desc: "Track expenses and income per crop",
       },
       reports: {
         title: "PDF Reports",
@@ -48,8 +48,8 @@ export default {
         desc: "10-100 hectares — full monitoring",
       },
       largeFarms: {
-        title: "Large Farms & Associations",
-        desc: "100+ hectares — enterprise with API",
+        title: "Large Farms & Co-ops",
+        desc: "100+ hectares — enterprise-grade with API",
       },
       crops: {
         title: "Diverse Crops",
@@ -57,19 +57,19 @@ export default {
       },
       docs: {
         title: "Documentation",
-        desc: "Installation and setup guides",
+        desc: "Guides for setup and configuration",
       },
       blog: {
         title: "Blog",
-        desc: "Articles about smart agriculture",
+        desc: "Insights on smart farming",
       },
       helpCenter: {
         title: "Help Center",
-        desc: "FAQ and tech support",
+        desc: "FAQs and technical support",
       },
       community: {
         title: "Community",
-        desc: "Join farmers across Romania",
+        desc: "Connect with farmers across Romania",
       },
       featuredPost: "Featured Article",
       featuredPostTitle: "How IoT is Transforming Agriculture in Romania",
@@ -86,8 +86,8 @@ export default {
       "Keep track of your fields, check sensor data in real time, and make better decisions for your harvest. AgriOne puts everything in one place.",
     ctaPrimary: "Open Platform",
     ctaPrimaryAuthed: "Go to Dashboard",
-    ctaSecondary: "See more",
-    scrollToExplore: "Scroll down",
+    ctaSecondary: "Learn More",
+    scrollToExplore: "Scroll to explore",
     stats: {
       farms: "Farms Connected",
       sensors: "Active Sensors",
@@ -96,8 +96,8 @@ export default {
   },
 
   features: {
-    badge: "What it does",
-    title: "Everything in one place, to make",
+    badge: "Features",
+    title: "Everything in one place to make",
     titleHighlight: "your work",
     titleEnd: "easier",
     subtitle:
@@ -132,7 +132,7 @@ export default {
   },
 
   dashboardPreview: {
-    badge: "How it looks in practice",
+    badge: "See It in Action",
     title: "Here's how you see your farm",
     titleHighlight: "in real time",
     subtitle:
@@ -155,11 +155,11 @@ export default {
   },
 
   howItWorks: {
-    badge: "It's simple",
-    title: "Get going in",
+    badge: "How It Works",
+    title: "Get started in just",
     titleHighlight: "3 steps",
     subtitle:
-      "Not complicated at all. Hook up the sensors, set your rules, and you're done — the dashboard does the rest.",
+      "It couldn't be simpler. Hook up the sensors, set your rules, and you're done — the app takes care of the rest.",
     steps: {
       install: {
         title: "Place the Sensors",
@@ -193,11 +193,11 @@ export default {
   },
 
   testimonials: {
-    badge: "Feedback",
+    badge: "Testimonials",
     title: "What farmers",
-    titleHighlight: "say",
+    titleHighlight: "are saying",
     subtitle:
-      "A few farmers who tested the platform and told us what they liked.",
+      "Hear from real farmers who have tried AgriOne and seen results.",
     items: [
       {
         name: "Ion Popescu",
@@ -236,7 +236,7 @@ export default {
     title: "Simple plans for",
     titleHighlight: "any farm",
     subtitle:
-      "Start free, no strings attached. Want more? Go Pro. Clear prices, no surprises.",
+      "Start free, no strings attached. Need more? Go Pro. Transparent pricing, no hidden fees.",
     mostPopular: "Recommended",
     perMonth: "/month",
     free: "Free",
@@ -297,14 +297,14 @@ export default {
     title: "We're a team of",
     titleHighlight: "developers",
     subtitle:
-      "AgriOne is created by students passionate about technology and agriculture, with hands-on experience in software development and IoT sensors. Our mission is to bring Romania's agriculture into the digital era.",
+      "AgriOne is built by students passionate about technology and agriculture, with hands-on experience in software development and IoT sensors. Our mission is to bring Romania's agriculture into the digital age.",
     mission: {
       label: "Who we are",
-      text: "We are a team of software developers with background in modern web technologies, IoT and databases. We have practical experience with React, Node.js, Arduino sensors and cloud platforms. Our project combines technical knowledge with real agricultural challenges.",
+      text: "We're a team of software developers with a background in modern web technologies, IoT, and databases. We have practical experience with React, Node.js, Arduino sensors, and cloud platforms. Our project combines technical expertise with real agricultural challenges.",
     },
     vision: {
-      label: "What's our vision",
-      text: "We want to demonstrate that technology can be simple and useful for farmers. We're not just creating an app — we're building bridges between technological innovation and the concrete needs of Romanian agriculture. Every feature is designed to solve a real problem.",
+      label: "Our vision",
+      text: "We want to show that technology can be simple and genuinely useful for farmers. We're not just building an app — we're bridging the gap between technological innovation and the real needs of Romanian agriculture. Every feature is designed to solve a real problem.",
     },
     thesisBadge: "Bachelor Thesis - Software Engineers",
     thesisText:
@@ -331,10 +331,10 @@ export default {
 
   faq: {
     badge: "FAQ",
-    title: "Questions?",
-    titleHighlight: "Of course",
+    title: "Got questions?",
+    titleHighlight: "We've got answers",
     subtitle:
-      "Here are the answers to what people ask us most often.",
+      "Here are the most common questions we get — and straightforward answers.",
     items: [
       {
         question: "What sensors do I need?",
@@ -370,9 +370,9 @@ export default {
   },
 
   ctaBanner: {
-    title: "Want to give it a try?",
+    title: "Ready to get started?",
     subtitle:
-      "Create a free account, add your fields, and see how it works right away. No strings attached.",
+      "Create a free account, add your fields, and see how it works. No commitments, no credit card.",
     ctaPrimary: "Create Free Account",
     ctaPrimaryAuthed: "Go to Dashboard",
     ctaSecondary: "Contact Us",
@@ -385,7 +385,7 @@ export default {
 
   footer: {
     description:
-      "AgriOne helps farmers make better decisions with IoT sensor data, interactive maps, and clear financial tracking.",
+      "AgriOne helps farmers make smarter decisions with IoT sensor data, interactive maps, and clear financial tracking.",
     platform: "Platform",
     company: "Company",
     resources: "Resources",

@@ -96,7 +96,7 @@ export default {
   },
 
   features: {
-    badge: "Ce poate face",
+    badge: "Funcționalități",
     title: "Totul într-un singur loc, ca să-ți",
     titleHighlight: "ușurezi",
     titleEnd: "munca",
@@ -132,7 +132,7 @@ export default {
   },
 
   dashboardPreview: {
-    badge: "Cum arată în practică",
+    badge: "Vizualizare",
     title: "Uite cum vezi ferma",
     titleHighlight: "în timp real",
     subtitle:
@@ -155,7 +155,7 @@ export default {
   },
 
   howItWorks: {
-    badge: "E simplu",
+    badge: "Cum Funcționează",
     title: "Pornești în",
     titleHighlight: "3 pași",
     subtitle:
@@ -193,11 +193,11 @@ export default {
   },
 
   testimonials: {
-    badge: "Păreri",
+    badge: "Testimoniale",
     title: "Ce zic",
     titleHighlight: "fermierii",
     subtitle:
-      "Câțiva fermieri care au testat platforma și ne-au spus ce le-a plăcut.",
+      "Află de la fermieri reali care au încercat AgriOne și au văzut rezultate.",
     items: [
       {
         name: "Ion Popescu",

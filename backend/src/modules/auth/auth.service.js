@@ -2,10 +2,14 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
+const { OAuth2Client } = require("google-auth-library");
 const env = require("../../config/env");
 const ApiError = require("../../utils/ApiError");
 const { User, RefreshToken, PasswordResetToken, sequelize } = require("../../models");
 const { sendMail, hasSmtpConfig } = require("../../utils/mailer");
+
+// Google OAuth client for verifying ID tokens
+const googleClient = new OAuth2Client();
 
 function signAccessToken(user) {
   return jwt.sign({ sub: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
@@ -23,12 +27,43 @@ function createResetToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
+/**
+ * Verify Google ID token using google-auth-library.
+ * Falls back to manual decode if GOOGLE_CLIENT_ID is not configured.
+ */
+async function verifyGoogleToken(idToken) {
+  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+
+  if (clientId && clientId !== "your-google-client-id") {
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: clientId,
+      });
+      return ticket.getPayload();
+    } catch (err) {
+      console.error("Google token verification failed:", err.message);
+      throw new ApiError(401, "Invalid Google credential", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");
+    }
+  }
+
+  // Fallback: manual decode (for development without GOOGLE_CLIENT_ID)
+  console.warn("GOOGLE_CLIENT_ID not set - falling back to unverified JWT decode");
+  return decodeJwtPayload(idToken);
+}
+
 function decodeJwtPayload(jwtToken) {
   const parts = String(jwtToken || "").split(".");
   if (parts.length < 2) throw new ApiError(400, "Invalid Google credential", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");
-  const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-  const json = Buffer.from(base64, "base64").toString("utf8");
-  return JSON.parse(json);
+  try {
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = Buffer.from(base64, "base64").toString("utf8");
+    const payload = JSON.parse(json);
+    if (!payload || typeof payload !== "object") throw new Error("Invalid payload");
+    return payload;
+  } catch {
+    throw new ApiError(400, "Invalid Google credential", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");
+  }
 }
 
 function normalizeEmail(email) {
@@ -153,8 +188,9 @@ async function login(email, password) {
 async function loginWithGoogle(credential, profile = {}) {
   let payload = null;
   try {
-    payload = decodeJwtPayload(credential);
-  } catch {
+    payload = await verifyGoogleToken(credential);
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
     throw new ApiError(401, "Google credential invalid", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");
   }
 

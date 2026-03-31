@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion as Motion } from "framer-motion";
 import { Mail, ArrowRight, CheckCircle } from "lucide-react";
-import { http } from "../../api/http";
+import { apiClient } from "../../api/client";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { useLanguage } from "../../i18n/LanguageProvider";
 import { Button } from "../../ui/button";
@@ -54,7 +54,7 @@ export default function NewsletterSubscribe() {
 
     setLoading(true);
     try {
-      await http.post("/api/newsletter/subscribe", {
+      await apiClient.post("/api/newsletter/subscribe", {
         email,
         language,
         source: "blog_page",

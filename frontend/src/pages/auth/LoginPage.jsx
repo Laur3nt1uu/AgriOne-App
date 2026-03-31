@@ -39,10 +39,11 @@ export default function LoginPage() {
       // acceptă orice format: {token,user} sau {accessToken,user} etc.
       const token = data.token || data.accessToken || data.jwt || data?.data?.token;
       const user = data.user || data.profile || data?.data?.user || { email };
+      const refreshToken = data.refreshToken || data?.data?.refreshToken;
 
       if (!token) throw new Error("Login response missing token.");
 
-      authStore.setAuth({ token, user });
+      authStore.setAuth({ token, user, refreshToken });
       toastSuccess("Welcome back!");
       nav(redirectTo, { replace: true });
     } catch (e2) {

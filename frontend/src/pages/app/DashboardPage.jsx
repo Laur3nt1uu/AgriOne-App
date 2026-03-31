@@ -400,7 +400,9 @@ export default function DashboardPage() {
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-warn/10" />
         <div className="relative flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
-            <div className="text-xl font-semibold tracking-tight">Dashboard</div>
+            <div className="text-xl font-semibold tracking-tight">
+              {user?.name ? `Bun venit, ${user.name.split(" ")[0]}!` : "Dashboard"}
+            </div>
             <div className="text-muted-foreground text-sm mt-1 capitalize">{roDate} • {roTime}</div>
             {globalLocationLabel ? (
               <div className="text-muted-foreground text-xs mt-2 flex items-center gap-2">
@@ -503,8 +505,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-              {[{ title: "Terenuri", desc: "Gestionează parcele și hartă", Icon: Leaf }, { title: "Senzori", desc: "Istoric citiri și status", Icon: Cpu }, { title: "Economie", desc: "Venituri / cheltuieli", Icon: TrendingUp }].map(({ title, desc, Icon: QuickIcon }) => (
-                <div key={title} className="rounded-xl border border-border/15 bg-background/40 p-4 flex items-center gap-3">
+              {[{ title: "Terenuri", desc: "Gestionează parcele și hartă", Icon: Leaf, to: "/app/lands" }, { title: "Senzori", desc: "Istoric citiri și status", Icon: Cpu, to: "/app/sensors" }, { title: "Economie", desc: "Venituri / cheltuieli", Icon: TrendingUp, to: "/app/economics" }].map(({ title, desc, Icon: QuickIcon, to }) => (
+                <div
+                  key={title}
+                  onClick={() => nav(to)}
+                  className="rounded-xl border border-border/15 bg-background/40 p-4 flex items-center gap-3 cursor-pointer hover:bg-background/60 hover:border-primary/20 transition-all group"
+                >
                   <div className="h-10 w-10 rounded-xl border border-border/15 bg-background/60 grid place-items-center">
                     {createElement(QuickIcon, { size: 18, className: "text-muted-foreground" })}
                   </div>

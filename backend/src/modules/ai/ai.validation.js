@@ -44,9 +44,18 @@ const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
+const publicChatSchema = z.object({
+  message: z
+    .string()
+    .min(1, "Mesajul nu poate fi gol")
+    .max(500, "Mesajul este prea lung (max 500 caractere)"),
+  sessionId: z.string().max(64).optional().nullable(),
+});
+
 module.exports = {
   chatMessageSchema,
   analyzeImageSchema,
   getConversationSchema,
   paginationSchema,
+  publicChatSchema,
 };

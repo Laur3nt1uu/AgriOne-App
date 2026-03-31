@@ -6,7 +6,7 @@ import ReadingsChart from "../../components/charts/ReadingsChart";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { SensorsSkeleton } from "../../ui/skeleton";
-import { Cpu, Droplets, Download, FileSpreadsheet, Thermometer, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { Cpu, Droplets, Download, FileSpreadsheet, Thermometer, RefreshCw, Wifi, WifiOff, Sprout } from "lucide-react";
 import { authStore } from "../../auth/auth.store";
 import { motion as Motion } from "framer-motion";
 import { StatusBadge } from "../../components/agri/StatusBadge";
@@ -29,13 +29,16 @@ function mockSeries(hours = 24) {
   const points = [];
   let t = 20 + Math.random() * 4;
   let h = 55 + Math.random() * 10;
+  let s = 45 + Math.random() * 15;
   for (let i = hours - 1; i >= 0; i--) {
     t += (Math.random() - 0.5) * 0.9;
     h += (Math.random() - 0.5) * 1.8;
+    s += (Math.random() - 0.5) * 1.2;
     points.push({
       ts: new Date(now - i * 60 * 60 * 1000).toISOString(),
       temperature: Number(t.toFixed(1)),
       humidity: Math.max(0, Math.min(100, Math.round(h))),
+      soilMoisture: Math.max(0, Math.min(100, Math.round(s))),
     });
   }
   return points;
@@ -46,6 +49,7 @@ function normalizeReadings(rows) {
     ts: r.recordedAt || r.ts || r.createdAt || r.timestamp || new Date().toISOString(),
     temperature: Number(r.temperatureC ?? r.temperature ?? r.temp ?? 0),
     humidity: Number(r.humidityPct ?? r.humidity ?? r.hum ?? 0),
+    soilMoisture: r.soilMoisturePct != null ? Number(r.soilMoisturePct) : null,
   }));
 }
 
@@ -132,18 +136,24 @@ export default function SensorsPage() {
     if (!series?.length) return null;
     const temps = series.map(x => x.temperature);
     const hums = series.map(x => x.humidity);
+    const soils = series.filter(x => x.soilMoisture != null).map(x => x.soilMoisture);
     const avg = (arr) => arr.reduce((a,b)=>a+b,0) / arr.length;
 
     return {
       tNow: temps[temps.length-1],
       hNow: hums[hums.length-1],
+      sNow: soils.length ? soils[soils.length-1] : null,
       lastTs: series[series.length-1]?.ts,
       tAvg: avg(temps),
       hAvg: avg(hums),
+      sAvg: soils.length ? avg(soils) : null,
       tMax: Math.max(...temps),
       tMin: Math.min(...temps),
       hMax: Math.max(...hums),
       hMin: Math.min(...hums),
+      sMax: soils.length ? Math.max(...soils) : null,
+      sMin: soils.length ? Math.min(...soils) : null,
+      hasSoil: soils.length > 0,
     };
   }, [series]);
 
@@ -155,6 +165,10 @@ export default function SensorsPage() {
   const humNorm = useMemo(() => {
     if (!stats) return 0;
     return clamp01(Number(stats.hNow) / 100);
+  }, [stats]);
+  const soilNorm = useMemo(() => {
+    if (!stats || stats.sNow == null) return 0;
+    return clamp01(Number(stats.sNow) / 100);
   }, [stats]);
 
   const lastLabel = useMemo(() => {
@@ -255,7 +269,7 @@ export default function SensorsPage() {
           <div className="space-y-4">
             {/* Quick Stats */}
             {stats && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid gap-3 ${stats.hasSoil ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <Motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -283,7 +297,7 @@ export default function SensorsPage() {
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                   <div className="relative z-10">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="muted text-xs">Umiditate</div>
+                      <div className="muted text-xs">Umiditate Aer</div>
                       <Droplets size={16} className="text-blue-500" />
                     </div>
                     <div className="text-2xl font-extrabold mt-1">{stats.hNow.toFixed(0)}%</div>
@@ -292,6 +306,27 @@ export default function SensorsPage() {
                     </div>
                   </div>
                 </Motion.div>
+
+                {stats.hasSoil && (
+                  <Motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="card-soft p-4 agri-pattern relative overflow-hidden group"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="muted text-xs">Umiditate Sol</div>
+                        <Sprout size={16} className="text-emerald-500" />
+                      </div>
+                      <div className="text-2xl font-extrabold mt-1">{stats.sNow.toFixed(0)}%</div>
+                      <div className="mt-2 progress h-1.5">
+                        <div className="progress-bar bg-emerald-500" style={{ width: `${Math.round(soilNorm * 100)}%` }} />
+                      </div>
+                    </div>
+                  </Motion.div>
+                )}
               </div>
             )}
 
@@ -328,7 +363,7 @@ export default function SensorsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-xs font-semibold">
                       <Droplets size={14} className="text-blue-500" />
-                      Umiditate
+                      Umiditate Aer
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="card-soft p-2">
@@ -345,6 +380,30 @@ export default function SensorsPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Soil Moisture Stats */}
+                  {stats.hasSoil && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-semibold">
+                        <Sprout size={14} className="text-emerald-500" />
+                        Umiditate Sol
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="card-soft p-2">
+                          <div className="text-xs muted">Min</div>
+                          <div className="font-bold text-sm">{stats.sMin.toFixed(0)}%</div>
+                        </div>
+                        <div className="card-soft p-2">
+                          <div className="text-xs muted">Medie</div>
+                          <div className="font-bold text-sm">{stats.sAvg.toFixed(0)}%</div>
+                        </div>
+                        <div className="card-soft p-2">
+                          <div className="text-xs muted">Max</div>
+                          <div className="font-bold text-sm">{stats.sMax.toFixed(0)}%</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
