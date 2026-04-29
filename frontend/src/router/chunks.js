@@ -21,6 +21,7 @@ export const loadProfilePage = () => import("../pages/app/ProfilePage");
 export const loadAddLandPage = () => import("../pages/app/AddLandPage");
 export const loadUsersManagementPage = () => import("../pages/app/admin/UsersManagementPage");
 export const loadSystemSettingsPage = () => import("../pages/app/admin/SystemSettingsPage");
+export const loadNewsletterPage = () => import("../pages/app/admin/NewsletterPage");
 export const loadApiaPage = () => import("../pages/app/ApiaPage");
 export const loadPlanPage = () => import("../pages/app/PlanPage");
 export const loadNotFoundPage = () => import("../pages/NotFoundPage");
@@ -30,6 +31,12 @@ export const loadDocumentationPage = () => import("../pages/resources/Documentat
 export const loadBlogPage = () => import("../pages/resources/BlogPage");
 export const loadHelpCenterPage = () => import("../pages/resources/HelpCenterPage");
 export const loadCommunityPage = () => import("../pages/resources/CommunityPage");
+export const loadUnsubscribePage = () => import("../pages/newsletter/UnsubscribePage");
+
+// Legal pages (public)
+export const loadPrivacyPolicyPage = () => import("../pages/legal/PrivacyPolicyPage");
+export const loadTermsPage = () => import("../pages/legal/TermsPage");
+export const loadGdprPage = () => import("../pages/legal/GdprPage");
 
 function safePrefetch(loader) {
   try {
@@ -68,12 +75,14 @@ export function prefetchByPath(path) {
   if (p.startsWith("/app/plan")) return safePrefetch(loadPlanPage);
   if (p.startsWith("/app/admin/users")) return safePrefetch(loadUsersManagementPage);
   if (p.startsWith("/app/admin/settings")) return safePrefetch(loadSystemSettingsPage);
+  if (p.startsWith("/app/admin/newsletter")) return safePrefetch(loadNewsletterPage);
 
   // Resource pages
   if (p.startsWith("/docs")) return safePrefetch(loadDocumentationPage);
   if (p.startsWith("/blog")) return safePrefetch(loadBlogPage);
   if (p.startsWith("/help")) return safePrefetch(loadHelpCenterPage);
   if (p.startsWith("/community")) return safePrefetch(loadCommunityPage);
+  if (p.startsWith("/newsletter/unsubscribe")) return safePrefetch(loadUnsubscribePage);
 
   // Legacy paths support (for gradual migration)
   if (p.startsWith("/login")) return safePrefetch(loadLoginPage);

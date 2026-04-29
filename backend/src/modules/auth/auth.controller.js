@@ -17,7 +17,7 @@ const { User } = require("../../models");
 const register = asyncHandler(async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
-  const result = await authService.register(parsed.data.email, parsed.data.password, parsed.data.role, parsed.data.username, parsed.data.name);
+  const result = await authService.register(parsed.data.email, parsed.data.password, parsed.data.username, parsed.data.name);
   res.status(201).json(result);
 });
 
@@ -159,6 +159,15 @@ const changePlan = asyncHandler(async (req, res) => {
 
   const user = await User.findByPk(req.user.sub);
   if (!user) throw new ApiError(404, "User not found", null, "AUTH_USER_NOT_FOUND");
+
+  if (parsed.data.plan !== "STARTER") {
+    throw new ApiError(
+      403,
+      "Paid plan upgrades must use the payment flow.",
+      null,
+      "PLAN_DIRECT_UPGRADE_DISABLED"
+    );
+  }
 
   user.plan = parsed.data.plan;
   await user.save();

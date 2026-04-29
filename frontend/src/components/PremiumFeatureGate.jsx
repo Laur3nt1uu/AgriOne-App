@@ -44,7 +44,7 @@ export default function PremiumFeatureGate({
   const [showModal, setShowModal] = useState(false);
   const { hasFeature, getUserPlan, getRequiredPlanForFeature } = usePlanFeatures();
   const { simulatePayment, loading } = useStripePayment();
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const currentPlan = getUserPlan();

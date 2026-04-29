@@ -1,4 +1,4 @@
-import { createElement, useCallback, useEffect, useMemo, useState } from "react";
+import { createElement, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { api, pick } from "../../api/endpoints";
 import { toastError } from "../../utils/toast";
@@ -12,6 +12,16 @@ import { KPICard } from "../../components/agri/KPICard";
 import { DashboardSkeleton } from "../../ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import {
+  AreaChart,
+  Area,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  CartesianGrid,
+} from "recharts";
+import {
+  ArrowRight,
   BellRing,
   CheckCircle2,
   Cloud,
@@ -59,6 +69,53 @@ function weatherVisual(weather) {
   return { Icon: Sun, accentClass: "text-warn", label: "Senin" };
 }
 
+/* ── Isolated clock so it doesn't re-render the whole page ── */
+const LiveClock = memo(function LiveClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const roDate = now.toLocaleDateString("ro-RO", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const roTime = now.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return <span className="capitalize">{roDate} • {roTime}</span>;
+});
+
+/* ── Chart tooltip ── */
+function MiniChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl border border-border/15 bg-background/90 backdrop-blur-sm p-3 text-sm shadow-lg">
+      <div className="font-semibold text-xs text-muted-foreground mb-1">
+        {new Date(label).toLocaleString("ro-RO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+      </div>
+      {payload.map((p) => (
+        <div key={p.dataKey} className="flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: p.color }} />
+          <span className="text-muted-foreground">{p.dataKey === "temperature" ? "Temp" : "Umid"}:</span>
+          <span className="font-semibold">{Number(p.value).toFixed(1)}{p.dataKey === "temperature" ? "°C" : "%"}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Normalize reading from API shape ── */
+function normalizeReading(r) {
+  return {
+    ts: r.recordedAt || r.ts || r.createdAt || new Date().toISOString(),
+    temperature: Number(r.temperatureC ?? r.temperature ?? 0),
+    humidity: Number(r.humidityPct ?? r.humidity ?? 0),
+  };
+}
+
+/* ── Stagger animation variants ── */
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+};
+
 export default function DashboardPage() {
   const nav = useNavigate();
   const user = authStore.getUser();
@@ -66,7 +123,9 @@ export default function DashboardPage() {
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [overview, setOverview] = useState(null);
-  const [now, setNow] = useState(() => new Date());
+
+  const [readings, setReadings] = useState([]);
+  const [readingsLandName, setReadingsLandName] = useState(null);
 
   const [adminStats, setAdminStats] = useState(null);
 
@@ -281,11 +340,6 @@ export default function DashboardPage() {
   }, [loadRecentAlerts]);
 
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
     (async () => {
       try {
         const lands = await api.lands.list().catch(() => []);
@@ -299,10 +353,19 @@ export default function DashboardPage() {
 
         const loc = await api.weather.reverseGeocode(land.centroidLat, land.centroidLng).catch(() => null);
         setWeatherPlace(loc?.name || null);
+
+        // Fetch sensor readings for chart
+        try {
+          const rd = await api.readings.byLand(land.id, "7d");
+          const items = Array.isArray(rd?.items) ? rd.items : (Array.isArray(rd) ? rd : []);
+          setReadings(items.map(normalizeReading));
+          setReadingsLandName(land.name || null);
+        } catch {
+          setReadings([]);
+        }
       } catch {
         setWeather(null);
         setWeatherPlace(null);
-        // weather is best-effort; don't spam error toasts on dashboard
       }
     })();
   }, []);
@@ -330,22 +393,13 @@ export default function DashboardPage() {
   }, [globalRec]);
 
   const kpiCards = [
-    { label: "Total terenuri", value: pick(overview, ["totalLands","lands","countLands","landsCount"], "—"), Icon: Leaf },
-    { label: "Senzori activi", value: pick(overview, ["activeSensors","sensorsOnline"], "—"), Icon: Cpu },
-    { label: "Temp. medie (24h)", value: pick(overview, ["avgTemp","avgTemperature","avgTemperature24h"], "—"), Icon: Thermometer },
-    { label: "Umid. medie (24h)", value: pick(overview, ["avgHumidity","avgHum","avgHumidity24h"], "—"), Icon: Droplets },
-    { label: "Profit total", value: pick(overview, ["totalProfit","profit","profitTotal"], "—"), Icon: TrendingUp },
-    { label: "Alerte (7 zile)", value: pick(overview, ["activeAlerts","alertsActive","recentAlerts"], "—"), Icon: BellRing },
+    { label: "Total terenuri", value: pick(overview, ["totalLands","lands","countLands","landsCount"], "—"), Icon: Leaf, sub: "Parcele agricole" },
+    { label: "Senzori activi", value: pick(overview, ["activeSensors","sensorsOnline"], "—"), Icon: Cpu, sub: `din ${pick(overview, ["sensorsCount","totalSensors"], "?")} total` },
+    { label: "Temp. medie (24h)", value: pick(overview, ["avgTemp","avgTemperature","avgTemperature24h"], "—"), Icon: Thermometer, sub: "Ultimele 24 de ore", suffix: "°C" },
+    { label: "Umid. medie (24h)", value: pick(overview, ["avgHumidity","avgHum","avgHumidity24h"], "—"), Icon: Droplets, sub: "Ultimele 24 de ore", suffix: "%" },
+    { label: "Profit total", value: pick(overview, ["totalProfit","profit","profitTotal"], "—"), Icon: TrendingUp, sub: "Venituri − cheltuieli", suffix: " RON" },
+    { label: "Alerte (7 zile)", value: pick(overview, ["activeAlerts","alertsActive","recentAlerts"], "—"), Icon: BellRing, sub: "Ultimele 7 zile" },
   ];
-
-  const roDate = useMemo(
-    () => now.toLocaleDateString("ro-RO", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
-    [now]
-  );
-  const roTime = useMemo(
-    () => now.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-    [now]
-  );
 
   const globalWeather = globalRec?.inputs?.weather || null;
   const globalActions = Array.isArray(globalRec?.actions) ? globalRec.actions : [];
@@ -398,12 +452,12 @@ export default function DashboardPage() {
     <div className="space-y-6 animate-fadeIn">
       <Card className="relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-warn/10" />
-        <div className="relative flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+        <div className="relative flex flex-col gap-4 p-4 sm:p-6 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             <div className="text-xl font-semibold tracking-tight">
               {user?.name ? `Bun venit, ${user.name.split(" ")[0]}!` : "Dashboard"}
             </div>
-            <div className="text-muted-foreground text-sm mt-1 capitalize">{roDate} • {roTime}</div>
+            <div className="text-muted-foreground text-sm mt-1"><LiveClock /></div>
             {globalLocationLabel ? (
               <div className="text-muted-foreground text-xs mt-2 flex items-center gap-2">
                 <MapPin size={14} className="text-muted-foreground" />
@@ -415,8 +469,8 @@ export default function DashboardPage() {
             ) : null}
           </div>
 
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="secondary" onClick={() => loadGlobalRec(false)} disabled={globalBusy}>
+          <div className="flex gap-2 flex-wrap shrink-0">
+            <Button variant="secondary" onClick={() => loadGlobalRec(false)} disabled={globalBusy} className="text-sm">
               Actualizează
             </Button>
             <Button
@@ -424,6 +478,7 @@ export default function DashboardPage() {
               onClick={useDeviceLocation}
               disabled={globalBusy}
               title="Folosește coordonatele dispozitivului"
+              className="text-sm"
             >
               Locația mea
             </Button>
@@ -432,6 +487,7 @@ export default function DashboardPage() {
               onClick={openPreferences}
               disabled={globalBusy}
               title="Setează locația globală salvată"
+              className="text-sm"
             >
               Setează
             </Button>
@@ -439,7 +495,7 @@ export default function DashboardPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
         <div className="space-y-4">
           {isAdmin ? (
             <Card className="p-5">
@@ -480,18 +536,82 @@ export default function DashboardPage() {
             </Card>
           ) : null}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {kpiCards.map(({ label, value, Icon: KpiIcon }, index) => (
-              <KPICard
-                key={label}
-                title={label}
-                value={String(value)}
-                subtitle="Actualizat din backend"
-                icon={createElement(KpiIcon, { size: 24 })}
-                variant={index === 5 && String(value) !== "—" && Number(value) > 0 ? "warning" : "default"}
-              />
-            ))}
-          </div>
+          <Motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4"
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+          >
+            {kpiCards.map(({ label, value, Icon: KpiIcon, sub, suffix }, index) => {
+              const display = value != null && value !== "—" && suffix ? `${value}${suffix}` : String(value);
+              return (
+                <Motion.div key={label} variants={fadeUp}>
+                  <KPICard
+                    title={label}
+                    value={display}
+                    subtitle={sub}
+                    icon={createElement(KpiIcon, { size: 24 })}
+                    variant={index === 5 && String(value) !== "—" && Number(value) > 0 ? "warning" : "default"}
+                  />
+                </Motion.div>
+              );
+            })}
+          </Motion.div>
+
+          {/* ── Sensor readings chart ── */}
+          {readings.length > 0 && (
+            <Motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
+              <Card className="p-5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                      <div className="text-sm font-semibold">Citiri senzori (7 zile)</div>
+                      <div className="text-muted-foreground text-xs mt-1">
+                        {readingsLandName ? `Teren: ${readingsLandName}` : "Ultimele citiri disponibile"}
+                        {" • "}{readings.length} puncte
+                      </div>
+                    </div>
+                    <Button variant="ghost" onClick={() => nav("/app/sensors")} className="text-xs gap-1">
+                      Detalii <ArrowRight size={14} />
+                    </Button>
+                  </div>
+                  <div className="h-[180px] sm:h-[220px] md:h-[260px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={readings} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                        <defs>
+                          <linearGradient id="dashTempGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--color-primary, #10b981)" stopOpacity={0.3} />
+                            <stop offset="100%" stopColor="var(--color-primary, #10b981)" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="dashHumGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.2} />
+                            <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #e5e7eb)" strokeOpacity={0.15} />
+                        <XAxis
+                          dataKey="ts"
+                          tickFormatter={(v) => new Date(v).toLocaleDateString("ro-RO", { day: "2-digit", month: "short" })}
+                          stroke="var(--color-muted-foreground, #9ca3af)"
+                          tick={{ fontSize: 11 }}
+                          strokeOpacity={0.4}
+                        />
+                        <YAxis stroke="var(--color-muted-foreground, #9ca3af)" tick={{ fontSize: 11 }} strokeOpacity={0.4} />
+                        <RTooltip content={<MiniChartTooltip />} />
+                        <Area type="monotone" dataKey="temperature" stroke="var(--color-primary, #10b981)" strokeWidth={2} fill="url(#dashTempGrad)" dot={false} />
+                        <Area type="monotone" dataKey="humidity" stroke="#3b82f6" strokeWidth={1.5} fill="url(#dashHumGrad)" dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-0.5 rounded bg-primary" />Temperatură (°C)</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-0.5 rounded" style={{ background: "#3b82f6" }} />Umiditate (%)</span>
+                  </div>
+                </div>
+              </Card>
+            </Motion.div>
+          )}
 
           <Card className="p-5">
             <div className="flex items-start justify-between gap-3">
@@ -504,7 +624,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[{ title: "Terenuri", desc: "Gestionează parcele și hartă", Icon: Leaf, to: "/app/lands" }, { title: "Senzori", desc: "Istoric citiri și status", Icon: Cpu, to: "/app/sensors" }, { title: "Economie", desc: "Venituri / cheltuieli", Icon: TrendingUp, to: "/app/economics" }].map(({ title, desc, Icon: QuickIcon, to }) => (
                 <div
                   key={title}
@@ -559,6 +679,7 @@ export default function DashboardPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                       whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                      onClick={() => nav("/app/alerts")}
                       className={`rounded-xl border p-4 flex items-start justify-between gap-3 cursor-pointer relative overflow-hidden transition-all duration-300 group ${
                         sev === "CRITICAL"
                           ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30"
@@ -603,6 +724,14 @@ export default function DashboardPage() {
                 <div className="text-muted-foreground text-sm">Nu există alerte.</div>
               )}
             </div>
+
+            {recentAlerts.length > 0 && (
+              <div className="mt-4 flex justify-end">
+                <Button variant="ghost" onClick={() => nav("/app/alerts")} className="text-xs gap-1">
+                  Vezi toate alertele <ArrowRight size={14} />
+                </Button>
+              </div>
+            )}
             </div>
           </Card>
         </div>

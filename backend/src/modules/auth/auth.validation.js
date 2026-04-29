@@ -19,7 +19,6 @@ const registerSchema = z.object({
     .string()
     .min(6, "Parola trebuie să aibă cel puțin 6 caractere.")
     .max(72, "Parola este prea lungă."),
-  role: z.enum(["USER", "ADMIN"]).optional().default("USER"),
 });
 
 const loginSchema = z.object({

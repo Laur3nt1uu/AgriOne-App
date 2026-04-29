@@ -10,6 +10,13 @@ function required(name) {
   return v;
 }
 
+function boolean(name, fallback = false) {
+  if (process.env[name] == null) return fallback;
+  return String(process.env[name]).trim().toLowerCase() === "true";
+}
+
+const isProduction = process.env.NODE_ENV === "production";
+
 module.exports = {
   PORT: process.env.PORT || 5000,
   DB_HOST: required("DB_HOST"),
@@ -41,4 +48,8 @@ module.exports = {
 
   // Google OAuth
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
+  GOOGLE_ALLOW_UNVERIFIED_TOKENS: boolean("GOOGLE_ALLOW_UNVERIFIED_TOKENS", !isProduction),
+
+  // Demo payment mode is useful for the university presentation, but disabled by default in production.
+  PAYMENTS_DEMO_MODE: boolean("PAYMENTS_DEMO_MODE", !isProduction),
 };

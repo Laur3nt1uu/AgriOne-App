@@ -21,6 +21,7 @@ import {
   loadAddLandPage,
   loadUsersManagementPage,
   loadSystemSettingsPage,
+  loadNewsletterPage,
   loadApiaPage,
   loadPlanPage,
   loadNotFoundPage,
@@ -28,8 +29,12 @@ import {
   loadBlogPage,
   loadHelpCenterPage,
   loadCommunityPage,
+  loadUnsubscribePage,
   loadAuthCallbackPage,
   loadAuthRedirectPage,
+  loadPrivacyPolicyPage,
+  loadTermsPage,
+  loadGdprPage,
 } from "./chunks";
 
 const LandingPage = lazy(loadLandingPage);
@@ -51,6 +56,7 @@ const ProfilePage = lazy(loadProfilePage);
 const AddLandPage = lazy(loadAddLandPage);
 const UsersManagementPage = lazy(loadUsersManagementPage);
 const SystemSettingsPage = lazy(loadSystemSettingsPage);
+const NewsletterPage = lazy(loadNewsletterPage);
 const ApiaPage = lazy(loadApiaPage);
 const PlanPage = lazy(loadPlanPage);
 const NotFoundPage = lazy(loadNotFoundPage);
@@ -60,6 +66,12 @@ const DocumentationPage = lazy(loadDocumentationPage);
 const BlogPage = lazy(loadBlogPage);
 const HelpCenterPage = lazy(loadHelpCenterPage);
 const CommunityPage = lazy(loadCommunityPage);
+const UnsubscribePage = lazy(loadUnsubscribePage);
+
+// Legal pages
+const PrivacyPolicyPage = lazy(loadPrivacyPolicyPage);
+const TermsPage = lazy(loadTermsPage);
+const GdprPage = lazy(loadGdprPage);
 
 function suspense(el) {
   return (
@@ -108,6 +120,24 @@ export const router = createBrowserRouter([
     path: "/community",
     element: suspense(<CommunityPage />),
   },
+  {
+    path: "/newsletter/unsubscribe/:token",
+    element: suspense(<UnsubscribePage />),
+  },
+
+  // Legal Pages (Public)
+  {
+    path: "/privacy",
+    element: suspense(<PrivacyPolicyPage />),
+  },
+  {
+    path: "/terms",
+    element: suspense(<TermsPage />),
+  },
+  {
+    path: "/gdpr",
+    element: suspense(<GdprPage />),
+  },
 
   // App Routes (Authenticated Application)
   {
@@ -137,6 +167,10 @@ export const router = createBrowserRouter([
       {
         path: "admin/settings",
         element: <RequireAdmin>{suspense(<SystemSettingsPage />)}</RequireAdmin>
+      },
+      {
+        path: "admin/newsletter",
+        element: <RequireAdmin>{suspense(<NewsletterPage />)}</RequireAdmin>
       },
     ],
   },

@@ -1,8 +1,10 @@
 const http = require("http");
 const path = require("path");
+const bcrypt = require("bcrypt");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 
 const app = require("../src/app");
+const { User } = require("../src/models");
 
 const PORT = 5056;
 
@@ -59,7 +61,7 @@ async function run() {
       const password = "Passw0rd!";
 
       let res = await request("POST", "/api/auth/register", {
-        body: { email, password, role: "USER" },
+        body: { email, password },
       });
       add("auth.register", res.status === 201 && res.json?.accessToken, res.json || res.body);
 
@@ -72,6 +74,26 @@ async function run() {
         headers: { Authorization: `Bearer ${userToken}` },
       });
       add("auth.me", res.status === 200 && res.json?.user?.email === email, res.json || res.body);
+
+      const roleProbeEmail = `role_probe_${Date.now()}@example.com`;
+      res = await request("POST", "/api/auth/register", {
+        body: { email: roleProbeEmail, password, role: "ADMIN" },
+      });
+      add(
+        "auth.registerIgnoresRole",
+        res.status === 201 && res.json?.user?.role === "USER",
+        res.json || res.body
+      );
+
+      res = await request("PUT", "/api/auth/plan", {
+        headers: { Authorization: `Bearer ${userToken}` },
+        body: { plan: "PRO" },
+      });
+      add(
+        "auth.blocksDirectPaidPlan",
+        res.status === 403 && res.json?.code === "PLAN_DIRECT_UPGRADE_DISABLED",
+        res.json || res.body
+      );
 
       const landPayload = {
         name: "Test Land",
@@ -201,11 +223,17 @@ async function run() {
       add("exports.readingsCsv", csvOk, res.body?.slice?.(0, 80) || res.body);
 
       const adminEmail = `admin_${Date.now()}@example.com`;
-      res = await request("POST", "/api/auth/register", {
-        body: { email: adminEmail, password, role: "ADMIN" },
+      await User.create({
+        email: adminEmail,
+        username: `admin_${Date.now()}`,
+        passwordHash: await bcrypt.hash(password, 12),
+        role: "ADMIN",
+      });
+      res = await request("POST", "/api/auth/login", {
+        body: { email: adminEmail, password },
       });
       const adminToken = res.json?.accessToken;
-      add("admin.register", res.status === 201 && adminToken, res.json || res.body);
+      add("admin.login", res.status === 200 && adminToken, res.json || res.body);
 
       res = await request("GET", "/api/admin/stats", {
         headers: { Authorization: `Bearer ${adminToken}` },

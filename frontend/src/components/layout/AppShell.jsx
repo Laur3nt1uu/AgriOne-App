@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useNavigationType } from "react-router-dom";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion as Motion, useReducedMotion } from "framer-motion";
+import Lenis from "lenis";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import MobileNav from "./MobileNavigation";
@@ -15,8 +16,38 @@ export default function AppShell() {
   const reduceMotion = useReducedMotion();
   const scrollPositionsRef = useRef(new Map());
   const mainRef = useRef(null);
+  const lenisRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+
+  // Lenis smooth scroll on the main scrollable area
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el || reduceMotion) return;
+
+    const lenis = new Lenis({
+      wrapper: el,
+      duration: 1.0,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: "vertical",
+      gestureOrientation: "vertical",
+      smoothWheel: true,
+      touchMultiplier: 2,
+    });
+
+    lenisRef.current = lenis;
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, [showSplash, reduceMotion]);
 
   useLayoutEffect(() => {
     const positions = scrollPositionsRef.current;
@@ -36,20 +67,29 @@ export default function AppShell() {
       if (!el) return;
       if (navigationType === "POP") {
         const y = scrollPositionsRef.current.get(loc.key);
-        el.scrollTo(0, typeof y === "number" ? y : 0);
+        const pos = typeof y === "number" ? y : 0;
+        if (lenisRef.current) {
+          lenisRef.current.scrollTo(pos, { immediate: true });
+        } else {
+          el.scrollTo(0, pos);
+        }
       } else {
-        el.scrollTo(0, 0);
+        if (lenisRef.current) {
+          lenisRef.current.scrollTo(0, { immediate: true });
+        } else {
+          el.scrollTo(0, 0);
+        }
       }
     } catch {
       // ignore
     }
   }, [loc.key, navigationType]);
 
-  const initial = reduceMotion ? { opacity: 1 } : { opacity: 0 };
-  const animate = { opacity: 1 };
+  const initial = reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 };
+  const animate = { opacity: 1, y: 0 };
   const transition = reduceMotion
     ? { duration: 0 }
-    : { duration: 0.12, ease: [0.22, 1, 0.36, 1] };
+    : { duration: 0.25, ease: [0.22, 1, 0.36, 1] };
 
   if (showSplash) {
     return <LoadingScreen onComplete={() => setShowSplash(false)} />;
@@ -68,8 +108,8 @@ export default function AppShell() {
         <div className="flex-1 flex flex-col overflow-hidden relative z-10">
           <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
-          <main ref={mainRef} className="flex-1 overflow-y-auto pb-20 md:pb-0">
-            <div className="p-4 md:p-8">
+          <main ref={mainRef} className="flex-1 overflow-y-auto pb-24 md:pb-8">
+            <div className="p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
               <Motion.div
                 key={loc.pathname}
                 style={{ willChange: "opacity" }}

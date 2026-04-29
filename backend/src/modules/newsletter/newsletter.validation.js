@@ -6,6 +6,11 @@ const subscribeSchema = z.object({
   source: z.string().max(50).optional().default("blog_page"),
 });
 
+const sendCampaignSchema = z.object({
+  campaignKey: z.string().min(1).max(50),
+});
+
 module.exports = {
   subscribeSchema,
+  sendCampaignSchema,
 };

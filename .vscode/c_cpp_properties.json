@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "name": "Arduino",
+      "includePath": [
+        "C:/Users/Laurentiu/Documents/Arduino/libraries/**",
+        "C:/Users/Laurentiu/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.8.7/cores/arduino",
+        "C:/Users/Laurentiu/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.8.7/variants/standard",
+        "C:/Users/Laurentiu/AppData/Local/Arduino15/libraries/**"
+      ],
+      "defines": [
+        "ARDUINO=10800",
+        "__AVR_ATmega328P__",
+        "F_CPU=16000000L"
+      ],
+      "compilerPath": "",
+      "cStandard": "c11",
+      "cppStandard": "c++11",
+      "intelliSenseMode": "gcc-avr"
+    }
+  ],
+  "version": 4
+}

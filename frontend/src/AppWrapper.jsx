@@ -4,6 +4,7 @@ import { router } from "./router/router";
 import { prefetchCommonAppRoutes } from "./router/chunks";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { LanguageProvider } from "./i18n/LanguageProvider";
+import CookieConsent from "./components/CookieConsent";
 
 // Lazy load PWA provider to avoid issues in development
 const PWAProvider = lazy(() =>
@@ -31,6 +32,7 @@ export default function AppWrapper() {
         <Suspense fallback={null}>
           <PWAProvider>
             <RouterProvider router={router} />
+            <CookieConsent />
           </PWAProvider>
         </Suspense>
       </LanguageProvider>

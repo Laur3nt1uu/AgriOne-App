@@ -132,12 +132,12 @@ export default function LandsPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="card p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+      <div className="card p-4 sm:p-6 agri-pattern flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div>
           <div className="page-title">{isAdmin ? "Toate terenurile" : "Terenurile mele"}</div>
           <div className="muted text-sm">{isAdmin ? "Administrare globală" : "Monitorizare personală"} • parcele • senzori</div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {!isAdmin && (() => {
             const plan = authStore.getPlan();
             const max = PLAN_LIMITS[plan] ?? PLAN_LIMITS.STARTER;
@@ -156,7 +156,7 @@ export default function LandsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-4 lg:gap-6">
         <div className="space-y-4">
           {busy ? (
             <div className="card p-6 muted">Se încarcă…</div>
@@ -173,7 +173,7 @@ export default function LandsPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-3 sm:gap-4">
               {items.map((it, index) => {
                 const online = isOnline(it.lastSensorAt);
                 const rec = recByLand[it.id];
@@ -208,7 +208,7 @@ export default function LandsPage() {
                   >
                   <button
                     onClick={() => nav(`/app/lands/${it.id}`)}
-                    className="text-left card p-5 card-hover agri-pattern relative overflow-hidden group"
+                    className="text-left card p-4 sm:p-5 card-hover agri-pattern relative overflow-hidden group w-full"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.boxShadow = "0 8px 30px rgba(16, 185, 129, 0.15)";
                     }}
@@ -230,8 +230,8 @@ export default function LandsPage() {
                       <StatusBadge status={online ? "online" : "offline"} />
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div className="card-soft p-4">
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
+                      <div className="card-soft p-3 sm:p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div className="muted text-xs">Cultură</div>
                           <Leaf size={16} className="text-muted-foreground" />
@@ -239,7 +239,7 @@ export default function LandsPage() {
                         <div className="text-sm font-extrabold mt-2 truncate">{it.cropType || "—"}</div>
                       </div>
 
-                      <div className="card-soft p-4">
+                      <div className="card-soft p-3 sm:p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div className="muted text-xs">Suprafață</div>
                           <Ruler size={16} className="text-muted-foreground" />
@@ -247,7 +247,7 @@ export default function LandsPage() {
                         <div className="text-sm font-extrabold mt-2">{fmtHa(it.areaHa)}</div>
                       </div>
 
-                      <div className="card-soft p-4">
+                      <div className="card-soft p-3 sm:p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div className="muted text-xs">Senzor</div>
                           <Cpu size={16} className="text-muted-foreground" />
@@ -255,7 +255,7 @@ export default function LandsPage() {
                         <div className="text-sm font-extrabold mt-2 truncate">{it.sensorId ? it.sensorId : "Neasociat"}</div>
                       </div>
 
-                      <div className="card-soft p-4">
+                      <div className="card-soft p-3 sm:p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div className="muted text-xs">Vreme</div>
                           <WxIcon size={16} className="text-muted-foreground" />
@@ -307,20 +307,20 @@ export default function LandsPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="card p-5">
+          <div className="card p-4 sm:p-5">
             <div className="text-sm font-bold">Statistici</div>
-            <div className="mt-3 grid grid-cols-3 gap-3">
-              <div className="card-soft p-4">
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="card-soft p-3 sm:p-4">
                 <div className="muted text-xs">Total</div>
-                <div className="text-2xl font-extrabold mt-1">{count}</div>
+                <div className="text-xl sm:text-2xl font-extrabold mt-1">{count}</div>
               </div>
-              <div className="card-soft p-4">
+              <div className="card-soft p-3 sm:p-4">
                 <div className="muted text-xs">Online</div>
-                <div className="text-2xl font-extrabold mt-1">{onlineCount}</div>
+                <div className="text-xl sm:text-2xl font-extrabold mt-1">{onlineCount}</div>
               </div>
-              <div className="card-soft p-4">
+              <div className="card-soft p-3 sm:p-4">
                 <div className="muted text-xs">Offline</div>
-                <div className="text-2xl font-extrabold mt-1">{offlineCount}</div>
+                <div className="text-xl sm:text-2xl font-extrabold mt-1">{offlineCount}</div>
               </div>
             </div>
 

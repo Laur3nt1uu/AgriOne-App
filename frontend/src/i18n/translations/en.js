@@ -294,21 +294,18 @@ export default {
 
   about: {
     badge: "About Us",
-    title: "We're a team of",
-    titleHighlight: "developers",
+    title: "The platform that",
+    titleHighlight: "digitizes your farm",
     subtitle:
-      "AgriOne is built by students passionate about technology and agriculture, with hands-on experience in software development and IoT sensors. Our mission is to bring Romania's agriculture into the digital age.",
+      "AgriOne is a smart agricultural system that connects IoT field sensors with a modern dashboard, giving you full control over your lands, harvest and finances — all from one place.",
     mission: {
-      label: "Who we are",
-      text: "We're a team of software developers with a background in modern web technologies, IoT, and databases. We have practical experience with React, Node.js, Arduino sensors, and cloud platforms. Our project combines technical expertise with real agricultural challenges.",
+      label: "What is AgriOne",
+      text: "AgriOne is a complete farm management platform. It collects real-time data from IoT sensors in the field — temperature, soil moisture, air humidity — and displays it on an intuitive dashboard. It includes an alert system, financial tracking, interactive maps and PDF reports.",
     },
     vision: {
       label: "Our vision",
-      text: "We want to show that technology can be simple and genuinely useful for farmers. We're not just building an app — we're bridging the gap between technological innovation and the real needs of Romanian agriculture. Every feature is designed to solve a real problem.",
+      text: "We believe every farmer in Romania deserves access to modern technology, regardless of farm size. AgriOne turns raw sensor data into actionable insights that help you save resources, prevent losses and grow your harvest season after season.",
     },
-    thesisBadge: "Bachelor Thesis - Software Engineers",
-    thesisText:
-      "AgriOne is our bachelor thesis project in Systems Engineering - a full-stack platform demonstrating the integration of modern web technologies (React, Node.js, PostgreSQL) with IoT hardware for real-time agricultural monitoring.",
     values: {
       accessibility: {
         title: "Accessibility",
@@ -415,6 +412,145 @@ export default {
     madeWith: "Made with",
     inRomania: "in Romania",
     allSystemsOperational: "All systems running",
+  },
+
+  newsletter: {
+    badge: "Newsletter",
+    title: "Stay in the loop",
+    subtitle: "Get weekly insights on smart farming, weather alerts, and platform updates — straight to your inbox.",
+    placeholder: "your@email.com",
+    button: "Subscribe",
+    loading: "Subscribing...",
+    success: "You're subscribed! Check your inbox.",
+    error: "Subscription failed. Please try again.",
+    invalidEmail: "Please enter a valid email address.",
+    privacy: "No spam, ever. Unsubscribe anytime with one click.",
+    benefits: {
+      alerts: "Smart farming tips",
+      insights: "Weekly data insights",
+      weather: "Seasonal weather guides",
+    },
+  },
+
+  legal: {
+    back: "Back",
+    privacy: {
+      title: "Privacy Policy",
+      lastUpdated: "Last updated: April 1, 2026",
+      intro: "At AgriOne, we take your privacy seriously. This policy explains what data we collect, how we use it, and your rights regarding your personal information.",
+      sections: [
+        {
+          title: "1. Data We Collect",
+          body: "We collect information you provide directly when creating an account (name, email address, password) and data generated through your use of the platform:\n\n• Farm and land information (location, area, crop types)\n• Sensor readings and IoT device data\n• Financial records you enter (income, expenses)\n• Usage analytics (pages visited, features used)\n• Device information (browser type, IP address)"
+        },
+        {
+          title: "2. How We Use Your Data",
+          body: "Your data is used to:\n\n• Provide and improve the AgriOne platform and its features\n• Display sensor readings, weather data, and analytics on your dashboard\n• Generate personalized recommendations for your crops\n• Send important notifications and alerts you configure\n• Improve our machine learning models for better agricultural insights\n• Communicate platform updates and relevant information"
+        },
+        {
+          title: "3. Data Storage & Security",
+          body: "All data is stored on secure servers within the European Union. We use industry-standard encryption (TLS 1.3) for data in transit and AES-256 for data at rest. Access to production systems is restricted and audited. We perform regular security assessments and backups."
+        },
+        {
+          title: "4. Data Sharing",
+          body: "We do not sell your personal data. We may share data with:\n\n• Weather service providers (anonymized location data for forecasts)\n• Payment processors (Stripe, Netopia) for subscription management\n• Analytics services to improve platform performance\n\nAll third-party processors are GDPR-compliant and bound by data processing agreements."
+        },
+        {
+          title: "5. Your Rights",
+          body: "Under GDPR and Romanian law, you have the right to:\n\n• Access all data we hold about you\n• Correct inaccurate data\n• Request deletion of your account and data\n• Export your data in a portable format\n• Withdraw consent at any time\n• Lodge a complaint with the Romanian Data Protection Authority (ANSPDCP)\n\nTo exercise any of these rights, contact us at hello@agri-one.com."
+        },
+        {
+          title: "6. Cookies",
+          body: "We use essential cookies for authentication and session management. Analytics cookies are used only with your consent to help us understand how the platform is used. You can manage cookie preferences in your browser settings at any time."
+        },
+        {
+          title: "7. Contact",
+          body: "For any privacy-related questions, contact our Data Protection Officer at:\n\nEmail: hello@agri-one.com\nPhone: +40 123 456 789\nAddress: Bucharest, Romania"
+        }
+      ]
+    },
+    terms: {
+      title: "Terms & Conditions",
+      lastUpdated: "Last updated: April 1, 2026",
+      intro: "These terms govern your use of the AgriOne platform. By creating an account or using our services, you agree to these terms.",
+      sections: [
+        {
+          title: "1. Acceptance of Terms",
+          body: "By accessing or using AgriOne, you agree to be bound by these Terms & Conditions and our Privacy Policy. If you do not agree, please do not use the platform."
+        },
+        {
+          title: "2. Account Registration",
+          body: "To use AgriOne, you must create an account with accurate information. You are responsible for:\n\n• Maintaining the confidentiality of your login credentials\n• All activities that occur under your account\n• Notifying us immediately of any unauthorized access\n\nYou must be at least 16 years old to create an account."
+        },
+        {
+          title: "3. Platform Usage",
+          body: "AgriOne provides farm management tools including IoT sensor monitoring, weather data, financial tracking, and crop recommendations. You agree to use the platform only for lawful agricultural management purposes. Prohibited actions include:\n\n• Attempting to gain unauthorized access to other accounts or systems\n• Uploading malicious code or interfering with platform operation\n• Scraping or automated data extraction without permission\n• Misrepresenting your identity or affiliation"
+        },
+        {
+          title: "4. Subscriptions & Payments",
+          body: "AgriOne offers free and premium subscription plans. For paid plans:\n\n• Prices are displayed in the currency shown at checkout\n• Subscriptions renew automatically unless cancelled\n• You may cancel or change your plan at any time from your profile\n• Refunds are handled on a case-by-case basis within 14 days of payment"
+        },
+        {
+          title: "5. Data & Content",
+          body: "You retain ownership of all data you upload to AgriOne (farm data, sensor readings, financial records). By using the platform, you grant us a limited license to process this data solely to provide and improve our services. We do not claim ownership of your content."
+        },
+        {
+          title: "6. Disclaimer of Warranties",
+          body: "AgriOne is provided \"as is\" without warranties of any kind. While we strive for accuracy, we do not guarantee that:\n\n• Crop recommendations will produce specific results\n• Sensor data will be error-free at all times\n• Weather forecasts will be perfectly accurate\n• The platform will be available without interruption\n\nAgricultural decisions should consider multiple sources of information."
+        },
+        {
+          title: "7. Limitation of Liability",
+          body: "To the fullest extent permitted by law, AgriOne shall not be liable for indirect, incidental, or consequential damages arising from platform use, including but not limited to crop losses, equipment damage, or financial losses based on platform data or recommendations."
+        },
+        {
+          title: "8. Modifications",
+          body: "We may update these terms from time to time. Material changes will be communicated via email or platform notification at least 30 days before taking effect. Continued use after changes constitutes acceptance of the new terms."
+        },
+        {
+          title: "9. Governing Law",
+          body: "These terms are governed by the laws of Romania and the European Union. Any disputes shall be resolved in the competent courts of Bucharest, Romania."
+        }
+      ]
+    },
+    gdpr: {
+      title: "GDPR Compliance",
+      lastUpdated: "Last updated: April 1, 2026",
+      intro: "AgriOne is fully committed to compliance with the General Data Protection Regulation (EU) 2016/679. This page details how we protect your rights as a data subject.",
+      sections: [
+        {
+          title: "1. Data Controller",
+          body: "AgriOne SRL acts as the data controller for all personal data processed through the platform.\n\nRegistered address: Bucharest, Romania\nContact: hello@agri-one.com\nData Protection Officer: hello@agri-one.com"
+        },
+        {
+          title: "2. Legal Basis for Processing",
+          body: "We process personal data based on the following legal grounds:\n\n• Contract performance — to provide the AgriOne platform services you signed up for\n• Legitimate interest — to improve our services, ensure security, and prevent fraud\n• Consent — for optional analytics, marketing communications, and non-essential cookies\n• Legal obligation — to comply with tax, accounting, and regulatory requirements"
+        },
+        {
+          title: "3. Data Subject Rights",
+          body: "Under GDPR Articles 15–22, you have the following rights:\n\n• Right of Access (Art. 15) — Request a copy of all personal data we hold\n• Right to Rectification (Art. 16) — Correct any inaccurate personal data\n• Right to Erasure (Art. 17) — Request deletion of your personal data\n• Right to Restriction (Art. 18) — Limit how we process your data\n• Right to Portability (Art. 20) — Receive your data in a machine-readable format\n• Right to Object (Art. 21) — Object to processing based on legitimate interest\n\nRequests are processed within 30 days. Contact hello@agri-one.com to exercise your rights."
+        },
+        {
+          title: "4. Data Processing Activities",
+          body: "We maintain a Record of Processing Activities (ROPA) as required by Article 30. Key processing activities include:\n\n• User account management and authentication\n• IoT sensor data collection and visualization\n• Weather data aggregation from third-party APIs\n• Financial record management\n• AI-powered crop recommendations\n• Email notifications and alerts"
+        },
+        {
+          title: "5. International Data Transfers",
+          body: "Your data is primarily stored within the European Economic Area (EEA). Where data is transferred outside the EEA (e.g., to cloud service providers), we ensure adequate protection through:\n\n• EU Standard Contractual Clauses (SCCs)\n• Adequacy decisions by the European Commission\n• Binding Corporate Rules where applicable"
+        },
+        {
+          title: "6. Data Retention",
+          body: "We retain personal data only as long as necessary:\n\n• Account data — retained while your account is active, deleted within 30 days of account deletion\n• Sensor readings — retained for 5 years for historical analysis, anonymized after\n• Financial records — retained for 10 years as required by Romanian fiscal law\n• Server logs — retained for 90 days for security purposes"
+        },
+        {
+          title: "7. Data Breach Notification",
+          body: "In the event of a personal data breach, we will:\n\n• Notify the Romanian Data Protection Authority (ANSPDCP) within 72 hours as required by Article 33\n• Inform affected users without undue delay if the breach poses a high risk to their rights and freedoms\n• Document all breaches in our internal breach register"
+        },
+        {
+          title: "8. Supervisory Authority",
+          body: "You have the right to lodge a complaint with the Romanian National Supervisory Authority for Personal Data Processing (ANSPDCP):\n\nAddress: B-dul G-ral. Gheorghe Magheru 28-30, Sector 1, 010336, Bucharest, Romania\nWebsite: www.dataprotection.ro\nPhone: +40 318 059 211"
+        }
+      ]
+    }
   },
 
   plan: {

@@ -408,7 +408,7 @@ export default function EconomicsPage() {
       )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
         {/* Transactions List - Mobile Card View */}
         <div className="card p-4 sm:p-5 agri-pattern">
           <div className="flex items-center justify-between gap-3 mb-4">

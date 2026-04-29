@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="card p-6 agri-pattern relative overflow-hidden flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+      <div className="card p-4 sm:p-6 agri-pattern relative overflow-hidden flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
         <div>
           <div className="page-title">Analize</div>
@@ -90,7 +90,7 @@ export default function AnalyticsPage() {
       {busy ? (
         <div className="card p-6 muted">Se încarcă…</div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] gap-4 lg:gap-6">
           <div className="card p-5 agri-pattern">
             <div className="text-sm font-bold">Sănătatea terenurilor</div>
             <div className="muted text-sm mt-1">

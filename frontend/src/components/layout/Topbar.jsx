@@ -7,7 +7,7 @@ import { authStore } from "../../auth/auth.store";
 import { useTheme } from "../../theme/ThemeProvider";
 import { Badge } from "../../ui/badge";
 import { StatusBadge } from "../agri/StatusBadge";
-import { useTranslation } from "react-i18next";
+import { useLanguage } from "../../i18n/LanguageProvider";
 
 const titleMap = {
   "/app/dashboard": "Dashboard",
@@ -24,7 +24,7 @@ export default function Topbar({ onMenuClick }) {
   const loc = useLocation();
   const nav = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   const pathParts = loc.pathname.split("/");
   const base = pathParts.length >= 3 && pathParts[1] === "app" ?
@@ -72,7 +72,7 @@ export default function Topbar({ onMenuClick }) {
         }}
       />
 
-      <div className="px-4 md:px-6 py-4 flex items-center justify-between relative z-10">
+      <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-4">
           <Motion.button
             whileHover={{ scale: 1.1, rotate: 90 }}
@@ -88,7 +88,7 @@ export default function Topbar({ onMenuClick }) {
               initial={{ x: -10, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="text-xl md:text-2xl font-extrabold"
+              className="text-lg sm:text-xl md:text-2xl font-extrabold"
             >
               {title}
             </Motion.div>

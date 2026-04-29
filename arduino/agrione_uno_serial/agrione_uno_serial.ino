@@ -21,7 +21,7 @@
 #include <DHT.h>
 
 // ==================== CONFIGURARE ====================
-const char* SENSOR_CODE = "AGRI-CHANGE-ME";  // Identic cu cel din aplicatia AgriOne
+const char* SENSOR_CODE = "AGRI-FARM001";  // Identic cu cel din aplicatia AgriOne
 #define DHTPIN        2       // Pinul DATA al DHT11
 #define DHTTYPE       DHT11   // DHT11
 #define SOIL_DIG_PIN  4       // Pinul DO al senzorului de sol (digital)

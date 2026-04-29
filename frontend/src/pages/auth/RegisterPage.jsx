@@ -48,7 +48,6 @@ export default function RegisterPage() {
       const payload = {
         email,
         password,
-        role: "USER",
         username: username.trim() || undefined,
         name: name.trim() || undefined,
       };

@@ -11,6 +11,7 @@ import {
   User,
   Users,
   Settings,
+  Mail,
   X,
   Sparkles,
   Landmark,
@@ -19,7 +20,7 @@ import {
 import { authStore } from "../../auth/auth.store";
 import logo from "../../assets/agrione.png";
 import { prefetchByPath } from "../../router/chunks";
-import { useTranslation } from "react-i18next";
+import { useLanguage } from "../../i18n/LanguageProvider";
 
 const navItems = [
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -34,6 +35,7 @@ const navItems = [
 const adminItems = [
   { to: "/app/admin/users", label: "Utilizatori", icon: Users },
   { to: "/app/admin/settings", label: "Setări sistem", icon: Settings },
+  { to: "/app/admin/newsletter", label: "Newsletter", icon: Mail },
 ];
 
 export default function Sidebar({ isOpen = false, onClose = () => {} }) {
@@ -41,7 +43,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
   const isAdmin = user?.role === "ADMIN";
   const location = useLocation();
   const [isDesktop, setIsDesktop] = useState(false);
-  const { t } = useTranslation();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 768);

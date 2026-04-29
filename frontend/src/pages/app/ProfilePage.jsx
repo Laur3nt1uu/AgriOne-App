@@ -200,7 +200,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      <div className="card p-6 agri-pattern relative overflow-hidden">
+      <div className="card p-4 sm:p-6 agri-pattern relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center">

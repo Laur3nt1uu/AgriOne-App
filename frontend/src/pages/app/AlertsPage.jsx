@@ -137,7 +137,7 @@ export default function AlertsPage() {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="card p-6 agri-pattern">
+      <div className="card p-4 sm:p-6 agri-pattern">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="page-title">Alerte</div>
@@ -160,7 +160,7 @@ export default function AlertsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <Motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -199,7 +199,7 @@ export default function AlertsPage() {
       </div>
 
       {/* Filters & View Toggle */}
-      <div className="card p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      <div className="card p-3 sm:p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
           <Filter size={16} className="text-muted-foreground" />
           <select

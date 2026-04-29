@@ -187,7 +187,7 @@ export default function SensorsPage() {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="card p-6 agri-pattern">
+      <div className="card p-4 sm:p-6 agri-pattern">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -246,7 +246,7 @@ export default function SensorsPage() {
       {busy ? (
         <div className="card p-6 muted">Se încarcă…</div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
           {/* Chart Area */}
           <div className="space-y-4">
             <ReadingsChart data={series} />

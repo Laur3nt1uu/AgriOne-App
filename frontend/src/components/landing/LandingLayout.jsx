@@ -1,9 +1,16 @@
 import { motion as Motion } from "framer-motion";
 import NexusAtmosphere from "../layout/NexusAtmosphere";
+import { ScrollProgress } from "./ScrollAnimations";
+import useLenis from "../../hooks/useLenis";
 
 export default function LandingLayout({ children }) {
+  useLenis();
+
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-x-hidden">
+      {/* Scroll Progress Indicator */}
+      <ScrollProgress />
+
       {/* Animated Background */}
       <NexusAtmosphere className="fixed inset-0 z-0" />
 

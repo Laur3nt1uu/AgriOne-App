@@ -1,263 +1,227 @@
 import { motion as Motion } from "framer-motion";
-import { Thermometer, Bell, MapPin, DollarSign, ArrowRight } from "lucide-react";
+import { Thermometer, Bell, MapPin, DollarSign } from "lucide-react";
 import { useLanguage } from "../../i18n/LanguageProvider";
+import {
+  ScrollReveal,
+  TiltCard,
+  StaggerContainer,
+  StaggerItem,
+} from "./ScrollAnimations";
 
+/*  Animated illustrations  */
+function MonitoringVisual() {
+  return (
+    <div className="relative w-full max-w-sm mx-auto">
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: "23.5\u00b0C", color: "primary", w: "70%" },
+          { label: "67%", color: "blue-500", w: "55%" },
+          { label: "42%", color: "green-500", w: "80%" },
+          { label: "1013 hPa", color: "amber-500", w: "45%" },
+        ].map((d, i) => (
+          <Motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 + i * 0.1, type: "spring", stiffness: 200 }}
+            className="bg-card/60 rounded-xl p-4 border border-border/20 backdrop-blur-sm"
+          >
+            <div className="text-xs text-muted-foreground mb-2">Sensor {i + 1}</div>
+            <div className={`text-lg font-bold text-${d.color}`}>{d.label}</div>
+            <div className="mt-2 h-1.5 bg-border/20 rounded-full overflow-hidden">
+              <Motion.div
+                className={`h-full bg-${d.color}/60 rounded-full`}
+                initial={{ width: 0 }}
+                whileInView={{ width: d.w }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 + i * 0.1, duration: 1, ease: "easeOut" }}
+              />
+            </div>
+          </Motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AlertsVisual() {
+  const alerts = [
+    { text: "Temperatura critica \u2014 38\u00b0C", type: "destructive" },
+    { text: "Umiditate sol scazuta \u2014 15%", type: "warn" },
+    { text: "Sensor AGRI-002 offline", type: "warn" },
+  ];
+  return (
+    <div className="relative w-full max-w-sm mx-auto space-y-3">
+      {alerts.map((a, i) => (
+        <Motion.div
+          key={i}
+          initial={{ opacity: 0, x: 40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 + i * 0.15, type: "spring", stiffness: 120 }}
+          className={`flex items-center gap-3 p-4 rounded-xl border backdrop-blur-sm ${
+            a.type === "destructive"
+              ? "bg-destructive/10 border-destructive/20"
+              : "bg-amber-500/10 border-amber-500/20"
+          }`}
+        >
+          <Motion.div
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
+            className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+              a.type === "destructive" ? "bg-destructive" : "bg-amber-500"
+            }`}
+          />
+          <span className="text-sm font-medium text-foreground">{a.text}</span>
+        </Motion.div>
+      ))}
+    </div>
+  );
+}
+
+function MappingVisual() {
+  const colors = [
+    "bg-green-500/40", "bg-green-600/50", "bg-emerald-500/30",
+    "bg-primary/35", "bg-green-400/45", "bg-emerald-600/40",
+  ];
+  return (
+    <div className="relative w-full max-w-sm mx-auto">
+      <div className="grid grid-cols-4 grid-rows-3 gap-1.5 aspect-[4/3]">
+        {Array.from({ length: 12 }, (_, i) => (
+          <Motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15 + i * 0.04, type: "spring", stiffness: 200 }}
+            className={`rounded-lg ${colors[i % colors.length]} border border-border/10`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FinancialVisual() {
+  const bars = [35, 55, 42, 68, 51, 78, 62, 85];
+  return (
+    <div className="relative w-full max-w-sm mx-auto">
+      <div className="flex items-end gap-2 h-40">
+        {bars.map((h, i) => (
+          <Motion.div
+            key={i}
+            className="flex-1 bg-gradient-to-t from-primary/60 to-primary/20 rounded-t-md"
+            initial={{ height: 0 }}
+            whileInView={{ height: `${h}%` }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 + i * 0.06, duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+          />
+        ))}
+      </div>
+      <Motion.div
+        className="mt-3 h-0.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.7, duration: 0.6 }}
+      />
+    </div>
+  );
+}
+
+const VISUALS = [MonitoringVisual, AlertsVisual, MappingVisual, FinancialVisual];
+
+/*  Main Section  */
 export default function FeaturesSection() {
   const { t } = useLanguage();
 
   const features = [
-    {
-      icon: Thermometer,
-      title: t("features.monitoring.title"),
-      description: t("features.monitoring.description"),
-      details: t("features.monitoring.details"),
-      color: "primary"
-    },
-    {
-      icon: Bell,
-      title: t("features.alerts.title"),
-      description: t("features.alerts.description"),
-      details: t("features.alerts.details"),
-      color: "blue-500"
-    },
-    {
-      icon: MapPin,
-      title: t("features.mapping.title"),
-      description: t("features.mapping.description"),
-      details: t("features.mapping.details"),
-      color: "green-500"
-    },
-    {
-      icon: DollarSign,
-      title: t("features.financial.title"),
-      description: t("features.financial.description"),
-      details: t("features.financial.details"),
-      color: "amber-500"
-    }
+    { icon: Thermometer, title: t("features.monitoring.title"), desc: t("features.monitoring.description"), details: t("features.monitoring.details"), color: "primary" },
+    { icon: Bell, title: t("features.alerts.title"), desc: t("features.alerts.description"), details: t("features.alerts.details"), color: "blue-500" },
+    { icon: MapPin, title: t("features.mapping.title"), desc: t("features.mapping.description"), details: t("features.mapping.details"), color: "green-500" },
+    { icon: DollarSign, title: t("features.financial.title"), desc: t("features.financial.description"), details: t("features.financial.details"), color: "amber-500" },
   ];
 
   return (
-    <section id="features" className="py-20 lg:py-32 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <Motion.div
-          className="absolute top-1/2 left-1/4 w-72 h-72 rounded-full opacity-10 blur-3xl"
-          style={{
-            background: "radial-gradient(circle, rgb(var(--primary) / 0.3), transparent)"
-          }}
-          animate={{
-            scale: [1, 1.2, 1],
-            x: [0, 50, 0]
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </div>
-
+    <section id="features" className="py-24 lg:py-36 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <Motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16 lg:mb-20"
-        >
-          <Motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6"
-          >
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            {t("features.badge")}
-          </Motion.div>
+        <div className="text-center mb-16 lg:mb-24">
+          <ScrollReveal variant="blur-up">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              {t("features.badge")}
+            </div>
+          </ScrollReveal>
+          <ScrollReveal variant="blur-up" delay={0.1}>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-foreground mb-6">
+              {t("features.title")}{" "}
+              <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                {t("features.titleHighlight")}
+              </span>{" "}
+              {t("features.titleEnd")}
+            </h2>
+          </ScrollReveal>
+          <ScrollReveal variant="blur-up" delay={0.3}>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              {t("features.subtitle")}
+            </p>
+          </ScrollReveal>
+        </div>
 
-          <Motion.h2
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-foreground mb-6"
-          >
-            {t("features.title")}{" "}
-            <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
-              {t("features.titleHighlight")}
-            </span>{" "}
-            {t("features.titleEnd")}
-          </Motion.h2>
+        {/* Alternating feature rows */}
+        <div className="space-y-20 lg:space-y-32">
+          {features.map((f, i) => {
+            const Icon = f.icon;
+            const Visual = VISUALS[i];
+            const isOdd = i % 2 !== 0;
 
-          <Motion.p
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            viewport={{ once: true }}
-            className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
-          >
-            {t("features.subtitle")}
-          </Motion.p>
-        </Motion.div>
-
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
             return (
-              <Motion.div
-                key={index}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{
-                  delay: index * 0.1,
-                  duration: 0.8,
-                  type: "spring",
-                  stiffness: 100
-                }}
-                viewport={{ once: true }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group relative"
+              <div
+                key={i}
+                className={`flex flex-col lg:flex-row items-center gap-12 lg:gap-20 ${
+                  isOdd ? "lg:flex-row-reverse" : ""
+                }`}
               >
-                <Motion.div
-                  className="glass p-8 h-full relative overflow-hidden"
-                  whileHover={{
-                    boxShadow: `0 20px 40px rgb(var(--${feature.color}) / 0.15)`
-                  }}
-                  transition={{ duration: 0.3 }}
+                {/* Text */}
+                <ScrollReveal
+                  variant={isOdd ? "fade-right" : "fade-left"}
+                  delay={0.1}
+                  className="flex-1 w-full"
                 >
                   <Motion.div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    style={{
-                      background: `linear-gradient(135deg, rgb(var(--${feature.color}) / 0.1), transparent, rgb(var(--${feature.color}) / 0.05))`
-                    }}
-                  />
+                    className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-${f.color}/10 border border-${f.color}/20 mb-6`}
+                  >
+                    <Icon className={`w-7 h-7 text-${f.color}`} />
+                  </Motion.div>
+                  <h3 className="text-2xl lg:text-3xl xl:text-4xl font-extrabold text-foreground mb-4 leading-tight">
+                    {f.title}
+                  </h3>
+                  <p className="text-lg text-muted-foreground mb-3 leading-relaxed">
+                    {f.desc}
+                  </p>
+                  <p className="text-base text-muted-foreground/70 leading-relaxed">
+                    {f.details}
+                  </p>
+                </ScrollReveal>
 
-                  <Motion.div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100"
-                    animate={{ x: ["-100%", "200%"] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    style={{
-                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)",
-                      width: "50%"
-                    }}
-                  />
-
-                  <div className="relative z-10">
-                    <Motion.div
-                      className="mb-6"
-                      whileHover={{ rotate: 5 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Motion.div
-                        className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-${feature.color}/10 border border-${feature.color}/20 group-hover:bg-${feature.color}/20 transition-colors duration-300`}
-                        animate={{
-                          boxShadow: [
-                            `0 0 0 rgb(var(--${feature.color}) / 0.0)`,
-                            `0 0 20px rgb(var(--${feature.color}) / 0.3)`,
-                            `0 0 0 rgb(var(--${feature.color}) / 0.0)`
-                          ]
-                        }}
-                        transition={{ duration: 3, repeat: Infinity, delay: index * 0.5 }}
-                      >
-                        <Icon
-                          className={`w-8 h-8 text-${feature.color} group-hover:scale-110 transition-transform duration-300`}
-                        />
-                      </Motion.div>
-                    </Motion.div>
-
-                    <Motion.h3
-                      className="text-xl lg:text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors duration-300"
-                      whileHover={{ x: 5 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {feature.title}
-                    </Motion.h3>
-
-                    <Motion.p
-                      className="text-muted-foreground font-medium mb-4 text-base lg:text-lg"
-                      whileHover={{ x: 5 }}
-                      transition={{ duration: 0.2, delay: 0.05 }}
-                    >
-                      {feature.description}
-                    </Motion.p>
-
-                    <Motion.p
-                      className="text-muted-foreground/80 text-sm lg:text-base leading-relaxed mb-6"
-                      whileHover={{ x: 5 }}
-                      transition={{ duration: 0.2, delay: 0.1 }}
-                    >
-                      {feature.details}
-                    </Motion.p>
-
-                    <Motion.div
-                      className="flex items-center text-primary font-medium group-hover:text-primary/80 transition-colors cursor-pointer"
-                      whileHover={{ x: 5 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <span className="text-sm lg:text-base">{t("features.learnMore")}</span>
-                      <Motion.div
-                        animate={{ x: [0, 5, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        className="ml-2"
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                      </Motion.div>
-                    </Motion.div>
-                  </div>
-
-                  <Motion.div
-                    className={`absolute -top-2 -right-2 w-20 h-20 rounded-full bg-${feature.color}/5 blur-xl`}
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      opacity: [0.5, 0.8, 0.5]
-                    }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      delay: index * 0.8
-                    }}
-                  />
-                </Motion.div>
-              </Motion.div>
+                {/* Visual inside TiltCard */}
+                <ScrollReveal
+                  variant={isOdd ? "fade-left" : "fade-right"}
+                  delay={0.25}
+                  className="flex-1 w-full"
+                >
+                  <TiltCard tiltMax={8} glare className="w-full">
+                    <div className="glass p-8 lg:p-10">
+                      <Visual />
+                    </div>
+                  </TiltCard>
+                </ScrollReveal>
+              </div>
             );
           })}
         </div>
-
-        {/* Bottom CTA */}
-        <Motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mt-16 lg:mt-20"
-        >
-          <Motion.p className="text-muted-foreground text-lg mb-6">
-            {t("features.bottomCta")}
-          </Motion.p>
-
-          <Motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-blue-500 text-white font-semibold rounded-xl hover:shadow-xl transition-shadow duration-300"
-            onClick={() => {
-              const element = document.querySelector("#how-it-works");
-              if (element) {
-                element.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-          >
-            {t("features.seeHowItWorks")}
-            <Motion.div
-              animate={{ x: [0, 5, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              <ArrowRight className="w-5 h-5" />
-            </Motion.div>
-          </Motion.button>
-        </Motion.div>
       </div>
     </section>
   );

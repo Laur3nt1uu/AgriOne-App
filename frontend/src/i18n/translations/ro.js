@@ -79,64 +79,64 @@ export default {
   },
 
   hero: {
-    badge: "Platformă Agricolă Inteligentă",
+    badge: "Agricultura Inteligentă",
     headline: "Ferma ta,",
-    headlineHighlight: "mai deșteaptă",
+    headlineHighlight: "digitalizată",
     subheadline:
-      "Ții evidența terenurilor, vezi ce spun senzorii în timp real și iei decizii mai bune pentru recoltă. AgriOne pune totul într-un singur loc.",
-    ctaPrimary: "Deschide Platforma",
+      "Monitorizezi terenurile, citești senzorii în timp real și iei cele mai bune decizii pentru recoltă. Totul într-o singură platformă.",
+    ctaPrimary: "Începe Acum",
     ctaPrimaryAuthed: "Deschide Aplicația",
     ctaSecondary: "Află mai multe",
-    scrollToExplore: "Continuă să citești",
+    scrollToExplore: "Descoperă mai jos",
     stats: {
-      farms: "Ferme Monitorizate",
-      sensors: "Senzori Activi",
-      uptime: "Funcționare Continuă",
+      farms: "Ferme Active",
+      sensors: "Senzori Conectați",
+      uptime: "Disponibilitate",
     },
   },
 
   features: {
     badge: "Funcționalități",
-    title: "Totul într-un singur loc, ca să-ți",
-    titleHighlight: "ușurezi",
+    title: "Toate uneltele de care ai nevoie, ca să-ți",
+    titleHighlight: "simplifici",
     titleEnd: "munca",
     subtitle:
-      "De la senzorii din câmp până la evidența financiară — AgriOne te ajută să ai o imagine completă asupra fermei și să iei decizii mai bune.",
+      "De la senzorii din câmp la registrul financiar — AgriOne îți oferă o vedere completă asupra fermei și te ajută să iei decizii mai bune.",
     monitoring: {
       title: "Monitorizare în Timp Real",
-      description: "Vezi umiditatea și temperatura din sol non-stop",
+      description: "Umiditate, temperatură și calitatea solului — 24/7",
       details:
-        "Datele de la senzori vin direct pe dashboard. Vezi ce se întâmplă pe fiecare teren, fără să trebuiască să mergi în câmp de fiecare dată.",
+        "Datele de la senzori ajung direct pe tabloul tău de bord. Vezi ce se întâmplă pe fiecare teren fără să mai mergi în câmp.",
     },
     alerts: {
       title: "Alerte și Notificări",
-      description: "Primești mesaj pe email sau SMS când ceva nu e în regulă",
+      description: "Primești alertă pe email sau SMS instant",
       details:
-        "Setezi tu pragurile — dacă e prea uscat, prea cald sau prea umed, primești alertă. Așa nu mai ratezi momentul potrivit pentru irigat sau alte intervenții.",
+        "Setezi pragurile dorite — dacă e prea uscat, prea cald sau prea umed, ești notificat imediat. Nu mai ratezi momentul potrivit pentru irigat.",
     },
     mapping: {
       title: "Harta Terenurilor",
-      description: "Toate parcelele tale, vizibile pe o hartă interactivă",
+      description: "Parcelele tale, vizualizate pe harta interactivă",
       details:
-        "Trasezi limitele terenurilor cu GPS, vezi suprafețele, și ai totul organizat vizual. Ușor de înțeles, fără hârtii și caiete.",
+        "Trasezi limitele terenurilor cu GPS, verifici suprafețele și ai totul organizat vizual. Fără hârtii, fără caiete.",
     },
     financial: {
       title: "Evidența Financiară",
-      description: "Ții socoteala cheltuielilor și veniturilor pe fiecare cultură",
+      description: "Cheltuieli și venituri pe fiecare cultură",
       details:
-        "Știi exact cât ai investit și cât ai scos pe fiecare teren. Calculezi randamentul și vezi unde merită să investești mai mult.",
+        "Știi exact cât ai investit și cât ai câștigat pe fiecare teren. Calculezi randamentul și identifici unde merită să investești.",
     },
-    learnMore: "Află mai mult",
-    bottomCta: "Vrei să vezi cum funcționează concret?",
+    learnMore: "Află mai multe",
+    bottomCta: "Vrei să vezi cum funcționează?",
     seeHowItWorks: "Vezi Pașii",
   },
 
   dashboardPreview: {
-    badge: "Vizualizare",
-    title: "Uite cum vezi ferma",
+    badge: "Previzualizare",
+    title: "Așa arată ferma ta",
     titleHighlight: "în timp real",
     subtitle:
-      "Un dashboard simplu care îți arată tot ce trebuie — de la senzorii din câmp la situația financiară, totul pe un singur ecran.",
+      "Un tablou de bord simplu care îți arată totul — de la datele senzorilor la situația financiară, pe un singur ecran.",
     kpis: {
       farms: "Ferme Conectate",
       sensors: "Senzori Activi",
@@ -156,48 +156,48 @@ export default {
 
   howItWorks: {
     badge: "Cum Funcționează",
-    title: "Pornești în",
-    titleHighlight: "3 pași",
+    title: "Începi în doar",
+    titleHighlight: "3 pași simpli",
     subtitle:
-      "Nu e complicat deloc. Instalezi senzorii, configurezi alertele și gata — aplicația face restul.",
+      "Instalezi senzorii, configurezi alertele și gata — aplicația se ocupă de rest.",
     steps: {
       install: {
-        title: "Pui Senzorii",
-        description: "Îi conectezi la terenul tău",
+        title: "Instalează Senzorii",
+        description: "Conectează-i la terenul tău",
         details:
-          "Montezi senzorii IoT în câmp și ei încep să colecteze date automat: umiditate sol, temperatură, umiditatea aerului.",
+          "Montezi senzorii IoT în câmp și ei încep să colecteze date automat: umiditatea solului, temperatura și umiditatea aerului.",
         duration: "5 minute",
       },
       rules: {
-        title: "Setezi Regulile",
-        description: "Stabilești praguri pentru temperatură și umiditate",
+        title: "Configurează Alertele",
+        description: "Stabilești praguri pentru fiecare parametru",
         details:
-          "Alegi tu limitele — de exemplu, dacă umiditatea scade sub 30%, primești alertă. Fiecare cultură poate avea reguli diferite.",
+          "Alegi limitele dorite — dacă umiditatea scade sub 30%, primești notificare. Fiecare cultură poate avea reguli diferite.",
         duration: "10 minute",
       },
       monitor: {
-        title: "Urmărești și Crești",
-        description: "Folosești dashboard-ul ca să iei decizii mai bune",
+        title: "Monitorizează și Crește",
+        description: "Ia decizii bazate pe date reale",
         details:
-          "Vezi grafice, tendințe și rapoarte clare. Pe parcurs, înveți ce funcționează și îți optimizezi recolta.",
-        duration: "Continuu",
+          "Consulți grafice, tendințe și rapoarte clare. Cu fiecare sezon, înveți ce funcționează și îți optimizezi recolta.",
+        duration: "Permanent",
       },
     },
-    bottomTitle: "Gata să încerci?",
+    bottomTitle: "Pregătit să începi?",
     bottomSubtitle:
-      "E gratuit să începi. Faci cont, adaugi terenurile și vezi cum arată dashboard-ul cu datele tale.",
+      "E gratuit. Creează un cont, adaugă terenurile și vezi cum arată tabloul de bord cu datele tale.",
     ctaPrimary: "Creează Cont Gratuit",
-    ctaPrimaryAuthed: "Mergi la Dashboard",
-    ctaSecondary: "Conectare",
+    ctaPrimaryAuthed: "Deschide Aplicația",
+    ctaSecondary: "Autentificare",
     ctaSecondaryAuthed: "Vezi Profilul",
   },
 
   testimonials: {
     badge: "Testimoniale",
-    title: "Ce zic",
+    title: "Ce spun",
     titleHighlight: "fermierii",
     subtitle:
-      "Află de la fermieri reali care au încercat AgriOne și au văzut rezultate.",
+      "Păreri de la fermieri care folosesc AgriOne și au obținut rezultate reale.",
     items: [
       {
         name: "Ion Popescu",
@@ -225,18 +225,18 @@ export default {
       },
     ],
     trustStats: {
-      farms: "ferme conectate",
-      rating: "notă medie",
-      satisfaction: "mulțumiți",
+      farms: "ferme active",
+      rating: "rating mediu",
+      satisfaction: "sunt mulțumiți",
     },
   },
 
   pricing: {
     badge: "Prețuri",
-    title: "Planuri simple pentru",
+    title: "Planuri transparente pentru",
     titleHighlight: "orice fermă",
     subtitle:
-      "Începi gratuit, fără obligații. Dacă vrei mai mult, treci pe Pro. Prețuri clare, fără surprize.",
+      "Începi gratuit, fără obligații. Vrei mai mult? Treci pe Pro. Fără costuri ascunse.",
     mostPopular: "Recomandat",
     perMonth: "/lună",
     free: "Gratuit",
@@ -245,14 +245,14 @@ export default {
     ctaPro: "Alege Pro",
     ctaEnterprise: "Contactează-ne",
     ctaAuthed: "Deschide Aplicația",
-    ctaCurrent: "Planul tău curent",
-    ctaUpgrade: "Fă upgrade",
-    ctaChangePlan: "Schimbă planul",
+    ctaCurrent: "Planul Curent",
+    ctaUpgrade: "Treci la Pro",
+    ctaChangePlan: "Schimbă Planul",
     tiers: {
       starter: {
         name: "Starter",
         price: "0 RON",
-        description: "Ca să testezi platforma",
+        description: "Perfect pentru a testa platforma",
         features: [
           "Până la 2 terenuri",
           "Până la 5 senzori",
@@ -265,7 +265,7 @@ export default {
       pro: {
         name: "Pro",
         price: "49 RON",
-        description: "Pentru fermieri care vor totul",
+        description: "Pentru fermieri care vor mai mult",
         features: [
           "Terenuri nelimitate",
           "Până la 50 senzori",
@@ -279,7 +279,7 @@ export default {
       enterprise: {
         name: "Enterprise",
         price: "La cerere",
-        description: "Pentru ferme mari sau asociații",
+        description: "Soluție dedicată fermelor mari",
         features: [
           "Senzori nelimitați",
           "Acces la API",
@@ -294,37 +294,34 @@ export default {
 
   about: {
     badge: "Despre Noi",
-    title: "Suntem o echipă de",
-    titleHighlight: "dezvoltatori",
+    title: "Platforma care îți",
+    titleHighlight: "digitalizează ferma",
     subtitle:
-      "AgriOne este creat de studenți pasionați de tehnologie și agricultură, cu experiență în dezvoltare software și senzori IoT. Misiunea noastră este să aducem agricultura României în era digitală.",
+      "AgriOne este un sistem agricol inteligent care conectează senzorii IoT din câmp cu un tablou de bord modern, oferindu-ți control total asupra terenurilor, recoltei și finanțelor — totul dintr-un singur loc.",
     mission: {
-      label: "Cine suntem",
-      text: "Suntem o echipă de dezvoltatori software cu background în tehnologii web moderne, IoT și baze de date. Avem experiență practică cu React, Node.js, senzori Arduino și platforme cloud. Proiectul nostru combină cunoștințele tehnice cu o problemă reală din agricultură.",
+      label: "Ce este AgriOne",
+      text: "AgriOne este o platformă completă de management agricol. Colectează date în timp real de la senzori IoT instalați în câmp — temperatură, umiditate sol, umiditate aer — și le afișează într-un tablou de bord intuitiv. Include sistem de alerte, evidență financiară, hărți interactive și rapoarte PDF.",
     },
     vision: {
-      label: "Care este viziunea noastră",
-      text: "Vrem să demonstrăm că tehnologia poate fi simplă și utilă pentru fermieri. Nu creăm doar o aplicație — construim punți între inovația tehnologică și nevoile concrete ale agriculturii românești. Fiecare feature este gândit să rezolve o problemă reală.",
+      label: "Viziunea noastră",
+      text: "Credem că fiecare fermier din România merită acces la tehnologie modernă, indiferent de mărimea fermei. AgriOne transformă date brute de la senzori în informații utile care te ajută să economisești resurse, să previi pierderile și să îți crești recolta sezon de sezon.",
     },
-    thesisBadge: "Proiect de Licență - Ingineeri Software",
-    thesisText:
-      "AgriOne este proiectul nostru de licență în Ingineria Sistemelor - o platformă full-stack care demonstrează integrarea tehnologiilor web moderne (React, Node.js, PostgreSQL) cu hardware IoT pentru monitorizarea în timp real a condițiilor agricole.",
     values: {
       accessibility: {
         title: "Accesibilitate",
-        description: "Nu trebuie să ai o fermă mare ca să beneficiezi de tehnologie. Am făcut totul cât mai simplu.",
+        description: "Nu ai nevoie de o fermă mare ca să beneficiezi de tehnologie. Am simplificat totul la maximum.",
       },
       simplicity: {
         title: "Simplitate",
-        description: "Fără meniuri complicate. Intri, vezi datele, iei decizii. Atât.",
+        description: "Fără meniuri complicate. Te autentifici, vezi datele, iei decizii. Atât.",
       },
       innovation: {
         title: "Tehnologie Modernă",
-        description: "Senzori IoT, dashboard în timp real, alerte automate — toate într-o aplicație web.",
+        description: "Senzori IoT, tablou de bord în timp real și alerte automate — totul într-o aplicație web.",
       },
       community: {
         title: "Pentru Comunitate",
-        description: "Construim pentru fermieri din România, cu feedback de la ei și cu nevoile lor în minte.",
+        description: "Construim pentru fermierii din România, pe baza feedback-ului și nevoilor lor reale.",
       },
     },
   },
@@ -332,9 +329,9 @@ export default {
   faq: {
     badge: "Întrebări Frecvente",
     title: "Ai întrebări?",
-    titleHighlight: "Normal",
+    titleHighlight: "Avem răspunsuri",
     subtitle:
-      "Aici sunt răspunsurile la ce ne întreabă lumea cel mai des.",
+      "Cele mai frecvente întrebări și răspunsurile lor, pe scurt.",
     items: [
       {
         question: "Ce senzori îmi trebuie?",
@@ -354,32 +351,32 @@ export default {
       {
         question: "Sunt datele mele în siguranță?",
         answer:
-          "Da. Totul e criptat, respectăm GDPR, și nu dăm datele tale nimănui. E treaba ta ce faci cu ele.",
+          "Da. Toate datele sunt criptate, respectăm GDPR și nu le partajăm cu nimeni. Datele tale rămân ale tale.",
       },
       {
-        question: "Trebuie să mă pricep la calculatoare?",
+        question: "Trebuie să fiu tehnic?",
         answer:
-          "Nu. Dacă știi să folosești un telefon, te descurci și cu AgriOne. Am făcut interfața cât mai simplă, și avem ghiduri dacă te blochezi.",
+          "Nu. Dacă știi să folosești un telefon, poți folosi și AgriOne. Interfața e intuitivă, iar dacă te blochezi, avem ghiduri pas cu pas.",
       },
       {
-        question: "Pot să export datele?",
+        question: "Pot exporta datele?",
         answer:
-          "Da, cu planul Pro poți exporta rapoarte PDF pentru fiecare teren — cu date de la senzori, grafice și situația financiară. Bune pentru dosare sau planificarea sezonului.",
+          "Da, cu planul Pro poți genera rapoarte PDF pentru fiecare teren — cu date de la senzori, grafice și situația financiară. Ideale pentru evidențe sau planificarea sezonului următor.",
       },
     ],
   },
 
   ctaBanner: {
-    title: "Vrei să încerci?",
+    title: "Pregătit să începi?",
     subtitle:
-      "Faci un cont gratuit, adaugi terenurile și vezi direct cum funcționează. Fără obligații.",
+      "Creează un cont gratuit, adaugă terenurile și vezi imediat cum funcționează. Fără obligații, fără card.",
     ctaPrimary: "Creează Cont Gratuit",
-    ctaPrimaryAuthed: "Mergi la Dashboard",
+    ctaPrimaryAuthed: "Deschide Aplicația",
     ctaSecondary: "Contactează-ne",
     trust: {
       noCreditCard: "Fără card bancar",
-      quickSetup: "Gata în 5 minute",
-      cancelAnytime: "Renunți oricând",
+      quickSetup: "Configurare în 5 minute",
+      cancelAnytime: "Anulezi oricând",
     },
   },
 
@@ -415,6 +412,145 @@ export default {
     madeWith: "Făcut cu",
     inRomania: "în România",
     allSystemsOperational: "Totul funcționează",
+  },
+
+  newsletter: {
+    badge: "Newsletter",
+    title: "Fii la curent cu tot",
+    subtitle: "Primește săptămânal sfaturi de agricultură inteligentă, alerte meteo și noutăți despre platformă — direct în inbox.",
+    placeholder: "adresa@email.com",
+    button: "Abonează-te",
+    loading: "Se procesează...",
+    success: "Te-ai abonat! Verifică-ți inbox-ul.",
+    error: "Abonarea a eșuat. Încearcă din nou.",
+    invalidEmail: "Introdu o adresă de email validă.",
+    privacy: "Fără spam, niciodată. Te poți dezabona oricând cu un click.",
+    benefits: {
+      alerts: "Sfaturi de agricultură smart",
+      insights: "Analize săptămânale de date",
+      weather: "Ghiduri meteo sezoniere",
+    },
+  },
+
+  legal: {
+    back: "Înapoi",
+    privacy: {
+      title: "Politica de Confidențialitate",
+      lastUpdated: "Ultima actualizare: 1 aprilie 2026",
+      intro: "La AgriOne, confidențialitatea datelor tale este o prioritate. Această politică explică ce date colectăm, cum le folosim și ce drepturi ai în legătură cu informațiile tale personale.",
+      sections: [
+        {
+          title: "1. Datele pe care le colectăm",
+          body: "Colectăm informații pe care le furnizezi direct la crearea contului (nume, adresă de email, parolă) și date generate prin utilizarea platformei:\n\n• Informații despre ferme și terenuri (locație, suprafață, tipuri de culturi)\n• Citiri de la senzori și date de la dispozitive IoT\n• Înregistrări financiare introduse de tine (venituri, cheltuieli)\n• Date de utilizare (pagini vizitate, funcționalități folosite)\n• Informații despre dispozitiv (tip browser, adresă IP)"
+        },
+        {
+          title: "2. Cum folosim datele tale",
+          body: "Datele tale sunt utilizate pentru:\n\n• Furnizarea și îmbunătățirea platformei AgriOne și a funcționalităților sale\n• Afișarea citirilor senzorilor, datelor meteo și analiticilor pe dashboard\n• Generarea de recomandări personalizate pentru culturile tale\n• Trimiterea notificărilor și alertelor importante pe care le configurezi\n• Îmbunătățirea modelelor noastre de machine learning pentru sfaturi agricole mai bune\n• Comunicarea actualizărilor platformei și a informațiilor relevante"
+        },
+        {
+          title: "3. Stocarea și securitatea datelor",
+          body: "Toate datele sunt stocate pe servere securizate din Uniunea Europeană. Folosim criptare de standard industrial (TLS 1.3) pentru datele în tranzit și AES-256 pentru datele stocate. Accesul la sistemele de producție este restricționat și auditat. Efectuăm evaluări de securitate și backup-uri regulate."
+        },
+        {
+          title: "4. Partajarea datelor",
+          body: "Nu vindem datele tale personale. Putem partaja date cu:\n\n• Furnizori de servicii meteo (date de localizare anonimizate pentru prognoze)\n• Procesatori de plăți (Stripe, Netopia) pentru gestionarea abonamentelor\n• Servicii de analiză pentru îmbunătățirea performanței platformei\n\nToți procesatorii terți sunt conformi GDPR și sunt obligați prin acorduri de procesare a datelor."
+        },
+        {
+          title: "5. Drepturile tale",
+          body: "Conform GDPR și legislației române, ai dreptul de a:\n\n• Accesa toate datele pe care le deținem despre tine\n• Corecta datele inexacte\n• Solicita ștergerea contului și a datelor tale\n• Exporta datele tale într-un format portabil\n• Retrage consimțământul în orice moment\n• Depune o plângere la Autoritatea Națională de Supraveghere (ANSPDCP)\n\nPentru exercitarea oricăruia dintre aceste drepturi, contactează-ne la hello@agri-one.com."
+        },
+        {
+          title: "6. Cookie-uri",
+          body: "Folosim cookie-uri esențiale pentru autentificare și gestionarea sesiunii. Cookie-urile de analiză sunt folosite doar cu consimțământul tău pentru a ne ajuta să înțelegem cum este utilizată platforma. Poți gestiona preferințele cookie din setările browserului în orice moment."
+        },
+        {
+          title: "7. Contact",
+          body: "Pentru orice întrebare legată de confidențialitate, contactează responsabilul nostru cu protecția datelor la:\n\nEmail: hello@agri-one.com\nTelefon: +40 123 456 789\nAdresă: București, România"
+        }
+      ]
+    },
+    terms: {
+      title: "Termeni și Condiții",
+      lastUpdated: "Ultima actualizare: 1 aprilie 2026",
+      intro: "Acești termeni guvernează utilizarea platformei AgriOne. Prin crearea unui cont sau utilizarea serviciilor noastre, ești de acord cu acești termeni.",
+      sections: [
+        {
+          title: "1. Acceptarea termenilor",
+          body: "Prin accesarea sau utilizarea AgriOne, ești de acord să respecți acești Termeni și Condiții și Politica noastră de Confidențialitate. Dacă nu ești de acord, te rugăm să nu utilizezi platforma."
+        },
+        {
+          title: "2. Înregistrarea contului",
+          body: "Pentru a utiliza AgriOne, trebuie să creezi un cont cu informații corecte. Ești responsabil de:\n\n• Menținerea confidențialității datelor de autentificare\n• Toate activitățile care au loc sub contul tău\n• Notificarea imediată în cazul oricărui acces neautorizat\n\nTrebuie să ai cel puțin 16 ani pentru a crea un cont."
+        },
+        {
+          title: "3. Utilizarea platformei",
+          body: "AgriOne oferă instrumente de management agricol, inclusiv monitorizare senzori IoT, date meteo, evidență financiară și recomandări pentru culturi. Ești de acord să utilizezi platforma doar în scopuri legale de management agricol. Acțiuni interzise:\n\n• Încercarea de acces neautorizat la alte conturi sau sisteme\n• Încărcarea de cod malițios sau interferența cu funcționarea platformei\n• Extragerea automată de date fără permisiune\n• Falsificarea identității sau afilierii"
+        },
+        {
+          title: "4. Abonamente și plăți",
+          body: "AgriOne oferă planuri de abonament gratuite și premium. Pentru planurile plătite:\n\n• Prețurile sunt afișate în moneda indicată la checkout\n• Abonamentele se reînnoiesc automat dacă nu sunt anulate\n• Poți anula sau schimba planul oricând din profil\n• Rambursările sunt gestionate individual în termen de 14 zile de la plată"
+        },
+        {
+          title: "5. Date și conținut",
+          body: "Păstrezi dreptul de proprietate asupra tuturor datelor încărcate pe AgriOne (date despre ferme, citiri de la senzori, înregistrări financiare). Prin utilizarea platformei, ne acorzi o licență limitată de a procesa aceste date exclusiv pentru furnizarea și îmbunătățirea serviciilor noastre. Nu revendicăm proprietatea asupra conținutului tău."
+        },
+        {
+          title: "6. Excluderea garanțiilor",
+          body: "AgriOne este furnizat \"ca atare\" fără garanții de niciun fel. Deși ne străduim pentru acuratețe, nu garantăm că:\n\n• Recomandările pentru culturi vor produce rezultate specifice\n• Datele de la senzori vor fi fără erori în permanență\n• Prognozele meteo vor fi perfect exacte\n• Platforma va fi disponibilă fără întreruperi\n\nDeciziile agricole ar trebui să ia în considerare mai multe surse de informare."
+        },
+        {
+          title: "7. Limitarea răspunderii",
+          body: "În limita maximă permisă de lege, AgriOne nu va fi responsabil pentru daune indirecte, incidentale sau consecvente rezultate din utilizarea platformei, incluzând dar nelimitându-se la pierderi de culturi, deteriorarea echipamentelor sau pierderi financiare bazate pe datele sau recomandările platformei."
+        },
+        {
+          title: "8. Modificări",
+          body: "Putem actualiza acești termeni periodic. Modificările importante vor fi comunicate prin email sau notificare în platformă cu cel puțin 30 de zile înainte de intrarea în vigoare. Utilizarea continuă după modificări constituie acceptarea noilor termeni."
+        },
+        {
+          title: "9. Legea aplicabilă",
+          body: "Acești termeni sunt guvernați de legile României și ale Uniunii Europene. Orice litigii vor fi soluționate de instanțele competente din București, România."
+        }
+      ]
+    },
+    gdpr: {
+      title: "Conformitate GDPR",
+      lastUpdated: "Ultima actualizare: 1 aprilie 2026",
+      intro: "AgriOne este pe deplin angajat în conformitatea cu Regulamentul General privind Protecția Datelor (UE) 2016/679. Această pagină detaliază modul în care protejăm drepturile tale ca persoană vizată.",
+      sections: [
+        {
+          title: "1. Operatorul de date",
+          body: "AgriOne SRL acționează ca operator de date pentru toate datele personale procesate prin platformă.\n\nSediul social: București, România\nContact: hello@agri-one.com\nResponsabil cu protecția datelor: hello@agri-one.com"
+        },
+        {
+          title: "2. Temeiul legal al prelucrării",
+          body: "Prelucrăm datele personale pe baza următoarelor temeiuri legale:\n\n• Executarea contractului — pentru furnizarea serviciilor platformei AgriOne la care te-ai înscris\n• Interes legitim — pentru îmbunătățirea serviciilor, asigurarea securității și prevenirea fraudei\n• Consimțământ — pentru analize opționale, comunicări de marketing și cookie-uri neesențiale\n• Obligație legală — pentru conformitatea cu cerințele fiscale, contabile și de reglementare"
+        },
+        {
+          title: "3. Drepturile persoanei vizate",
+          body: "Conform Articolelor 15–22 GDPR, ai următoarele drepturi:\n\n• Dreptul de acces (Art. 15) — Solicită o copie a tuturor datelor personale\n• Dreptul la rectificare (Art. 16) — Corectează datele personale inexacte\n• Dreptul la ștergere (Art. 17) — Solicită ștergerea datelor personale\n• Dreptul la restricționare (Art. 18) — Limitează modul în care prelucrăm datele tale\n• Dreptul la portabilitate (Art. 20) — Primește datele într-un format lizibil automat\n• Dreptul la opoziție (Art. 21) — Opune-te prelucrării bazate pe interes legitim\n\nCererile sunt procesate în 30 de zile. Contactează hello@agri-one.com pentru exercitarea drepturilor."
+        },
+        {
+          title: "4. Activități de prelucrare a datelor",
+          body: "Menținem un Registru al Activităților de Prelucrare (ROPA) conform cerințelor Articolului 30. Activitățile principale de prelucrare includ:\n\n• Gestionarea conturilor și autentificarea utilizatorilor\n• Colectarea și vizualizarea datelor de la senzorii IoT\n• Agregarea datelor meteo de la API-uri terțe\n• Gestionarea înregistrărilor financiare\n• Recomandări agricole bazate pe AI\n• Notificări și alerte prin email"
+        },
+        {
+          title: "5. Transferuri internaționale de date",
+          body: "Datele tale sunt stocate în principal în Spațiul Economic European (SEE). Acolo unde datele sunt transferate în afara SEE (de ex., către furnizorii de servicii cloud), asigurăm protecție adecvată prin:\n\n• Clauze Contractuale Standard UE (SCC-uri)\n• Decizii de adecvare ale Comisiei Europene\n• Reguli Corporatiste Obligatorii, acolo unde este aplicabil"
+        },
+        {
+          title: "6. Durata de păstrare a datelor",
+          body: "Păstrăm datele personale doar atât timp cât este necesar:\n\n• Datele contului — păstrate cât contul este activ, șterse în 30 de zile de la ștergerea contului\n• Citirile senzorilor — păstrate 5 ani pentru analiză istorică, anonimizate ulterior\n• Înregistrări financiare — păstrate 10 ani conform legislației fiscale române\n• Jurnale server — păstrate 90 de zile pentru securitate"
+        },
+        {
+          title: "7. Notificarea încălcărilor de date",
+          body: "În eventualitatea unei încălcări a datelor personale, vom:\n\n• Notifica Autoritatea Națională de Supraveghere (ANSPDCP) în termen de 72 de ore conform Articolului 33\n• Informa utilizatorii afectați fără întârziere nejustificată dacă încălcarea prezintă un risc ridicat\n• Documenta toate încălcările în registrul nostru intern"
+        },
+        {
+          title: "8. Autoritatea de supraveghere",
+          body: "Ai dreptul de a depune o plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP):\n\nAdresă: B-dul G-ral. Gheorghe Magheru 28-30, Sector 1, 010336, București, România\nSite web: www.dataprotection.ro\nTelefon: +40 318 059 211"
+        }
+      ]
+    }
   },
 
   plan: {
@@ -544,24 +680,24 @@ export default {
   },
   ui: {
     theme: {
-      switchToDark: "Comutați la tema întunecată",
-      switchToLight: "Comutați la tema deschisă",
+      switchToDark: "Comută la modul întunecat",
+      switchToLight: "Comută la modul luminos",
       dark: "Întunecat",
-      light: "Deschis",
+      light: "Luminos",
     },
     navigation: {
       landingPage: "Pagina Principală",
-      dashboard: "Tablou de bord",
+      dashboard: "Tablou de Bord",
       lands: "Terenuri",
       alerts: "Alerte",
-      economics: "Economie",
-      plan: "Plan",
+      economics: "Financiar",
+      plan: "Abonament",
       profile: "Profil",
     },
     premium: {
-      unlockFeatures: "Deblocați Funcționalitățile Premium",
-      upgrade: "Actualizați Planul",
-      learnMore: "Aflați mai multe",
+      unlockFeatures: "Deblochează Funcțiile Premium",
+      upgrade: "Treci la Pro",
+      learnMore: "Află mai multe",
     },
     actions: {
       save: "Salvează",
@@ -569,15 +705,15 @@ export default {
       edit: "Editează",
       delete: "Șterge",
       update: "Actualizează",
-      refresh: "Reîmprospătează",
+      refresh: "Reîncarcă",
       close: "Închide",
     },
     status: {
       loading: "Se încarcă...",
       error: "Eroare",
       success: "Succes",
-      warning: "Avertisment",
-      info: "Informații",
+      warning: "Atenție",
+      info: "Informație",
     },
   },
   ai: {

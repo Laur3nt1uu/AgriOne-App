@@ -29,10 +29,10 @@ function createResetToken() {
 
 /**
  * Verify Google ID token using google-auth-library.
- * Falls back to manual decode if GOOGLE_CLIENT_ID is not configured.
+ * Local demos may opt into an unverified decode, but production must fail closed.
  */
 async function verifyGoogleToken(idToken) {
-  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+  const clientId = env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 
   if (clientId && clientId !== "your-google-client-id") {
     try {
@@ -47,8 +47,12 @@ async function verifyGoogleToken(idToken) {
     }
   }
 
-  // Fallback: manual decode (for development without GOOGLE_CLIENT_ID)
-  console.warn("GOOGLE_CLIENT_ID not set - falling back to unverified JWT decode");
+  if (!env.GOOGLE_ALLOW_UNVERIFIED_TOKENS) {
+    throw new ApiError(503, "Google OAuth is not configured", null, "AUTH_GOOGLE_NOT_CONFIGURED");
+  }
+
+  // Fallback: manual decode for local demo environments only.
+  console.warn("GOOGLE_CLIENT_ID not set - using unverified JWT decode because GOOGLE_ALLOW_UNVERIFIED_TOKENS is enabled");
   return decodeJwtPayload(idToken);
 }
 
@@ -122,7 +126,7 @@ async function ensureUniqueUsername(desired, maxAttempts = 6) {
   return "user_" + crypto.randomBytes(4).toString("hex");
 }
 
-async function register(email, password, role = "USER", username = undefined, name = undefined) {
+async function register(email, password, username = undefined, name = undefined) {
   const normalized = normalizeEmail(email);
   const existing = await findUserByEmail(normalized);
   if (existing) throw new ApiError(409, "Email already registered", null, "AUTH_EMAIL_ALREADY_REGISTERED");
@@ -138,7 +142,7 @@ async function register(email, password, role = "USER", username = undefined, na
   const trimmedName = name ? String(name).trim() : null;
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await User.create({ email: normalized, username: finalUsername, name: trimmedName, passwordHash, role });
+  const user = await User.create({ email: normalized, username: finalUsername, name: trimmedName, passwordHash, role: "USER" });
 
   const accessToken = signAccessToken(user);
   const refreshToken = createRefreshToken();

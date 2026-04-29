@@ -177,6 +177,13 @@ export const api = {
     getStats: () => apiClient.get("/api/admin/stats").then(r => r.data),
     backup: () => apiClient.get("/api/admin/backup", { responseType: "blob" }).then(r => r.data),
   },
+
+  newsletter: {
+    getCampaigns: (language = "ro") => apiClient.get("/api/newsletter/campaigns", { params: { language } }).then(r => r.data),
+    getStats: () => apiClient.get("/api/newsletter/stats").then(r => r.data),
+    sendCampaign: (campaignKey) => apiClient.post("/api/newsletter/send", { campaignKey }).then(r => r.data),
+    unsubscribe: (token) => apiClient.post(`/api/newsletter/unsubscribe/${encodeURIComponent(token)}`).then(r => r.data),
+  },
   
   dev: {
   seedReadings: (landId, body) =>

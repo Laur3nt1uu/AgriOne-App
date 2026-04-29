@@ -181,7 +181,10 @@
 }
 
 html, body, #root { height: 100%; }
-html { scroll-behavior: smooth; font-size: var(--font-size); }
+html { font-size: var(--font-size); }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 body { overflow-x: hidden; }
 
 /* Scrollbar */
@@ -231,7 +234,7 @@ button, a, input, textarea, select { transition-property: all; }
   }
 
   .card {
-    @apply rounded-2xl border border-border/15 bg-card/60 backdrop-blur-xl;
+    @apply rounded-2xl border border-border/15 bg-card/60 backdrop-blur-xl shadow-sm;
   }
 
   .card-soft {
@@ -247,11 +250,11 @@ button, a, input, textarea, select { transition-property: all; }
   }
 
   .page-title {
-    @apply text-xl md:text-2xl font-semibold tracking-tight;
+    @apply text-lg sm:text-xl md:text-2xl font-semibold tracking-tight leading-tight;
   }
 
   .card-hover {
-    @apply transition hover:bg-card/70 hover:border-border/25;
+    @apply transition-all duration-200 hover:bg-card/70 hover:border-border/25 hover:shadow-md;
   }
 
   .agri-pattern {
@@ -439,6 +442,15 @@ button, a, input, textarea, select { transition-property: all; }
     transition: transform 0.6s;
     transform-style: preserve-3d;
   }
+
+  /* Hide scrollbar for mobile nav */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @keyframes gradient-shift {
@@ -491,6 +503,19 @@ button, a, input, textarea, select { transition-property: all; }
 @keyframes scan {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(100%); }
+}
+
+@keyframes floatParticle {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.8; }
+  50% { transform: translateY(-100px) translateX(30px); }
+  90% { opacity: 0.8; }
+}
+
+@keyframes gradientFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -40px) scale(1.08); }
+  66% { transform: translate(-20px, 25px) scale(0.95); }
 }
 
 /* scrollbar (nice) */
