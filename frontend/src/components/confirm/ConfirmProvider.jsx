@@ -52,7 +52,7 @@ export function ConfirmProvider({ children }) {
             if (e.target === e.currentTarget) close(false);
           }}
         >
-          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm pointer-events-none" />
           <div className="relative w-full max-w-md card p-6">
             <div className="flex items-start justify-between gap-3">
               <div>

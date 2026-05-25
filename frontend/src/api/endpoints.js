@@ -66,6 +66,7 @@ export const getErrorMessage = (err, fallback = "A apărut o eroare.") => {
     return "Resursa nu a fost găsită.";
   }
   if (status === 503 && code === "ECONOMICS_UNAVAILABLE") return "Economia nu este disponibilă momentan.";
+  if (status === 503 && code === "AI_NOT_CONFIGURED") return "Asistentul AI nu este disponibil momentan. Te rugăm să revii mai târziu.";
   if (status === 400 && code === "ADMIN_INVALID_ROLE") return "Rol invalid.";
   if (status === 400 && code === "ADMIN_CANNOT_DELETE_SELF") return "Nu îți poți șterge propriul cont.";
   if (status === 400 || status === 422) return "Date invalide. Verifică câmpurile și încearcă din nou.";
@@ -208,6 +209,20 @@ export const api = {
     createSession: (data) => apiClient.post("/api/payments/create-session", data).then(r => r.data),
     verify: (data) => apiClient.post("/api/payments/verify", data).then(r => r.data),
     simulate: (data) => apiClient.post("/api/payments/simulate", data).then(r => r.data),
+  },
+
+  community: {
+    listPosts: (category) =>
+      apiClient
+        .get("/api/community/posts", { params: category && category !== "all" ? { category } : undefined })
+        .then((r) => r.data?.posts || []),
+    getPost: (id) => apiClient.get(`/api/community/posts/${id}`).then((r) => r.data),
+    createPost: (data) => apiClient.post("/api/community/posts", data).then((r) => r.data?.post),
+    deletePost: (id) => apiClient.delete(`/api/community/posts/${id}`).then(() => true),
+    addComment: (id, body) =>
+      apiClient.post(`/api/community/posts/${id}/comments`, { body }).then((r) => r.data?.comment),
+    toggleLike: (id) => apiClient.post(`/api/community/posts/${id}/like`).then((r) => r.data),
+    myLikes: () => apiClient.get("/api/community/likes/mine").then((r) => r.data?.postIds || []),
   },
 
   ai: {

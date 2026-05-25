@@ -15,6 +15,13 @@ export function AIChatWidget() {
   const { hasFeature, getUserPlan } = usePlanFeatures();
   const { t } = useLanguage();
 
+  // Listen for programmatic open requests (e.g. from AI sidebar item)
+  useEffect(() => {
+    const handler = () => setIsOpen(true);
+    window.addEventListener("open-ai-chat", handler);
+    return () => window.removeEventListener("open-ai-chat", handler);
+  }, []);
+
   // Check if user has AI access - all plans have some AI (even STARTER has basic AI)
   const hasAiAccess = hasFeature('ai_assistant') || hasFeature('ai_assistant_basic');
 

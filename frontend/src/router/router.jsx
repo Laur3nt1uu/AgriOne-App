@@ -23,6 +23,7 @@ import {
   loadSystemSettingsPage,
   loadNewsletterPage,
   loadApiaPage,
+  loadCalendarPage,
   loadPlanPage,
   loadNotFoundPage,
   loadDocumentationPage,
@@ -58,6 +59,7 @@ const UsersManagementPage = lazy(loadUsersManagementPage);
 const SystemSettingsPage = lazy(loadSystemSettingsPage);
 const NewsletterPage = lazy(loadNewsletterPage);
 const ApiaPage = lazy(loadApiaPage);
+const CalendarPage = lazy(loadCalendarPage);
 const PlanPage = lazy(loadPlanPage);
 const NotFoundPage = lazy(loadNotFoundPage);
 
@@ -158,6 +160,8 @@ export const router = createBrowserRouter([
       { path: "alerts", element: suspense(<AlertsPage />) },
       { path: "analytics", element: suspense(<AnalyticsPage />) },
       { path: "apia", element: suspense(<ApiaPage />) },
+      { path: "calendar", element: suspense(<CalendarPage />) },
+      { path: "ai", element: <Navigate to="/app/dashboard" replace /> },
       { path: "profile", element: suspense(<ProfilePage />) },
       { path: "plan", element: suspense(<PlanPage />) },
       {

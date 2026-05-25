@@ -31,12 +31,14 @@ import {
   Droplets,
   Leaf,
   MapPin,
+  RefreshCw,
   ShieldAlert,
   Sun,
   Thermometer,
   TrendingUp,
   TriangleAlert,
   Wind,
+  X,
 } from "lucide-react";
 
 function clamp01(x) {
@@ -145,6 +147,7 @@ export default function DashboardPage() {
   const [prefName, setPrefName] = useState("");
   const [prefLat, setPrefLat] = useState("");
   const [prefLng, setPrefLng] = useState("");
+  const [weatherRefreshing, setWeatherRefreshing] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -239,6 +242,11 @@ export default function DashboardPage() {
   }
 
   async function openPreferences() {
+    // Open immediately so the modal feels instant
+    setPrefName("");
+    setPrefLat("");
+    setPrefLng("");
+    setPrefOpen(true);
     try {
       const p = await api.auth.getPreferences().catch(() => null);
       const gl = p?.globalLocation || null;
@@ -246,12 +254,23 @@ export default function DashboardPage() {
       setPrefLat(gl?.lat != null ? String(gl.lat) : "");
       setPrefLng(gl?.lng != null ? String(gl.lng) : "");
     } catch {
-      // best-effort
-      setPrefName("");
-      setPrefLat("");
-      setPrefLng("");
+      // best-effort — fields stay empty
+    }
+  }
+
+  async function refreshLandWeather() {
+    if (!weatherLand || weatherRefreshing) return;
+    setWeatherRefreshing(true);
+    try {
+      const w = await api.weather.byCoords(weatherLand.centroidLat, weatherLand.centroidLng);
+      setWeather(w);
+      const loc = await api.weather.reverseGeocode(weatherLand.centroidLat, weatherLand.centroidLng).catch(() => null);
+      setWeatherPlace(loc?.name || null);
+    } catch {
+      setWeather(null);
+      setWeatherPlace(null);
     } finally {
-      setPrefOpen(true);
+      setWeatherRefreshing(false);
     }
   }
 
@@ -498,7 +517,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
         <div className="space-y-4">
           {isAdmin ? (
-            <Card className="p-5">
+            <Card className="p-5 gap-0">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold">Admin dashboard</div>
@@ -613,7 +632,7 @@ export default function DashboardPage() {
             </Motion.div>
           )}
 
-          <Card className="p-5">
+          <Card className="p-5 gap-0">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold">Acțiuni rapide</div>
@@ -678,24 +697,19 @@ export default function DashboardPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                      whileHover={{
+                        y: -4,
+                        boxShadow: sev === "CRITICAL"
+                          ? "0 8px 24px rgba(220, 38, 38, 0.15)"
+                          : "0 8px 24px rgba(245, 158, 11, 0.1)",
+                        transition: { duration: 0.2 },
+                      }}
                       onClick={() => nav("/app/alerts")}
-                      className={`rounded-xl border p-4 flex items-start justify-between gap-3 cursor-pointer relative overflow-hidden transition-all duration-300 group ${
+                      className={`rounded-xl border p-4 flex items-start justify-between gap-3 cursor-pointer relative overflow-hidden group ${
                         sev === "CRITICAL"
                           ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30"
                           : "bg-gradient-to-br from-warn/10 to-warn/5 border-warn/30"
                       }`}
-                      style={{
-                        "--hover-shadow": sev === "CRITICAL" ? "var(--shadow-destructive-hover)" : "var(--shadow-warn-hover)"
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.boxShadow = sev === "CRITICAL"
-                          ? "0 8px 24px rgba(220, 38, 38, 0.15)"
-                          : "0 8px 24px rgba(245, 158, 11, 0.1)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                       <div className="min-w-0 relative z-10">
@@ -749,22 +763,12 @@ export default function DashboardPage() {
               </div>
               <Button
                 variant="ghost"
-                onClick={async () => {
-                  try {
-                    if (!weatherLand) return;
-                    const w = await api.weather.byCoords(weatherLand.centroidLat, weatherLand.centroidLng);
-                    setWeather(w);
-
-                    const loc = await api.weather.reverseGeocode(weatherLand.centroidLat, weatherLand.centroidLng).catch(() => null);
-                    setWeatherPlace(loc?.name || null);
-                  } catch {
-                    setWeather(null);
-                    setWeatherPlace(null);
-                  }
-                }}
-                disabled={!weatherLand}
+                onClick={refreshLandWeather}
+                disabled={!weatherLand || weatherRefreshing}
+                className="gap-1.5"
               >
-                Actualizează
+                <RefreshCw size={14} className={weatherRefreshing ? "animate-spin" : ""} />
+                {weatherRefreshing ? "Se încarcă…" : "Actualizează"}
               </Button>
             </div>
 
@@ -909,81 +913,105 @@ export default function DashboardPage() {
       </div>
 
       <AnimatePresence>
-      {prefOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setPrefOpen(false);
-          }}
-        >
-          <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
-          <Motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}>
-          <Card className="relative w-full max-w-md p-6 gap-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-lg font-semibold">Locație globală</div>
-                <div className="text-muted-foreground text-sm mt-1">Salvată în cont și folosită pentru meteo/recomandări globale.</div>
-              </div>
-              <Button type="button" variant="ghost" onClick={() => setPrefOpen(false)} disabled={prefSaving} title="Închide">
-                ✕
-              </Button>
-            </div>
+        {prefOpen && (
+          <Motion.div
+            key="pref-modal"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {/* Backdrop — click to close */}
+            <div
+              className="absolute inset-0 bg-background/70 backdrop-blur-sm"
+              onClick={() => { if (!prefSaving) setPrefOpen(false); }}
+            />
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="prefName">Nume (opțional)</Label>
-                <Input
-                  id="prefName"
-                  value={prefName}
-                  onChange={(e) => setPrefName(e.target.value)}
-                  placeholder="ex: Iași / Ferma bunicilor"
-                  disabled={prefSaving}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="prefLat">Latitudine</Label>
-                  <Input
-                    id="prefLat"
-                    value={prefLat}
-                    onChange={(e) => setPrefLat(e.target.value)}
-                    placeholder="ex: 47.158"
+            {/* Modal card */}
+            <Motion.div
+              initial={{ scale: 0.96, y: 16 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: 16 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-10 w-full max-w-md"
+            >
+              <Card className="p-6 gap-0">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-lg font-semibold">Locație globală</div>
+                    <div className="text-muted-foreground text-sm mt-1">Salvată în cont și folosită pentru meteo/recomandări globale.</div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPrefOpen(false)}
                     disabled={prefSaving}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="prefLng">Longitudine</Label>
-                  <Input
-                    id="prefLng"
-                    value={prefLng}
-                    onChange={(e) => setPrefLng(e.target.value)}
-                    placeholder="ex: 27.601"
-                    disabled={prefSaving}
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 justify-between">
-                <Button type="button" variant="ghost" onClick={fillPrefsFromDevice} disabled={prefSaving}>
-                  Locația mea
-                </Button>
-                <div className="flex gap-2">
-                  <Button type="button" variant="ghost" onClick={clearPreferences} disabled={prefSaving}>
-                    Șterge
-                  </Button>
-                  <Button type="button" variant="primary" onClick={savePreferences} disabled={prefSaving}>
-                    {prefSaving ? "Se salvează..." : "Salvează"}
+                    className="shrink-0"
+                    title="Închide"
+                  >
+                    <X size={16} />
                   </Button>
                 </div>
-              </div>
-            </div>
-          </Card>
+
+                {/* Form */}
+                <div className="space-y-4 mt-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="prefName">Nume (opțional)</Label>
+                    <Input
+                      id="prefName"
+                      value={prefName}
+                      onChange={(e) => setPrefName(e.target.value)}
+                      placeholder="ex: Iași / Ferma bunicilor"
+                      disabled={prefSaving}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="prefLat">Latitudine</Label>
+                      <Input
+                        id="prefLat"
+                        value={prefLat}
+                        onChange={(e) => setPrefLat(e.target.value)}
+                        placeholder="ex: 47.158"
+                        disabled={prefSaving}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="prefLng">Longitudine</Label>
+                      <Input
+                        id="prefLng"
+                        value={prefLng}
+                        onChange={(e) => setPrefLng(e.target.value)}
+                        placeholder="ex: 27.601"
+                        disabled={prefSaving}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 justify-between pt-1">
+                    <Button type="button" variant="ghost" onClick={fillPrefsFromDevice} disabled={prefSaving}>
+                      Locația mea
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button type="button" variant="ghost" onClick={clearPreferences} disabled={prefSaving}>
+                        Șterge
+                      </Button>
+                      <Button type="button" variant="primary" onClick={savePreferences} disabled={prefSaving}>
+                        {prefSaving ? "Se salvează..." : "Salvează"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </Motion.div>
           </Motion.div>
-        </div>
-      ) : null}
+        )}
       </AnimatePresence>
     </div>
   );

@@ -30,9 +30,10 @@ function getOpenAIClient() {
 }
 
 // Model configurations — use current stable models
+// gpt-4o-mini: ~30x cheaper than gpt-4o, sufficient for Romanian agricultural Q&A
 const MODELS = {
-  chat: process.env.OPENAI_MODEL || "gpt-4o",
-  vision: process.env.OPENAI_VISION_MODEL || "gpt-4o",
+  chat: process.env.OPENAI_MODEL || "gpt-4o-mini",
+  vision: process.env.OPENAI_VISION_MODEL || "gpt-4o-mini",
 };
 
 const MAX_HISTORY_MESSAGES = 10;

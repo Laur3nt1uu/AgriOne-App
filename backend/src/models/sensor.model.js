@@ -26,6 +26,20 @@ module.exports = (sequelize) =>
       },
 
       lastReadingAt: { type: DataTypes.DATE, allowNull: true, field: "last_reading_at" },
+
+      lastLat: { type: DataTypes.DOUBLE, allowNull: true, field: "last_lat" },
+      lastLng: { type: DataTypes.DOUBLE, allowNull: true, field: "last_lng" },
+      locationVerified: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: "location_verified",
+      },
+      locationCheckedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: "location_checked_at",
+      },
     },
     {
       tableName: "sensors",

@@ -1,12 +1,28 @@
 /*
- * AgriOne — Arduino UNO + SIM900A + DHT11 + Senzor Umiditate Sol (digital)
+ * AgriOne — Arduino UNO + SIM900A + DHT11 + Senzor Umiditate Sol + GPS NEO-6M (opțional)
  *
  * ===== HARDWARE =====
  *   - Arduino UNO
  *   - SIM900A GSM/GPRS (TX→pin 7, RX→pin 8)
  *   - DHT11 (data→pin 2)
  *   - Senzor umiditate sol digital FC-28 (DO→pin 4)
+ *   - GPS NEO-6M (TX→pin 3) — OPȚIONAL, codul merge si fara el
  *   - Cartela SIM cu date mobile in modulul SIM900A
+ *
+ * ===== CABLARE GPS NEO-6M (optional) =====
+ *   NEO-6M TX  → Arduino pin 3   (SoftwareSerial RX)
+ *   NEO-6M RX  → neconectat       (nu trimitem comenzi la GPS)
+ *   NEO-6M GND → Arduino GND
+ *   NEO-6M VCC → Arduino 5V (verifica eticheta modulului — unele suporta doar 3.3V!)
+ *
+ *   ATENTIE: GPS-ul trebuie OUTDOOR pentru a prinde fix. Prima fixare (cold start)
+ *   poate dura 2-5 minute. LED-ul clipeste 1/sec cand are fix valid.
+ *
+ *   OPTIONAL — control alimentare GPS prin MOSFET (economie energie):
+ *     Pin 6 Arduino → Gate MOSFET (IRLML6344)
+ *     Source MOSFET → GND
+ *     Drain MOSFET  → GND-ul GPS-ului
+ *     Daca folosesti MOSFET, decomenteaza GPS_POWER_PIN mai jos.
  *
  * ===== CABLARE SIM900A =====
  *   SIM900A TX   → Arduino pin 7  (SoftwareSerial RX)
@@ -44,6 +60,7 @@
 
 #include <SoftwareSerial.h>
 #include <DHT.h>
+#include <TinyGPS++.h>   // Install via Arduino IDE → Library Manager → "TinyGPS++"
 
 // ==================== CONFIGURARE — MODIFICA AICI ====================
 
@@ -67,7 +84,7 @@ const char* IOT_KEY = "iot_dev_key_change_me";
 // APN-ul operatorului de la cartela SIM:
 //   Orange Romania = "internet"  |  Vodafone Romania = "internet"
 //   Digi Romania   = "broadband" |  Telekom Romania  = "broadband"
-const char* APN = "internet";
+const char* APN = "broadband";
 
 // ----------- Pini senzori -----------
 #define DHTPIN        2       // Pinul DATA al DHT11
@@ -90,6 +107,12 @@ const char* APN = "internet";
 #define SIM_TX_PIN    7   // SIM900A TX → Arduino pin 7
 #define SIM_RX_PIN    8   // SIM900A RX → Arduino pin 8 (prin divisor tensiune!)
 
+// ----------- Pini GPS NEO-6M (optional) -----------
+#define GPS_RX_PIN    3   // NEO-6M TX → Arduino pin 3
+// #define GPS_POWER_PIN 6   // Decomenteaza daca folosesti MOSFET pentru pornit/oprit GPS
+#define GPS_FIX_TIMEOUT_MS    90000UL   // Cat astept dupa fix-ul GPS la pornire (90s)
+#define GPS_REFIX_INTERVAL_MS 86400000UL // Refac fix-ul o data pe zi (24h) pentru detectie mutare
+
 // ----------- Interval trimitere -----------
 #define SEND_INTERVAL_MS  30000UL  // 30 secunde (pentru testare)
 // Pentru productie schimba in 300000UL (5 minute)
@@ -97,22 +120,41 @@ const char* APN = "internet";
 // ==================== SFARSIT CONFIGURARE ====================
 
 SoftwareSerial sim900(SIM_TX_PIN, SIM_RX_PIN);
+SoftwareSerial gpsSerial(GPS_RX_PIN, -1);  // -1 = nu transmitem catre GPS
+TinyGPSPlus gps;
 DHT dht(DHTPIN, DHTTYPE);
 
 unsigned long lastSend = 0;
+unsigned long lastGpsFixAt = 0;
 bool gprsReady = false;
+
+// Ultima fixare GPS valida (se trimite la fiecare uplink daca e disponibila)
+float gpsLat = 0.0;
+float gpsLng = 0.0;
+bool gpsValid = false;
 
 void setup() {
   Serial.begin(9600);
   sim900.begin(9600);
+  gpsSerial.begin(9600);
   dht.begin();
 
   // Senzor sol digital
   pinMode(SOIL_DIG_PIN, INPUT);
 
+#ifdef GPS_POWER_PIN
+  pinMode(GPS_POWER_PIN, OUTPUT);
+  digitalWrite(GPS_POWER_PIN, LOW);  // GPS oprit initial
+#endif
+
   Serial.println(F("=== AgriOne IoT ==="));
-  Serial.println(F("DHT11 + Senzor Sol + SIM900A"));
+  Serial.println(F("DHT11 + Senzor Sol + SIM900A + GPS"));
+
+  // Incerc sa obtin un fix GPS inainte de orice. Daca esueaza, continuam fara — backend-ul accepta.
+  acquireGpsFix();
+
   Serial.println(F("Astept SIM900A sa porneasca..."));
+  sim900.listen();
   delay(5000);  // SIM900A are nevoie de cateva secunde sa booteze
 
   // Initializare SIM900A + GPRS
@@ -133,6 +175,14 @@ void loop() {
 
   if (now - lastSend >= SEND_INTERVAL_MS) {
     lastSend = now;
+
+    // ===== REFRESH PERIODIC GPS (1x / 24h) =====
+    // Detecteaza daca Arduino-ul a fost mutat in afara terenului. Skip daca n-am avut niciodata fix.
+    if (gpsValid && (now - lastGpsFixAt >= GPS_REFIX_INTERVAL_MS)) {
+      Serial.println(F("Refac fix GPS periodic..."));
+      acquireGpsFix();
+      sim900.listen();
+    }
 
     // ===== CITIRE SENZORI =====
     float temperature = dht.readTemperature();   // Celsius
@@ -330,6 +380,17 @@ bool sendReading(float tempC, float humPct, float soilPct) {
   json += String(humPct, 1);
   json += ",\"soilMoisturePct\":";
   json += String(soilPct, 1);
+
+  // Adauga coordonatele GPS doar daca avem fix valid.
+  // Backend-ul accepta payload-ul si fara aceste campuri (backward-compatible).
+  if (gpsValid) {
+    json += ",\"lat\":";
+    json += String(gpsLat, 6);
+    json += ",\"lng\":";
+    json += String(gpsLng, 6);
+    json += ",\"locValid\":true";
+  }
+
   json += "}";
 
   // Deschide conexiune TCP catre server
@@ -401,4 +462,77 @@ bool sendReading(float tempC, float humPct, float soilPct) {
     Serial.print(F("Cod raspuns neasteptat. Verifica ca SENSOR_CODE si IOT_KEY sunt corecte."));
     return false;
   }
+}
+
+// ==================== FUNCTII GPS ====================
+
+/*
+ * Incearca sa obtina un fix GPS valabil in maxim GPS_FIX_TIMEOUT_MS milisecunde.
+ * Folosirea: comuta SoftwareSerial pe GPS (gpsSerial.listen()), citeste bytes,
+ * parseaza cu TinyGPS++, opreste cand are fix proaspat (< 2s vechime).
+ *
+ * IMPORTANT: dupa apel TREBUIE sa apelezi sim900.listen() inainte de a folosi SIM900A,
+ * altfel SoftwareSerial-ul SIM-ului nu mai primeste date!
+ *
+ * Daca nu prinde fix in timeout, lasa gpsValid neschimbat — datele se trimit
+ * fara coordonate, backend-ul accepta.
+ */
+bool acquireGpsFix() {
+  Serial.println(F("--- GPS fix ---"));
+
+#ifdef GPS_POWER_PIN
+  // Aprinde GPS-ul (MOSFET) si lasa-l sa booteze
+  digitalWrite(GPS_POWER_PIN, HIGH);
+  delay(1000);
+#endif
+
+  gpsSerial.listen();
+  delay(100);
+
+  unsigned long start = millis();
+  unsigned long lastReport = 0;
+  bool gotFix = false;
+
+  while (millis() - start < GPS_FIX_TIMEOUT_MS) {
+    while (gpsSerial.available() > 0) {
+      gps.encode(gpsSerial.read());
+    }
+
+    if (gps.location.isValid() && gps.location.age() < 2000) {
+      gpsLat = gps.location.lat();
+      gpsLng = gps.location.lng();
+      gpsValid = true;
+      lastGpsFixAt = millis();
+      gotFix = true;
+
+      Serial.print(F("  Fix GPS: "));
+      Serial.print(gpsLat, 6);
+      Serial.print(F(", "));
+      Serial.print(gpsLng, 6);
+      Serial.print(F(" (sateliti: "));
+      Serial.print(gps.satellites.value());
+      Serial.println(F(")"));
+      break;
+    }
+
+    // Status la fiecare 10 secunde
+    if (millis() - lastReport > 10000) {
+      lastReport = millis();
+      Serial.print(F("  Astept fix... sateliti vizibili: "));
+      Serial.println(gps.satellites.value());
+    }
+  }
+
+  if (!gotFix) {
+    Serial.println(F("  Fix GPS esuat (timeout). Continui fara verificare locatie."));
+    Serial.println(F("  Verifica: GPS conectat? Antena outdoor? LED GPS clipeste 1/sec?"));
+  }
+
+#ifdef GPS_POWER_PIN
+  // Oprim GPS-ul pentru economie de energie pana la urmatorul refresh
+  digitalWrite(GPS_POWER_PIN, LOW);
+#endif
+
+  Serial.println(F("--- GPS fix end ---"));
+  return gotFix;
 }

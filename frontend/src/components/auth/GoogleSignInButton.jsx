@@ -5,16 +5,27 @@ import { googleOAuth } from "../../auth/google-oauth.service";
 import { authStore } from "../../auth/auth.store";
 import { toastError, toastSuccess } from "../../utils/toast";
 
+function GoogleLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908C16.658 14.233 17.64 11.925 17.64 9.2Z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
+      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
 export default function GoogleSignInButton({ onSuccess, disabled = false }) {
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState(null);
-  const buttonContainerRef = useRef(null);
+  const [ready, setReady] = useState(false);
+  const hiddenContainerRef = useRef(null);
   const initializedRef = useRef(false);
 
   const handleGoogleResult = useCallback(async (result) => {
     setLoading(true);
     try {
-      // Send Google token to backend for verification/login
       const data = await api.auth.googleLogin({
         credential: result.credential,
         user: result.user,
@@ -23,7 +34,6 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
       const token = data?.token || data?.accessToken || data?.jwt;
       if (!token) throw new Error("Backend authentication failed");
 
-      // Store authentication with OAuth metadata
       authStore.setGoogleAuth({
         token,
         user: { ...(data?.user || result.user), provider: "google" },
@@ -35,44 +45,52 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
       toastSuccess(`Bun venit, ${displayName}!`);
       onSuccess?.(data);
     } catch (error) {
-      console.error('Google Sign-In error:', error);
-      toastError(error, 'Autentificarea Google a eșuat.');
+      console.error("Google Sign-In error:", error);
+      toastError(error, "Autentificarea Google a eșuat.");
     } finally {
       setLoading(false);
     }
   }, [onSuccess]);
 
   useEffect(() => {
-    if (initializedRef.current || !buttonContainerRef.current) return;
+    if (initializedRef.current || !hiddenContainerRef.current) return;
     initializedRef.current = true;
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId || clientId === 'your-google-client-id') {
-      setInitError('Google Client ID not configured');
+    if (!clientId || clientId === "your-google-client-id") {
+      setInitError("Google Client ID not configured");
       return;
     }
 
     (async () => {
       try {
         await googleOAuth.initialize(clientId);
-        googleOAuth.renderButton(buttonContainerRef.current, (err, result) => {
+        googleOAuth.renderButton(hiddenContainerRef.current, (err, result) => {
           if (err) {
-            console.error('Google OAuth error:', err);
-            toastError(err, 'Autentificarea Google a eșuat.');
+            console.error("Google OAuth error:", err);
+            toastError(err, "Autentificarea Google a eșuat.");
             return;
           }
           handleGoogleResult(result);
         });
+        setReady(true);
       } catch (err) {
-        console.error('Failed to initialize Google OAuth:', err);
+        console.error("Failed to initialize Google OAuth:", err);
         setInitError(err.message);
       }
     })();
   }, [handleGoogleResult]);
 
+  function handleClick() {
+    if (!ready || loading || disabled) return;
+    // Trigger the hidden Google SDK button — keeps GIS requirements satisfied
+    const googleBtn = hiddenContainerRef.current?.querySelector('div[role="button"], button');
+    if (googleBtn) googleBtn.click();
+  }
+
   if (initError) {
     return (
-      <div className="w-full p-3 text-center text-sm text-muted-foreground border border-border/50 rounded-2xl">
+      <div className="w-full h-11 flex items-center justify-center text-sm text-muted-foreground border border-border/50 rounded-xl">
         Google Sign-In indisponibil
       </div>
     );
@@ -80,21 +98,38 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
 
   return (
     <div className="relative w-full">
-      {/* Google rendered button container */}
+      {/* Hidden Google SDK container — invisible but required for the popup to work */}
       <div
-        ref={buttonContainerRef}
-        className={`w-full flex justify-center [&>div]:!w-full ${disabled || loading ? 'pointer-events-none opacity-50' : ''}`}
+        ref={hiddenContainerRef}
+        className="absolute opacity-0 pointer-events-none overflow-hidden w-px h-px"
+        aria-hidden="true"
       />
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-card/80 rounded-2xl">
-          <Motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full"
-          />
-          <span className="ml-2 text-sm text-muted-foreground">Se conectează...</span>
-        </div>
-      )}
+
+      {/* Custom styled button */}
+      <Motion.button
+        type="button"
+        onClick={handleClick}
+        disabled={disabled || loading || !ready}
+        whileHover={{ scale: disabled || loading ? 1 : 1.01 }}
+        whileTap={{ scale: disabled || loading ? 1 : 0.98 }}
+        className="w-full flex items-center justify-center gap-3 h-11 px-4 rounded-xl border border-border bg-card hover:bg-muted/50 text-sm font-medium text-foreground transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        {loading ? (
+          <>
+            <Motion.span
+              animate={{ rotate: 360 }}
+              transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+              className="block w-4 h-4 border-2 border-current border-t-transparent rounded-full"
+            />
+            <span>Se conectează...</span>
+          </>
+        ) : (
+          <>
+            <GoogleLogo />
+            <span>Continuă cu Google</span>
+          </>
+        )}
+      </Motion.button>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import LandingLayout from "../components/landing/LandingLayout";
 import LandingNavbar from "../components/landing/LandingNavbar";
 import HeroSection from "../components/landing/HeroSection";
@@ -14,6 +16,18 @@ import LandingFooter from "../components/landing/LandingFooter";
 import LandingChatWidget from "../components/landing/LandingChatWidget";
 
 export default function LandingPage() {
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (!hash) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [hash]);
+
   return (
     <LandingLayout>
       {/* Navigation */}

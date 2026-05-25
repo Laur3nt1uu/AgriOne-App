@@ -28,7 +28,7 @@ import { Button } from "../../ui/button";
 import logo from "../../assets/agrione.png";
 import LandingMobileMenu from "./LandingMobileMenu";
 
-function MegaMenuItem({ icon: Icon, title, desc, href, onClick, accent }) {
+function MegaMenuItem({ icon: Icon, title, desc, onClick, accent }) {
   return (
     <button
       onClick={onClick}
@@ -92,6 +92,17 @@ export default function LandingNavbar() {
   const navRef = useRef(null);
   const isAuthenticated = authStore.isAuthed();
   const { t, language, toggleLanguage } = useLanguage();
+  const authUser = authStore.getUser();
+  const username =
+    authUser?.username ||
+    authUser?.app_metadata?.username ||
+    authUser?.["https://agri.one/username"];
+  const displayName =
+    username ||
+    authUser?.name ||
+    (authUser?.email ? String(authUser.email).split("@")[0] : "") ||
+    "User";
+  const displayInitial = (displayName || "U")[0]?.toUpperCase?.() || "U";
 
   const handleAuthCTA = () => {
     if (isAuthenticated) {
@@ -107,6 +118,10 @@ export default function LandingNavbar() {
     setOpenDropdown(null);
     if (isRoute || (!href.startsWith("#") && href.startsWith("/"))) {
       navigate(href);
+      return;
+    }
+    if (href.startsWith("#") && window.location.pathname !== "/") {
+      navigate(`/${href}`);
       return;
     }
     const element = document.querySelector(href);
@@ -612,11 +627,11 @@ export default function LandingNavbar() {
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-blue-500/10 animate-pulse" />
                     <span className="text-foreground font-bold text-sm relative z-10">
-                      {(authStore.getUser()?.name || authStore.getUser()?.username || "U")[0].toUpperCase()}
+                      {displayInitial}
                     </span>
                   </Motion.span>
                   <span className="text-sm font-medium text-foreground/90 max-w-[120px] truncate">
-                    {authStore.getUser()?.name || authStore.getUser()?.username || "User"}
+                    {displayName}
                   </span>
                 </Motion.div>
               )}

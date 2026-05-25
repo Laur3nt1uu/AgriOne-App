@@ -26,6 +26,7 @@ import { api } from "../../api/endpoints";
 import { toastError, toastSuccess } from "../../utils/toast";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { ApiaSkeleton } from "../../ui/skeleton";
 import { useLanguage } from "../../i18n/LanguageProvider";
 import { useConfirm } from "../../components/confirm/ConfirmProvider";
 
@@ -113,8 +114,8 @@ function ParcelsTab({ t, parcels, lands, onRefresh }) {
   }
 
   async function handleSave() {
-    if (!form.landId && !editingId) return toastError(t("apia.parcels.form.selectLand"));
-    if (!form.apiaAreaHa || Number(form.apiaAreaHa) <= 0) return toastError("Suprafata APIA invalida");
+    if (!form.landId && !editingId) return toastError(null, t("apia.parcels.form.selectLand"));
+    if (!form.apiaAreaHa || Number(form.apiaAreaHa) <= 0) return toastError(null, "Suprafață APIA invalidă.");
 
     setSaving(true);
     try {
@@ -125,17 +126,17 @@ function ParcelsTab({ t, parcels, lands, onRefresh }) {
       };
 
       if (editingId) {
-        const { landId, ...updateData } = payload;
+        const { landId: _landId, ...updateData } = payload;
         await api.apia.updateParcel(editingId, updateData);
-        toastSuccess(t("apia.parcels.edit") + " OK");
+        toastSuccess("Parcelă actualizată.");
       } else {
         await api.apia.createParcel(payload);
-        toastSuccess(t("apia.parcels.addNew") + " OK");
+        toastSuccess("Parcelă adăugată.");
       }
       setShowForm(false);
       onRefresh();
     } catch (e) {
-      toastError(e?.response?.data?.message || "Error");
+      toastError(e, "Nu pot salva parcela.");
     } finally {
       setSaving(false);
     }
@@ -146,16 +147,16 @@ function ParcelsTab({ t, parcels, lands, onRefresh }) {
       title: t("apia.parcels.delete"),
       message: t("apia.parcels.confirmDelete"),
       confirmText: t("apia.parcels.delete"),
-      variant: "danger",
+      destructive: true,
     });
     if (!ok) return;
 
     try {
       await api.apia.deleteParcel(id);
-      toastSuccess("OK");
+      toastSuccess("Parcelă ștearsă.");
       onRefresh();
     } catch (e) {
-      toastError(e?.response?.data?.message || "Error");
+      toastError(e, "Nu pot șterge parcela.");
     }
   }
 
@@ -246,26 +247,28 @@ function ParcelsTab({ t, parcels, lands, onRefresh }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-start justify-center p-4 py-8 overflow-y-auto"
             role="dialog"
             aria-modal="true"
             onMouseDown={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
           >
-            <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-background/70 backdrop-blur-sm pointer-events-none" />
 
             <Motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="relative w-full max-w-lg card p-6 space-y-4 my-8"
+              className="relative w-full max-w-lg card p-6 space-y-4"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-extrabold text-foreground">{t("apia.parcels.form.title")}</h2>
                   <p className="muted text-sm mt-0.5">{editingId ? t("apia.parcels.edit") : t("apia.parcels.addNew")}</p>
                 </div>
-                <Button variant="ghost" onClick={() => setShowForm(false)} title="Închide">✕</Button>
+                <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} title="Închide" className="shrink-0">
+                  <span aria-hidden>✕</span>
+                </Button>
               </div>
 
               {!editingId && (
@@ -277,7 +280,7 @@ function ParcelsTab({ t, parcels, lands, onRefresh }) {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   ["tarlaNumber", "tarlaNumber"],
                   ["parcelNumber", "parcelNumber"],
@@ -291,7 +294,7 @@ function ParcelsTab({ t, parcels, lands, onRefresh }) {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="muted text-xs mb-1">{t("apia.parcels.form.landCategory")}</div>
                   <select value={form.landCategory} onChange={(e) => setForm({ ...form, landCategory: e.target.value })} className="input w-full">
@@ -521,9 +524,9 @@ function ExportTab({ t, parcelsCount }) {
       a.download = `apia-report-${Date.now()}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-      toastSuccess("PDF OK");
+      toastSuccess("PDF descărcat.");
     } catch (e) {
-      toastError(e?.response?.data?.message || "Export failed");
+      toastError(e, "Nu pot exporta raportul.");
     } finally {
       setDownloading(false);
     }
@@ -605,6 +608,11 @@ export default function ApiaPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Show skeleton on initial load
+  if (loading && parcels.length === 0 && lands.length === 0) {
+    return <ApiaSkeleton />;
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn">

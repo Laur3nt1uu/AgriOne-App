@@ -2,8 +2,9 @@ const ApiError = require("../../utils/ApiError");
 const { Sensor, Reading, Land } = require("../../models");
 const { Op } = require("sequelize");
 const { checkSensorLimit } = require("../sensors/sensors.service");
+const { isPointInLand } = require("../../utils/geo");
 
-async function ingest({ sensorCode, temperatureC, humidityPct, soilMoisturePct, recordedAt }) {
+async function ingest({ sensorCode, temperatureC, humidityPct, soilMoisturePct, lat, lng, locValid, recordedAt }) {
   const sensor = await Sensor.findOne({ where: { sensorCode } });
   if (!sensor) throw new ApiError(404, "Sensor not registered", null, "SENSOR_NOT_REGISTERED");
 
@@ -18,19 +19,45 @@ async function ingest({ sensorCode, temperatureC, humidityPct, soilMoisturePct, 
   });
 
   sensor.lastReadingAt = ts;
+
+  // ---- Verificare locație GPS (opțional, doar dacă payload-ul aduce coordonate valide) ----
+  let locationCheck = null;
+  if (locValid && typeof lat === "number" && typeof lng === "number") {
+    sensor.lastLat = lat;
+    sensor.lastLng = lng;
+    sensor.locationCheckedAt = ts;
+
+    if (sensor.landId) {
+      const land = await Land.findByPk(sensor.landId);
+      if (land) {
+        const result = isPointInLand(lat, lng, land);
+        const previousVerified = sensor.locationVerified;
+        sensor.locationVerified = result.inside;
+        locationCheck = { ...result, previousVerified };
+
+        if (previousVerified && !result.inside) {
+          // Tranziție verified → not verified: senzorul a fost mutat în afara terenului.
+          // Log pentru moment; alerta dedicată poate fi adăugată ulterior.
+          console.warn(
+            `[IOT] Sensor ${sensor.sensorCode} moved OUT of land ${land.name} (${result.method})`
+          );
+        }
+      }
+    }
+  }
+
   await sensor.save();
 
   const alertsService = require("../alerts/alerts.service");
-  
 
- const createdAlerts = await alertsService.evaluateReadingAndCreateAlerts({
-  sensor,
-  temperatureC,
-  humidityPct,
-  recordedAt: ts,
-});
+  const createdAlerts = await alertsService.evaluateReadingAndCreateAlerts({
+    sensor,
+    temperatureC,
+    humidityPct,
+    recordedAt: ts,
+  });
 
-return { sensorId: sensor.id, reading, createdAlerts };
+  return { sensorId: sensor.id, reading, createdAlerts, locationCheck };
 }
 
 async function pairBoard(actor, { landId, boardCode, name }) {

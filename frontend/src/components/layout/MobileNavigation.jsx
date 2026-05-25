@@ -7,6 +7,7 @@ import {
   Wheat,
   Bell,
   BarChart3,
+  CalendarDays,
   Landmark,
 } from "lucide-react";
 import { prefetchByPath } from "../../router/chunks";
@@ -19,6 +20,7 @@ const navItems = [
   { to: "/app/alerts", label: "Alerte", icon: Bell },
   { to: "/app/analytics", label: "Analize", icon: BarChart3 },
   { to: "/app/apia", label: "APIA", icon: Landmark },
+  { to: "/app/calendar", label: "Calendar", icon: CalendarDays },
 ];
 
 export default function MobileNav() {

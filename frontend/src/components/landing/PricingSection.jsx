@@ -80,7 +80,7 @@ export default function PricingSection() {
         {/* Cards grid */}
         <StaggerContainer stagger={0.15} className="grid md:grid-cols-3 gap-8 items-stretch">
           {plans.map((plan) => {
-            const isCurrent = isAuthenticated && user.plan === plan.key;
+            const isCurrent = isAuthenticated && String(user.plan || "").toLowerCase() === plan.key;
             return (
               <StaggerItem key={plan.key} variant="blur-up">
                 <TiltCard tiltMax={8} glare className="h-full group">

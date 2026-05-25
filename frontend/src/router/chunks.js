@@ -23,6 +23,7 @@ export const loadUsersManagementPage = () => import("../pages/app/admin/UsersMan
 export const loadSystemSettingsPage = () => import("../pages/app/admin/SystemSettingsPage");
 export const loadNewsletterPage = () => import("../pages/app/admin/NewsletterPage");
 export const loadApiaPage = () => import("../pages/app/ApiaPage");
+export const loadCalendarPage = () => import("../pages/app/CalendarPage");
 export const loadPlanPage = () => import("../pages/app/PlanPage");
 export const loadNotFoundPage = () => import("../pages/NotFoundPage");
 
@@ -71,6 +72,7 @@ export function prefetchByPath(path) {
   if (p.startsWith("/app/alerts")) return safePrefetch(loadAlertsPage);
   if (p.startsWith("/app/analytics")) return safePrefetch(loadAnalyticsPage);
   if (p.startsWith("/app/apia")) return safePrefetch(loadApiaPage);
+  if (p.startsWith("/app/calendar")) return safePrefetch(loadCalendarPage);
   if (p.startsWith("/app/profile")) return safePrefetch(loadProfilePage);
   if (p.startsWith("/app/plan")) return safePrefetch(loadPlanPage);
   if (p.startsWith("/app/admin/users")) return safePrefetch(loadUsersManagementPage);

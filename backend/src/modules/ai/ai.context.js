@@ -18,7 +18,7 @@ async function buildUserContext(userId, options = {}) {
       where: { ownerId: userId },
       attributes: ["id", "name", "cropType", "areaHa"],
       limit: 10,
-      order: [["createdAt", "DESC"]],
+      order: [["created_at", "DESC"]],
     });
 
     if (lands.length > 0) {
@@ -70,11 +70,11 @@ async function buildUserContext(userId, options = {}) {
     const alerts = await Alert.findAll({
       where: {
         ownerId: userId,
-        createdAt: { [Op.gte]: sevenDaysAgo },
+        created_at: { [Op.gte]: sevenDaysAgo },
       },
-      attributes: ["severity", "type", "message", "createdAt"],
+      attributes: ["severity", "type", "message", ["created_at", "createdAt"]],
       limit: 5,
-      order: [["createdAt", "DESC"]],
+      order: [["created_at", "DESC"]],
     });
 
     if (alerts.length > 0) {

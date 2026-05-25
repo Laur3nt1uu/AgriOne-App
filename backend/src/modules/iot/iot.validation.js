@@ -37,6 +37,20 @@ const ingestSchema = z.object({
       .min(0, "Umiditatea solului nu poate fi sub 0%.")
       .max(100, "Umiditatea solului nu poate depăși 100%.")
   ).optional(),
+  lat: numberField(
+    "Latitudinea trebuie să fie număr.",
+    z.number().min(-90).max(90)
+  ).optional(),
+  lng: numberField(
+    "Longitudinea trebuie să fie număr.",
+    z.number().min(-180).max(180)
+  ).optional(),
+  locValid: z
+    .preprocess(
+      (v) => (typeof v === "number" ? v !== 0 : typeof v === "string" ? v === "1" || v === "true" : v),
+      z.boolean()
+    )
+    .optional(),
   recordedAt: z.string().datetime({ message: "Data/ora este invalidă." }).optional(), // ISO
 });
 

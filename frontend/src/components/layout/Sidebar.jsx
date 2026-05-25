@@ -8,6 +8,7 @@ import {
   Wheat,
   Bell,
   BarChart3,
+  CalendarDays,
   User,
   Users,
   Settings,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   Landmark,
   Globe,
+  Crown,
 } from "lucide-react";
 import { authStore } from "../../auth/auth.store";
 import logo from "../../assets/agrione.png";
@@ -30,6 +32,8 @@ const navItems = [
   { to: "/app/alerts", label: "Alerte", icon: Bell },
   { to: "/app/analytics", label: "Analize", icon: BarChart3 },
   { to: "/app/apia", label: "APIA", icon: Landmark },
+  { to: "/app/calendar", label: "Calendar", icon: CalendarDays },
+  { to: "/app/plan", label: "Plan Premium", icon: Crown },
 ];
 
 const adminItems = [
@@ -146,7 +150,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
                   const idx = itemIndex++;
                   const isActive =
                     location.pathname === item.to ||
-                    (item.to !== "/profile" && location.pathname.startsWith(item.to + "/"));
+                    (item.to !== "/app/profile" && location.pathname.startsWith(item.to + "/"));
 
                   return (
                     <Motion.div

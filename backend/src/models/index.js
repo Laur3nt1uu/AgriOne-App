@@ -93,6 +93,27 @@ AiConversation.belongsTo(User, { foreignKey: "ownerId" });
 AiConversation.hasMany(AiMessage, { foreignKey: "conversationId", as: "messages" });
 AiMessage.belongsTo(AiConversation, { foreignKey: "conversationId" });
 
+// Community
+const CommunityPostModel = require("./communityPost.model");
+const CommunityCommentModel = require("./communityComment.model");
+const CommunityLikeModel = require("./communityLike.model");
+
+const CommunityPost = CommunityPostModel(sequelize);
+const CommunityComment = CommunityCommentModel(sequelize);
+const CommunityLike = CommunityLikeModel(sequelize);
+
+User.hasMany(CommunityPost, { foreignKey: "ownerId" });
+CommunityPost.belongsTo(User, { foreignKey: "ownerId", as: "owner" });
+
+CommunityPost.hasMany(CommunityComment, { foreignKey: "postId", as: "comments", onDelete: "CASCADE" });
+CommunityComment.belongsTo(CommunityPost, { foreignKey: "postId" });
+CommunityComment.belongsTo(User, { foreignKey: "ownerId", as: "owner" });
+User.hasMany(CommunityComment, { foreignKey: "ownerId" });
+
+CommunityPost.hasMany(CommunityLike, { foreignKey: "postId", onDelete: "CASCADE" });
+CommunityLike.belongsTo(CommunityPost, { foreignKey: "postId" });
+CommunityLike.belongsTo(User, { foreignKey: "ownerId" });
+
 module.exports = {
 	sequelize,
 	User,
@@ -109,4 +130,7 @@ module.exports = {
 	Blog,
 	AiConversation,
 	AiMessage,
+	CommunityPost,
+	CommunityComment,
+	CommunityLike,
 };

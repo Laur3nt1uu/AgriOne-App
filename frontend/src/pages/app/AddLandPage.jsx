@@ -31,7 +31,7 @@ export default function AddLandPage() {
   const [ownerId, setOwnerId] = useState("");
   const [step, setStep] = useState(1); // 1=form, 2=map
   const [name, setName] = useState("");
-  const [cropType, setCropType] = useState("Wheat");
+  const [cropType, setCropType] = useState("Grâu");
 
   const [polygon, setPolygon] = useState(null);
   const [areaHa, setAreaHa] = useState(0);

@@ -115,7 +115,7 @@ export default function UsersManagementPage() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex gap-2 justify-end">
-                        <Button onClick={() => nav(`/lands/new?ownerId=${encodeURIComponent(u.id)}`)} variant="ghost" className="text-xs">
+                        <Button onClick={() => nav(`/app/lands/new?ownerId=${encodeURIComponent(u.id)}`)} variant="ghost" className="text-xs">
                           Adaugă teren
                         </Button>
                         <Button onClick={() => toggleRole(u)} variant="ghost" className="text-xs">

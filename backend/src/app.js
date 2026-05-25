@@ -100,6 +100,9 @@ app.use("/api/payments", paymentsRoutes);
 const aiRoutes = require("./modules/ai/ai.routes");
 app.use("/api/ai", aiRoutes);
 
+const communityRoutes = require("./modules/community/community.routes");
+app.use("/api/community", communityRoutes);
+
 const notFound = require("./middlewares/notFound.middleware");
 const errorHandler = require("./middlewares/error.middleware");
 

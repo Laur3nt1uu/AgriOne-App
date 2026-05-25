@@ -1,7 +1,8 @@
+import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronDown, LogOut, Menu, User as UserIcon, Sun, Moon, Globe, Crown } from "lucide-react";
+import { ChevronDown, LogOut, Menu, User as UserIcon, Sun, Moon, Globe, Crown, Bell } from "lucide-react";
 import { api } from "../../api/endpoints";
 import { authStore } from "../../auth/auth.store";
 import { useTheme } from "../../theme/ThemeProvider";
@@ -17,6 +18,8 @@ const titleMap = {
   "/app/alerts": "Alerte",
   "/app/analytics": "Analize",
   "/app/apia": "APIA",
+  "/app/calendar": "Calendar Agricol",
+  "/app/plan": "Plan Premium",
   "/app/profile": "Profil",
 };
 
@@ -33,9 +36,49 @@ export default function Topbar({ onMenuClick }) {
   const title = titleMap[base] || "AgriOne";
 
   const user = authStore.getUser();
-  const displayName =
-    user?.name ||
+  const userId = user?.id || user?.sub || "guest";
+
+  // ── Bell / unread alerts ──────────────────────────────────────────────
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const seenKey = `agri_bell_seen_${userId}`;
+  function getSeenIds() {
+    try { return new Set(JSON.parse(localStorage.getItem(seenKey) || "[]")); }
+    catch { return new Set(); }
+  }
+  function persistSeen(ids) {
+    try { localStorage.setItem(seenKey, JSON.stringify([...ids])); } catch { /* noop */ }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    api.alerts.list({ limit: 30 }).then((alerts) => {
+      if (cancelled) return;
+      const seen = getSeenIds();
+      setUnreadCount((alerts || []).filter(a => !seen.has(a.id)).length);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  // Refresh unread count on every navigation (cheap, only fetches 30 most recent).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loc.pathname]);
+
+  const handleBellClick = useCallback(() => {
+    api.alerts.list({ limit: 30 }).then((alerts) => {
+      persistSeen(new Set((alerts || []).map(a => a.id)));
+      setUnreadCount(0);
+    }).catch(() => {});
+    nav("/app/alerts");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav]);
+  // ─────────────────────────────────────────────────────────────────────
+
+  const username =
     user?.username ||
+    user?.app_metadata?.username ||
+    user?.["https://agri.one/username"];
+  const displayName =
+    username ||
+    user?.name ||
     (user?.email ? String(user.email).split("@")[0] : "") ||
     (user?.role === "ADMIN" ? "Administrator" : "Utilizator");
   const initial = (displayName || "U")[0]?.toUpperCase?.() || "U";
@@ -110,6 +153,22 @@ export default function Topbar({ onMenuClick }) {
               <Moon className="w-5 h-5 text-foreground" />
             ) : (
               <Sun className="w-5 h-5 text-foreground" />
+            )}
+          </Motion.button>
+
+          {/* Bell — unread alerts */}
+          <Motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleBellClick}
+            className="p-2 rounded-xl hover:bg-card/60 transition-colors relative"
+            title="Notificări alerte"
+          >
+            <Bell className="w-5 h-5 text-foreground" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none pointer-events-none">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
             )}
           </Motion.button>
 
