@@ -41,8 +41,6 @@ export function toGeoJsonPolygonFromLatLngPairs(latlngPairs) {
   return { type: "Polygon", coordinates: [ring] };
 }
 
-// Approx geodesic area on WGS84 sphere.
-// Formula: https://trs.jpl.nasa.gov/handle/2014/40409 (common spherical polygon area implementation)
 export function polygonAreaM2(latlngPairs) {
   const pts = normalizeLatLngPairs(latlngPairs);
   if (pts.length < 3) return 0;
@@ -138,11 +136,9 @@ export function simplifyLatLngPairs(latlngPairs, { epsilonMeters = 2, maxPoints 
   const c = centroidFromLatLngPairs(pts);
   const lat0 = ((c?.lat ?? 0) * Math.PI) / 180;
 
-  // keep as open ring points; do not duplicate last point here
   const simplified = rdp(pts, epsilonMeters, lat0);
 
   if (simplified.length > maxPoints) {
-    // If still too big, increase epsilon progressively.
     let eps = epsilonMeters;
     let best = simplified;
     while (best.length > maxPoints && eps < 200) {

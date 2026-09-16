@@ -11,7 +11,6 @@ app.use(helmet({
   contentSecurityPolicy: false, // allow inline scripts for development
   crossOriginEmbedderPolicy: false,
 }));
-// Support comma-separated CORS origins (e.g. "http://localhost:5173,https://agrione.ro")
 const corsOrigins = (env.CORS_ORIGIN || "http://localhost:5173")
   .split(",")
   .map((s) => s.trim())
@@ -31,7 +30,6 @@ const iotLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Stricter rate limit for auth endpoints (brute force protection)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20, // 20 requests per 15 minutes

@@ -1,7 +1,6 @@
 const ApiError = require("../utils/ApiError");
 
 function pickSequelizeDetails(err) {
-  // Normalize Sequelize error shapes into something frontend-friendly.
   const items = Array.isArray(err?.errors) ? err.errors : [];
   if (!items.length) return null;
 
@@ -20,7 +19,6 @@ module.exports = (err, req, res, next) => {
   let code = err instanceof ApiError ? err.code : null;
   let details = err?.details || null;
 
-  // Sequelize -> consistent API errors
   const seName = err?.name;
   if (!(err instanceof ApiError) && seName) {
     if (seName === "SequelizeUniqueConstraintError") {

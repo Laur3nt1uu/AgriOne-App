@@ -1,5 +1,3 @@
-// Centralized dynamic imports for route-level code splitting.
-// Keeps router + UI components free from circular dependencies.
 
 export const loadLandingPage = () => import("../pages/LandingPage");
 
@@ -27,14 +25,12 @@ export const loadCalendarPage = () => import("../pages/app/CalendarPage");
 export const loadPlanPage = () => import("../pages/app/PlanPage");
 export const loadNotFoundPage = () => import("../pages/NotFoundPage");
 
-// Resource pages (public)
 export const loadDocumentationPage = () => import("../pages/resources/DocumentationPage");
 export const loadBlogPage = () => import("../pages/resources/BlogPage");
 export const loadHelpCenterPage = () => import("../pages/resources/HelpCenterPage");
 export const loadCommunityPage = () => import("../pages/resources/CommunityPage");
 export const loadUnsubscribePage = () => import("../pages/newsletter/UnsubscribePage");
 
-// Legal pages (public)
 export const loadPrivacyPolicyPage = () => import("../pages/legal/PrivacyPolicyPage");
 export const loadTermsPage = () => import("../pages/legal/TermsPage");
 export const loadGdprPage = () => import("../pages/legal/GdprPage");
@@ -44,17 +40,14 @@ function safePrefetch(loader) {
     const p = loader?.();
     if (p && typeof p.catch === "function") p.catch(() => {});
   } catch {
-    // ignore
   }
 }
 
 export function prefetchByPath(path) {
   const p = String(path || "");
 
-  // Landing page
   if (p === "/") return safePrefetch(loadLandingPage);
 
-  // Auth routes
   if (p.startsWith("/auth/login")) return safePrefetch(loadLoginPage);
   if (p.startsWith("/auth/register")) return safePrefetch(loadRegisterPage);
   if (p.startsWith("/auth/forgot-password")) return safePrefetch(loadForgotPasswordPage);
@@ -62,7 +55,6 @@ export function prefetchByPath(path) {
   if (p.startsWith("/auth/callback")) return safePrefetch(loadAuthCallbackPage);
   if (p.startsWith("/auth/redirect")) return safePrefetch(loadAuthRedirectPage);
 
-  // App routes
   if (p.startsWith("/app/dashboard") || p === "/app") return safePrefetch(loadDashboardPage);
   if (p.startsWith("/app/lands/new")) return safePrefetch(loadAddLandPage);
   if (p.startsWith("/app/lands/")) return safePrefetch(loadLandDetailsPage);
@@ -79,14 +71,12 @@ export function prefetchByPath(path) {
   if (p.startsWith("/app/admin/settings")) return safePrefetch(loadSystemSettingsPage);
   if (p.startsWith("/app/admin/newsletter")) return safePrefetch(loadNewsletterPage);
 
-  // Resource pages
   if (p.startsWith("/docs")) return safePrefetch(loadDocumentationPage);
   if (p.startsWith("/blog")) return safePrefetch(loadBlogPage);
   if (p.startsWith("/help")) return safePrefetch(loadHelpCenterPage);
   if (p.startsWith("/community")) return safePrefetch(loadCommunityPage);
   if (p.startsWith("/newsletter/unsubscribe")) return safePrefetch(loadUnsubscribePage);
 
-  // Legacy paths support (for gradual migration)
   if (p.startsWith("/login")) return safePrefetch(loadLoginPage);
   if (p.startsWith("/register")) return safePrefetch(loadRegisterPage);
   if (p.startsWith("/forgot-password")) return safePrefetch(loadForgotPasswordPage);
@@ -101,8 +91,6 @@ export function prefetchByPath(path) {
 }
 
 export function prefetchCommonAppRoutes() {
-  // Prefetch the most-used pages so first navigation is instant.
-  // Intentionally exclude heavier/rarer routes (maps/admin) from eager prefetch.
   [
     loadDashboardPage,
     loadLandsPage,

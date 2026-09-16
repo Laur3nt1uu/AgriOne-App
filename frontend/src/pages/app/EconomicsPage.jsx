@@ -296,6 +296,7 @@ export default function EconomicsPage() {
             <PremiumFeatureGate
               feature="pdf_exports"
               customMessage="Exportul PDF este disponibil în planul Pro pentru rapoarte profesionale."
+              variant="inline"
             >
               <Button onClick={() => setExportOpen(true)} variant="ghost" size="sm" disabled={exporting}>
                 {exporting ? "Export..." : "Exportă"}

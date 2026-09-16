@@ -1,61 +1,11 @@
 /*
- * AgriOne — Arduino UNO + SIM900A + DHT11 + Senzor Umiditate Sol + GPS NEO-6M (opțional)
+ * AgriOne — Arduino UNO + SIM900A + DHT11 + senzor umiditate sol + GPS NEO-6M (optional).
+ * Citeste senzorii si trimite datele prin GPRS (HTTP POST) la /api/iot/ingest.
  *
- * ===== HARDWARE =====
- *   - Arduino UNO
- *   - SIM900A GSM/GPRS (TX→pin 7, RX→pin 8)
- *   - DHT11 (data→pin 2)
- *   - Senzor umiditate sol digital FC-28 (DO→pin 4)
- *   - GPS NEO-6M (TX→pin 3) — OPȚIONAL, codul merge si fara el
- *   - Cartela SIM cu date mobile in modulul SIM900A
- *
- * ===== CABLARE GPS NEO-6M (optional) =====
- *   NEO-6M TX  → Arduino pin 3   (SoftwareSerial RX)
- *   NEO-6M RX  → neconectat       (nu trimitem comenzi la GPS)
- *   NEO-6M GND → Arduino GND
- *   NEO-6M VCC → Arduino 5V (verifica eticheta modulului — unele suporta doar 3.3V!)
- *
- *   ATENTIE: GPS-ul trebuie OUTDOOR pentru a prinde fix. Prima fixare (cold start)
- *   poate dura 2-5 minute. LED-ul clipeste 1/sec cand are fix valid.
- *
- *   OPTIONAL — control alimentare GPS prin MOSFET (economie energie):
- *     Pin 6 Arduino → Gate MOSFET (IRLML6344)
- *     Source MOSFET → GND
- *     Drain MOSFET  → GND-ul GPS-ului
- *     Daca folosesti MOSFET, decomenteaza GPS_POWER_PIN mai jos.
- *
- * ===== CABLARE SIM900A =====
- *   SIM900A TX   → Arduino pin 7  (SoftwareSerial RX)
- *   SIM900A RX   → Arduino pin 8  (SoftwareSerial TX) prin DIVISOR DE TENSIUNE!
- *                   Arduino pin 8 → rezistor 1kΩ → SIM900A RX
- *                                                → rezistor 2kΩ → GND
- *                   (SIM900A e la 3.3V logic, Arduino la 5V — fara divisor arzi modulul!)
- *   SIM900A GND  → Arduino GND
- *   SIM900A VCC  → Sursa EXTERNA 5V / 2A (NU din Arduino 5V — nu are curent suficient!)
- *
- * ===== CABLARE DHT11 =====
- *   VCC  → 5V
- *   DATA → pin 2 (cu rezistor pull-up 10kΩ la 5V)
- *   GND  → GND
- *
- * ===== CABLARE SENZOR SOL (FC-28) =====
- *   VCC → 5V
- *   DO  → pin 4 (iesire digitala: HIGH = uscat, LOW = umed)
- *   GND → GND
- *   (Daca senzorul are si pin AO — analogic — poti conecta la A0 pentru procente exacte.
- *    Vezi SOIL_USE_ANALOG mai jos.)
- *
- * ===== CONFIGURARE =====
- *   1. Pune SENSOR_CODE — ACELASI cod pe care l-ai asociat in aplicatia web AgriOne
- *   2. Pune SERVER_HOST — IP-ul public al serverului (NU localhost!)
- *   3. Pune IOT_KEY — sa fie IDENTIC cu IOT_MASTER_KEY din backend/.env
- *   4. Pune APN-ul operatorului tau (Orange/Vodafone = "internet", Digi = "broadband")
- *
- * ===== FLUX =====
- *   La fiecare SEND_INTERVAL_MS (default 5 min):
- *     Citeste DHT11 + senzor sol → construieste JSON →
- *     trimite HTTP POST la /api/iot/ingest prin GPRS (AT commands) →
- *     backend-ul salveaza in PostgreSQL → datele apar in web UI
+ * Pini: DHT11 data -> 2 (pull-up 10k), sol FC-28 DO -> 4, SIM900A TX/RX -> 7/8, GPS TX -> 3.
+ * Atentie: SIM900A e la 3.3V logic -> divizor de tensiune pe pin 8 (1k + 2k la GND).
+ * SIM900A cere sursa externa 5V/2A (nu din Arduino). GPS-ul are nevoie de outdoor pentru fix.
+ * Config mai jos: SENSOR_CODE, SERVER_HOST, IOT_KEY (= IOT_MASTER_KEY din backend), APN.
  */
 
 #include <SoftwareSerial.h>
@@ -68,13 +18,8 @@
 // (Dashboard → Terenuri → Asociaza Senzor → codul pe care l-ai ales)
 const char* SENSOR_CODE = "AGRI-FARM001";
 
-// Serverul backend AgriOne
-// VARIANTA A (ngrok — pentru testare):
-//   Ruleaza "ngrok http 5000" pe laptop → copiaza hostname-ul FARA https://
-//   Exemplu: "a1b2c3d4.ngrok-free.app"
-// VARIANTA B (VPS — pentru productie):
-//   IP-ul public al serverului, ex: "185.123.45.67"
-const char* SERVER_HOST = "PUNE_NGROK_HOSTNAME_AICI";  // <-- MODIFICA!
+// Host backend: hostname ngrok (fara https://) pentru testare, sau IP public VPS.
+const char* SERVER_HOST = "PUNE_NGROK_HOSTNAME_AICI";
 const int   SERVER_PORT = 80;                          // ngrok=80, VPS=5000
 const char* SERVER_PATH = "/api/iot/ingest";
 
@@ -91,13 +36,7 @@ const char* APN = "broadband";
 #define DHTTYPE       DHT11   // DHT11 (nu DHT22!)
 #define SOIL_DIG_PIN  4       // Pinul DO al senzorului de sol (digital)
 
-// ----------- Senzor sol: digital vs analog -----------
-// Senzorul tau FC-28 are iesire digitala (DO) pe pin 4:
-//   HIGH = sol uscat → trimitem 0%
-//   LOW  = sol umed  → trimitem 100%
-//
-// Daca vrei PROCENTE exacte (0-100%), conecteaza si pinul AO la A0
-// si seteaza SOIL_USE_ANALOG pe true:
+// Sol FC-28: digital (HIGH=uscat 0%, LOW=umed 100%). Pentru procente exacte: AO la A0 + true.
 #define SOIL_USE_ANALOG   false   // true = citeste analog de pe A0
 #define SOIL_ANALOG_PIN   A0      // doar daca SOIL_USE_ANALOG = true
 #define SOIL_DRY_VALUE    1023    // valoare ADC in aer (calibreaza!)
@@ -466,17 +405,7 @@ bool sendReading(float tempC, float humPct, float soilPct) {
 
 // ==================== FUNCTII GPS ====================
 
-/*
- * Incearca sa obtina un fix GPS valabil in maxim GPS_FIX_TIMEOUT_MS milisecunde.
- * Folosirea: comuta SoftwareSerial pe GPS (gpsSerial.listen()), citeste bytes,
- * parseaza cu TinyGPS++, opreste cand are fix proaspat (< 2s vechime).
- *
- * IMPORTANT: dupa apel TREBUIE sa apelezi sim900.listen() inainte de a folosi SIM900A,
- * altfel SoftwareSerial-ul SIM-ului nu mai primeste date!
- *
- * Daca nu prinde fix in timeout, lasa gpsValid neschimbat — datele se trimit
- * fara coordonate, backend-ul accepta.
- */
+// Obtine un fix GPS (max GPS_FIX_TIMEOUT_MS). Dupa apel: sim900.listen() inainte de SIM900A.
 bool acquireGpsFix() {
   Serial.println(F("--- GPS fix ---"));
 

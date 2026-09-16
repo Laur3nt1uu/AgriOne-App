@@ -94,7 +94,7 @@ export default function AnalyticsPage() {
           <div className="card p-5 agri-pattern">
             <div className="text-sm font-bold">Sănătatea terenurilor</div>
             <div className="muted text-sm mt-1">
-              Scor = indicator demo (excelent pentru licență). Ulterior poate deveni bazat pe reguli/ML.
+              Scor 0–100 calculat pe reguli: senzor asociat și online, alerte din ultimele 7 zile, valori în afara intervalului normal.
             </div>
 
             <div className="mt-4 space-y-3">

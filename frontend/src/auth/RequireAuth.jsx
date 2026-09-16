@@ -4,7 +4,6 @@ import { authStore } from "./auth.store";
 export default function RequireAuth({ children }) {
   const loc = useLocation();
 
-  // Check both authentication and session expiry
   if (!authStore.isAuthed() || authStore.isExpired()) {
     if (authStore.isExpired()) {
       authStore.logout(); // Clean up expired session

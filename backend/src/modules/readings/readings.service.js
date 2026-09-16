@@ -1,8 +1,9 @@
 const ApiError = require("../../utils/ApiError");
 const { Op } = require("sequelize");
 const { Land, Sensor, Reading } = require("../../models");
+const { resolveReadingsPeriod } = require("../../utils/readingsPeriod");
 
-async function listReadingsByLand(actor, landId, range = "24h") {
+async function listReadingsByLand(actor, landId, { range = "24h", from, to } = {}) {
   const ownerId = actor?.sub;
   const isAdmin = actor?.role === "ADMIN";
 
@@ -13,7 +14,7 @@ async function listReadingsByLand(actor, landId, range = "24h") {
 
   const sensors = await Sensor.findAll({ where: { ownerId: effectiveOwnerId, landId } });
   if (!sensors.length) {
-    return { landId, sensorCode: null, range, items: [] };
+    return { landId, sensorCode: null, range, items: [], dataWindow: null };
   }
 
   sensors.sort((a, b) => {
@@ -26,23 +27,25 @@ async function listReadingsByLand(actor, landId, range = "24h") {
   const tempOffset = Number(sensor.calibrationTempOffsetC || 0);
   const humOffset = Number(sensor.calibrationHumidityOffsetPct || 0);
 
-  const since =
-    range === "7d"
-      ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      : new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const period = resolveReadingsPeriod({ range, from, to });
 
-  const readings = await Reading.findAll({
-    where: {
-      sensorId: sensor.id,
-      recordedAt: { [Op.gte]: since },
-    },
-    order: [["recorded_at", "ASC"]],
-  });
+  const [readings, first, last] = await Promise.all([
+    Reading.findAll({
+      where: { sensorId: sensor.id, ...(period.where ? { recordedAt: period.where } : {}) },
+      order: [["recorded_at", "ASC"]],
+    }),
+    // Overall span of stored data, so clients can offer a sensible "history" window
+    Reading.min("recordedAt", { where: { sensorId: sensor.id } }),
+    Reading.max("recordedAt", { where: { sensorId: sensor.id } }),
+  ]);
 
   return {
     landId,
     sensorCode: sensor.sensorCode,
-    range,
+    range: period.range,
+    from: period.from ? period.from.toISOString() : null,
+    to: period.to ? period.to.toISOString() : null,
+    dataWindow: first && last ? { first: new Date(first).toISOString(), last: new Date(last).toISOString() } : null,
     items: readings.map((r) => ({
       recordedAt: r.recordedAt,
       temperatureC: Number(r.temperatureC) + tempOffset,

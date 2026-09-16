@@ -15,6 +15,9 @@ export default function GooglePolygonDrawMap({
   const drawingRef = useRef(null);
   const polygonRef = useRef(null);
   const pathListenersRef = useRef([]);
+  // Last polygon we reported via onChange; when the parent echoes it back as `value`
+  // we must not re-apply it (that would re-fit bounds on every vertex drag).
+  const lastEmittedRef = useRef(null);
 
   const [err, setErr] = useState("");
 
@@ -38,7 +41,9 @@ export default function GooglePolygonDrawMap({
       const p = path.getAt(i);
       pts.push([Number(p.lat()), Number(p.lng())]);
     }
-    onChange?.(normalizeLatLngPairs(pts));
+    const normalized = normalizeLatLngPairs(pts);
+    lastEmittedRef.current = JSON.stringify(normalized);
+    onChange?.(normalized);
   }, [onChange]);
 
   const attachPathListeners = useCallback((google) => {
@@ -88,6 +93,7 @@ export default function GooglePolygonDrawMap({
     clearPathListeners();
     polygonRef.current?.setMap?.(null);
     polygonRef.current = null;
+    lastEmittedRef.current = null;
     onChange?.(null);
   }, [clearPathListeners, onChange]);
 
@@ -181,9 +187,12 @@ export default function GooglePolygonDrawMap({
         if (polygonRef.current) clearPolygon();
         return;
       }
+      // Echo of our own onChange → the map already shows it.
+      if (lastEmittedRef.current && lastEmittedRef.current === JSON.stringify(normalizeLatLngPairs(value))) return;
       try {
         const google = await loadGoogleMaps();
         if (!mapRef.current) return;
+        lastEmittedRef.current = null;
         setPolygonFromValue(google, value);
       } catch {
         // ignore

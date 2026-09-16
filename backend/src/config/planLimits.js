@@ -1,7 +1,3 @@
-// Plan limits configuration
-// STARTER: 2 lands, 5 sensors, 5 AI messages/day
-// PRO: unlimited lands, 50 sensors, 50 AI messages/day
-// ENTERPRISE: unlimited
 
 const PLAN_LIMITS = {
   STARTER: { maxLands: 2, maxSensors: 5, aiMessagesPerDay: 5, hasAiVision: false },

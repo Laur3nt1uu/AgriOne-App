@@ -1,9 +1,5 @@
 const { DataTypes } = require("sequelize");
 
-/**
- * AI Conversation Model
- * Stores conversation sessions for the AI assistant
- */
 module.exports = (sequelize) =>
   sequelize.define(
     "AiConversation",

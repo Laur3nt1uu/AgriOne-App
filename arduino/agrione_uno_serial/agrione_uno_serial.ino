@@ -1,39 +1,20 @@
-/*
- * AgriOne — Arduino UNO + DHT11 + Senzor Sol (USB Serial)
- *
- * Versiune pentru TESTARE — fara SIM900A!
- * Trimite date JSON pe Serial USB → bridge.mjs le trimite la backend.
- *
- * Hardware:
- *   - Arduino UNO
- *   - DHT11 (data → pin 2, cu pull-up 10kΩ la 5V)
- *   - Senzor umiditate sol digital FC-28 (DO → pin 4)
- *
- * Utilizare:
- *   1. Upload acest sketch pe Arduino
- *   2. Ruleaza bridge-ul pe PC:
- *      cd tools/agrione-serial-bridge
- *      npm install
- *      node bridge.mjs --port COM5 --key iot_dev_key_change_me
- *      (inlocuieste COM5 cu portul tau — vezi Arduino IDE → Tools → Port)
- */
+
 
 #include <DHT.h>
 
 // ==================== CONFIGURARE ====================
-const char* SENSOR_CODE = "AGRI-FARM001";  // Identic cu cel din aplicatia AgriOne
+const char* SENSOR_CODE = "AGRI-FARM001"; 
 #define DHTPIN        2       // Pinul DATA al DHT11
 #define DHTTYPE       DHT11   // DHT11
-#define SOIL_DIG_PIN  4       // Pinul DO al senzorului de sol (digital)
+#define SOIL_DIG_PIN  4       // Pinul DO al senzorului de sol
 
-// Daca vrei citiri analog in procente, conecteaza AO la A0 si seteaza true:
 #define SOIL_USE_ANALOG   false
 #define SOIL_ANALOG_PIN   A0
 #define SOIL_DRY_VALUE    1023
 #define SOIL_WET_VALUE    300
 
-#define READ_INTERVAL 10000   // 10 secunde (bridge-ul trimite fiecare citire)
-// ==================== SFARSIT CONFIGURARE ====================
+#define READ_INTERVAL 10000 
+
 
 DHT dht(DHTPIN, DHTTYPE);
 unsigned long lastRead = 0;

@@ -101,12 +101,10 @@ export default function PaymentSimulationModal({
 
     setStep('processing');
 
-    // Simulate payment processing with realistic delay
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     setStep('success');
 
-    // Wait a moment then trigger success callback
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     if (onPaymentSuccess) {
@@ -143,7 +141,6 @@ export default function PaymentSimulationModal({
           className="bg-card border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
           <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -168,7 +165,6 @@ export default function PaymentSimulationModal({
             </div>
           </div>
 
-          {/* Content */}
           <div className="p-6">
             <AnimatePresence mode="wait">
               {step === 'form' && (
@@ -180,7 +176,6 @@ export default function PaymentSimulationModal({
                   onSubmit={handleSubmit}
                   className="space-y-4"
                 >
-                  {/* Demo Notice */}
                   <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-center">
                     <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
                       🎭 {language === 'ro' ? 'Mod Demonstrație' : 'Demo Mode'}
@@ -193,7 +188,6 @@ export default function PaymentSimulationModal({
                     </p>
                   </div>
 
-                  {/* Card Number */}
                   <div className="space-y-2">
                     <Label htmlFor="cardNumber">
                       {language === 'ro' ? 'Număr Card' : 'Card Number'}
@@ -214,7 +208,6 @@ export default function PaymentSimulationModal({
                     )}
                   </div>
 
-                  {/* Card Holder Name */}
                   <div className="space-y-2">
                     <Label htmlFor="cardName">
                       {language === 'ro' ? 'Nume pe Card' : 'Name on Card'}
@@ -231,7 +224,6 @@ export default function PaymentSimulationModal({
                     )}
                   </div>
 
-                  {/* Expiry & CVV */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="expiry">
@@ -269,7 +261,6 @@ export default function PaymentSimulationModal({
                     </div>
                   </div>
 
-                  {/* Security Badge */}
                   <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
                     <ShieldCheck className="w-4 h-4 text-green-500" />
                     <span>
@@ -280,7 +271,6 @@ export default function PaymentSimulationModal({
                     </span>
                   </div>
 
-                  {/* Submit Button */}
                   <Button type="submit" variant="primary" className="w-full py-3">
                     {language === 'ro'
                       ? `Plătește ${planDetails.price} ${planDetails.currency}`

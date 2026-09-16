@@ -29,16 +29,24 @@ const loginSchema = z.object({
     .max(72, "Parola este prea lungă."),
 });
 
-const googleLoginSchema = z.object({
-  credential: z.string().min(10, "Credential Google invalid."),
-  user: z
-    .object({
-      email: z.string().email().optional(),
-      name: z.string().optional(),
-      picture: z.string().url().optional(),
-    })
-    .optional(),
-});
+const googleLoginSchema = z
+  .object({
+    // ID token (rendered "Sign in with Google" button) — legacy path
+    credential: z.string().min(10, "Credential Google invalid.").optional(),
+    // OAuth2 access token (popup flow used by the custom button)
+    accessToken: z.string().min(10, "Access token Google invalid.").optional(),
+    user: z
+      .object({
+        email: z.string().email().optional(),
+        name: z.string().optional(),
+        picture: z.string().url().optional(),
+      })
+      .optional(),
+  })
+  .refine((d) => d.credential || d.accessToken, {
+    message: "Este necesar credential sau accessToken.",
+    path: ["credential"],
+  });
 
 const refreshSchema = z.object({
   refreshToken: z.string().min(20),

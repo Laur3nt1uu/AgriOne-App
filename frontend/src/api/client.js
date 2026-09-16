@@ -11,7 +11,6 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  // Check if session is expired before making requests
   if (authStore.isExpired()) {
     authStore.logout();
     if (!window.location.pathname.startsWith("/auth")) {
@@ -25,7 +24,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Track whether a token refresh is currently in-flight
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -37,13 +35,11 @@ function processQueue(error, token = null) {
   failedQueue = [];
 }
 
-// Response interceptor: attempt silent token refresh on 401
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Only attempt refresh for 401 errors on non-auth endpoints
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
@@ -53,7 +49,6 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retry = true;
 
-      // If already refreshing, queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -66,7 +61,6 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Attempt to get a new access token using the refresh token
         const refreshToken = authStore.getRefreshToken?.() || null;
         if (!refreshToken) throw new Error("No refresh token");
 
@@ -76,16 +70,13 @@ apiClient.interceptors.response.use(
 
         if (!newToken) throw new Error("No token in refresh response");
 
-        // Update stored tokens
         authStore.updateTokens?.({ token: newToken, refreshToken: newRefresh });
         processQueue(null, newToken);
 
-        // Retry the original request with new token
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        // Refresh failed - logout and redirect
         authStore.logout();
         if (!window.location.pathname.startsWith("/auth")) {
           window.location.href = "/auth/login";
@@ -96,7 +87,6 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // For non-401 errors or already retried, just reject
     if (error.response?.status === 401) {
       const code = error.response?.data?.code;
       if (code === "AUTH_INVALID_TOKEN" || code === "AUTH_MISSING_TOKEN") {

@@ -39,19 +39,21 @@ export default function PremiumFeatureGate({
   children,
   showUpgradeButton = true,
   customMessage,
-  language = 'ro'
+  language = 'ro',
+  // "panel": lock card that replaces a settings row/section; "inline": small locked
+  // button for toolbars, where a panel would not fit
+  variant = 'panel',
+  className = '',
 }) {
   const [showModal, setShowModal] = useState(false);
-  const { hasFeature, getUserPlan, getRequiredPlanForFeature } = usePlanFeatures();
+  const { hasFeature, getRequiredPlanForFeature } = usePlanFeatures();
   const { simulatePayment, loading } = useStripePayment();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const currentPlan = getUserPlan();
   const requiredPlan = getRequiredPlanForFeature(feature);
   const hasAccess = hasFeature(feature);
 
-  // If user has access, render children normally
   if (hasAccess) {
     return children;
   }
@@ -66,75 +68,81 @@ export default function PremiumFeatureGate({
       await simulatePayment('PRO');
       setShowModal(false);
     } else {
-      // For Enterprise, redirect to contact
       navigate('/app/plan');
     }
   };
 
   const getText = (obj) => obj[language] || obj.en;
 
-  const PremiumBadge = () => (
+  const planLabel = requiredPlan === 'PRO' ? 'PRO' : 'ENTERPRISE';
+  const premiumBadge = (
     <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold">
       <Crown className="w-3 h-3" />
-      {requiredPlan === 'PRO' ? 'PRO' : 'ENTERPRISE'}
+      {planLabel}
     </div>
   );
 
-  const LockedContent = () => (
-    <div className="relative">
-      {/* Blurred/Disabled Content */}
-      <div className="filter blur-sm pointer-events-none opacity-50">
+  // Toolbar variant: a small locked button standing in for the gated control.
+  const lockedInline = (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => setShowModal(true)}
+      className={className}
+      title={customMessage || getText(featureInfo.description)}
+    >
+      <Crown className="w-4 h-4 mr-1 text-amber-500" />
+      {getText(featureInfo.title)}
+      <span className="ml-1 text-[10px] font-bold text-amber-500">{planLabel}</span>
+    </Button>
+  );
+
+  // Panel variant: the gated children are only a blurred backdrop; the lock panel is in
+  // normal flow so it defines the height and can never spill over the elements below it.
+  const lockedPanel = (
+    <div className={`relative overflow-hidden rounded-xl ${className}`}>
+      <div className="absolute inset-0 filter blur-sm pointer-events-none opacity-40 select-none" aria-hidden="true">
         {children}
       </div>
 
-      {/* Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center bg-card/80 backdrop-blur-sm rounded-lg border border-border">
-        <div className="text-center p-6 max-w-sm">
-          <div className="mb-4">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-primary/20 to-amber-500/20 flex items-center justify-center">
-              <Crown className="w-8 h-8 text-amber-500" />
-            </div>
-            <PremiumBadge />
+      <div className="relative flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-card/80 backdrop-blur-sm rounded-xl border border-border">
+        <div className="flex items-center gap-3 sm:flex-col sm:gap-2 shrink-0">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-amber-500/20 flex items-center justify-center">
+            <Crown className="w-6 h-6 text-amber-500" />
           </div>
+          {premiumBadge}
+        </div>
 
-          <h3 className="font-semibold text-foreground mb-2">
-            {getText(featureInfo.title)}
-          </h3>
-
-          <p className="text-sm text-muted-foreground mb-4">
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-foreground">{getText(featureInfo.title)}</div>
+          <p className="text-sm text-muted-foreground mt-1">
             {customMessage || getText(featureInfo.description)}
           </p>
-
-          {showUpgradeButton && (
-            <div className="space-y-2">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setShowModal(true)}
-                className="w-full"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {language === 'ro' ? 'Upgrade acum' : 'Upgrade now'}
-              </Button>
-
-              <button
-                onClick={() => navigate('/app/plan')}
-                className="text-xs text-muted-foreground hover:text-primary transition-colors"
-              >
-                {language === 'ro' ? 'Vezi toate planurile' : 'View all plans'}
-              </button>
-            </div>
-          )}
         </div>
+
+        {showUpgradeButton && (
+          <div className="flex flex-col items-stretch sm:items-end gap-1.5 shrink-0">
+            <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+              <Sparkles className="w-4 h-4 mr-2" />
+              {language === 'ro' ? 'Upgrade acum' : 'Upgrade now'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => navigate('/app/plan')}
+              className="text-xs text-muted-foreground hover:text-primary transition-colors text-center sm:text-right"
+            >
+              {language === 'ro' ? 'Vezi toate planurile' : 'View all plans'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
     <>
-      <LockedContent />
+      {variant === 'inline' ? lockedInline : lockedPanel}
 
-      {/* Upgrade Modal */}
       <AnimatePresence>
         {showModal && (
           <Motion.div
@@ -151,7 +159,6 @@ export default function PremiumFeatureGate({
               className="bg-card border border-border rounded-xl p-6 max-w-md w-full relative"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close Button */}
               <button
                 onClick={() => setShowModal(false)}
                 className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted/60 transition-colors"
@@ -159,7 +166,6 @@ export default function PremiumFeatureGate({
                 <X className="w-4 h-4" />
               </button>
 
-              {/* Header */}
               <div className="text-center mb-6">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-amber-500/20 flex items-center justify-center">
                   <Crown className="w-10 h-10 text-amber-500" />
@@ -177,7 +183,6 @@ export default function PremiumFeatureGate({
                 </p>
               </div>
 
-              {/* Features List */}
               {requiredPlan === 'PRO' && (
                 <div className="space-y-3 mb-6">
                   {[
@@ -204,7 +209,6 @@ export default function PremiumFeatureGate({
                 </div>
               )}
 
-              {/* Pricing */}
               <div className="bg-gradient-to-r from-primary/10 to-amber-500/10 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -221,11 +225,10 @@ export default function PremiumFeatureGate({
                       }
                     </div>
                   </div>
-                  <PremiumBadge />
+                  {premiumBadge}
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="space-y-3">
                 <Button
                   onClick={handleUpgrade}

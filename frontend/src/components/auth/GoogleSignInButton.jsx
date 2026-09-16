@@ -20,40 +20,31 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState(null);
   const [ready, setReady] = useState(false);
-  const hiddenContainerRef = useRef(null);
   const initializedRef = useRef(false);
 
   const handleGoogleResult = useCallback(async (result) => {
-    setLoading(true);
-    try {
-      const data = await api.auth.googleLogin({
-        credential: result.credential,
-        user: result.user,
-      });
+    const data = await api.auth.googleLogin({
+      accessToken: result.accessToken,
+      user: result.user,
+    });
 
-      const token = data?.token || data?.accessToken || data?.jwt;
-      if (!token) throw new Error("Backend authentication failed");
+    const token = data?.token || data?.accessToken || data?.jwt;
+    if (!token) throw new Error("Backend authentication failed");
 
-      authStore.setGoogleAuth({
-        token,
-        user: { ...(data?.user || result.user), provider: "google" },
-        googleToken: result.credential,
-        refreshToken: data?.refreshToken,
-      });
+    authStore.setGoogleAuth({
+      token,
+      user: { ...(data?.user || result.user), provider: "google" },
+      googleToken: result.accessToken,
+      refreshToken: data?.refreshToken,
+    });
 
-      const displayName = data?.user?.name || result?.user?.name || "utilizator";
-      toastSuccess(`Bun venit, ${displayName}!`);
-      onSuccess?.(data);
-    } catch (error) {
-      console.error("Google Sign-In error:", error);
-      toastError(error, "Autentificarea Google a eșuat.");
-    } finally {
-      setLoading(false);
-    }
+    const displayName = data?.user?.name || result?.user?.name || "utilizator";
+    toastSuccess(`Bun venit, ${displayName}!`);
+    onSuccess?.(data);
   }, [onSuccess]);
 
   useEffect(() => {
-    if (initializedRef.current || !hiddenContainerRef.current) return;
+    if (initializedRef.current) return;
     initializedRef.current = true;
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -62,30 +53,31 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
       return;
     }
 
-    (async () => {
-      try {
-        await googleOAuth.initialize(clientId);
-        googleOAuth.renderButton(hiddenContainerRef.current, (err, result) => {
-          if (err) {
-            console.error("Google OAuth error:", err);
-            toastError(err, "Autentificarea Google a eșuat.");
-            return;
-          }
-          handleGoogleResult(result);
-        });
-        setReady(true);
-      } catch (err) {
+    googleOAuth
+      .initialize(clientId)
+      .then(() => setReady(true))
+      .catch((err) => {
         console.error("Failed to initialize Google OAuth:", err);
         setInitError(err.message);
-      }
-    })();
-  }, [handleGoogleResult]);
+      });
+  }, []);
 
-  function handleClick() {
+  async function handleClick() {
     if (!ready || loading || disabled) return;
-    // Trigger the hidden Google SDK button — keeps GIS requirements satisfied
-    const googleBtn = hiddenContainerRef.current?.querySelector('div[role="button"], button');
-    if (googleBtn) googleBtn.click();
+    setLoading(true);
+    try {
+      // Opens Google's OAuth popup straight from this click (user gesture required)
+      const result = await googleOAuth.requestAccessToken();
+      await handleGoogleResult(result);
+    } catch (error) {
+      const cancelled = /popup_closed|cancelled/i.test(error?.message || "");
+      if (!cancelled) {
+        console.error("Google Sign-In error:", error);
+        toastError(error, "Autentificarea Google a eșuat.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (initError) {
@@ -98,14 +90,6 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
 
   return (
     <div className="relative w-full">
-      {/* Hidden Google SDK container — invisible but required for the popup to work */}
-      <div
-        ref={hiddenContainerRef}
-        className="absolute opacity-0 pointer-events-none overflow-hidden w-px h-px"
-        aria-hidden="true"
-      />
-
-      {/* Custom styled button */}
       <Motion.button
         type="button"
         onClick={handleClick}

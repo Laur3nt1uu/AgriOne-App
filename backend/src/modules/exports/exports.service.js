@@ -1,4 +1,5 @@
 const ApiError = require("../../utils/ApiError");
+const { resolveReadingsPeriod } = require("../../utils/readingsPeriod");
 const { Op } = require("sequelize");
 const { Land, Sensor, Reading, AlertRule, Alert, Transaction, User } = require("../../models");
 
@@ -108,7 +109,7 @@ async function getLandReportData(actor, landId, { from = undefined, to = undefin
   };
 }
 
-async function getReadingsCsv(actor, landId, range = "24h") {
+async function getReadingsCsv(actor, landId, { range = "24h", from, to } = {}) {
   const ownerId = actor?.sub;
   const isAdmin = actor?.role === "ADMIN";
 
@@ -127,16 +128,9 @@ async function getReadingsCsv(actor, landId, range = "24h") {
   });
   const sensor = sensors[0];
 
-  const since =
-    range === "7d"
-      ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      : new Date(Date.now() - 24 * 60 * 60 * 1000);
-
+  const period = resolveReadingsPeriod({ range, from, to });
   const readings = await Reading.findAll({
-    where: {
-      sensorId: sensor.id,
-      recordedAt: { [Op.gte]: since },
-    },
+    where: { sensorId: sensor.id, ...(period.where ? { recordedAt: period.where } : {}) },
     order: [["recorded_at", "ASC"]],
   });
 

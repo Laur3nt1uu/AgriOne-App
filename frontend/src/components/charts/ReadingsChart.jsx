@@ -14,6 +14,19 @@ function fmtTime(iso) {
   return d.toLocaleString(undefined, { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
+// Axis labels: times for spans up to 2 days, dates beyond that (multi-week history)
+function makeTickFormatter(data) {
+  if (!data?.length) return () => "";
+  const span = new Date(data[data.length - 1].ts) - new Date(data[0].ts);
+  const longSpan = span > 2 * 24 * 60 * 60 * 1000;
+  return (v) => {
+    const d = new Date(v);
+    return longSpan
+      ? d.toLocaleDateString(undefined, { day: "2-digit", month: "short" })
+      : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+}
+
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   const soil = payload.find(p=>p.dataKey==="soilMoisture");
@@ -53,6 +66,7 @@ function rgbaFromCssVar(varName, alpha, fallback) {
 }
 
 export default function ReadingsChart({ data }) {
+  const tickFormatter = useMemo(() => makeTickFormatter(data), [data]);
   const hasSoil = useMemo(() => data?.some(d => d.soilMoisture != null), [data]);
 
   const colors = useMemo(() => {
@@ -80,7 +94,8 @@ export default function ReadingsChart({ data }) {
           <CartesianGrid stroke={colors.gridStroke} />
           <XAxis
             dataKey="ts"
-            tickFormatter={(v) => new Date(v).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            tickFormatter={tickFormatter}
+            minTickGap={24}
             stroke={colors.axisStroke}
             tick={{ fontSize: 12 }}
           />

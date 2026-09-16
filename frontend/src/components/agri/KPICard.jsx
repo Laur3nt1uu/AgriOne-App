@@ -25,7 +25,7 @@ export function KPICard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl border border-border/15 transition-all duration-500 group active:scale-[0.98]"
+      className="relative h-full overflow-hidden rounded-2xl p-4 sm:p-5 backdrop-blur-xl border border-border/15 transition-all duration-500 group active:scale-[0.98]"
       style={{
         background: "var(--glass-bg)",
         backdropFilter: "blur(20px)",
@@ -57,9 +57,9 @@ export function KPICard({
       />
 
       <div className="relative z-10 flex items-start justify-between">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <Motion.p
-            className="text-xs uppercase tracking-wider text-muted-foreground/70 mb-3 font-light"
+            className="text-[11px] uppercase tracking-wider text-muted-foreground/70 mb-2 font-light truncate"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
@@ -67,9 +67,12 @@ export function KPICard({
             {title}
           </Motion.p>
 
-          <div className="flex items-baseline gap-3 mb-2">
+          <div className="flex items-baseline gap-3 mb-1 min-w-0">
             <Motion.h3
-              className="text-3xl md:text-4xl font-light tabular-nums"
+              // long values (e.g. "44.620 RON") step down so they never wrap and stretch the card
+              className={`font-light tabular-nums whitespace-nowrap leading-tight ${
+                String(value ?? "").length > 9 ? "text-xl md:text-2xl" : String(value ?? "").length > 6 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl"
+              }`}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 150 }}

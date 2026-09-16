@@ -22,7 +22,6 @@ export default function ContactModal({ open, onClose }) {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
     setSending(true);
-    // Simulate sending — no real backend endpoint needed for demo
     await new Promise((r) => setTimeout(r, 1200));
     setSending(false);
     setSent(true);
@@ -30,7 +29,6 @@ export default function ContactModal({ open, onClose }) {
 
   const handleClose = () => {
     onClose();
-    // Reset after animation
     setTimeout(() => {
       setSent(false);
       setForm((prev) => ({ ...prev, message: "" }));
@@ -46,20 +44,17 @@ export default function ContactModal({ open, onClose }) {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
         >
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => !sending && handleClose()}
           />
 
-          {/* Modal */}
           <Motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             className="card p-0 max-w-lg w-full relative z-10 overflow-hidden"
           >
-            {/* Header */}
             <div className="px-6 pt-6 pb-4 flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">

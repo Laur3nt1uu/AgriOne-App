@@ -1,9 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { api, getErrorMessage } from '../api/endpoints';
 
-/**
- * Custom hook for AI chat functionality
- */
 export function useAIChat() {
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
@@ -12,7 +9,6 @@ export function useAIChat() {
   const [usage, setUsage] = useState(null);
   const abortControllerRef = useRef(null);
 
-  // Fetch usage stats on mount
   useEffect(() => {
     fetchUsage();
   }, []);
@@ -32,7 +28,6 @@ export function useAIChat() {
     setLoading(true);
     setError(null);
 
-    // Add user message to UI immediately
     const userMessage = {
       id: `temp-${Date.now()}`,
       role: 'user',
@@ -48,15 +43,12 @@ export function useAIChat() {
         context,
       });
 
-      // Update conversation ID if new
       if (!conversationId && response.conversationId) {
         setConversationId(response.conversationId);
       }
 
-      // Add assistant message
       setMessages(prev => [...prev, response.message]);
 
-      // Refresh usage
       await fetchUsage();
 
       return response;
@@ -64,7 +56,6 @@ export function useAIChat() {
       const errorMsg = getErrorMessage(err, 'Nu am putut procesa mesajul.');
       setError(errorMsg);
 
-      // Remove the temporary user message on error
       setMessages(prev => prev.filter(m => m.id !== userMessage.id));
 
       throw err;
@@ -79,7 +70,6 @@ export function useAIChat() {
     setLoading(true);
     setError(null);
 
-    // Add user message with image indicator
     const userMessage = {
       id: `temp-${Date.now()}`,
       role: 'user',
@@ -97,15 +87,12 @@ export function useAIChat() {
         context,
       });
 
-      // Update conversation ID if new
       if (!conversationId && response.conversationId) {
         setConversationId(response.conversationId);
       }
 
-      // Add assistant message
       setMessages(prev => [...prev, response.message]);
 
-      // Refresh usage
       await fetchUsage();
 
       return response;
@@ -113,7 +100,6 @@ export function useAIChat() {
       const errorMsg = getErrorMessage(err, 'Nu am putut analiza imaginea.');
       setError(errorMsg);
 
-      // Remove the temporary user message on error
       setMessages(prev => prev.filter(m => m.id !== userMessage.id));
 
       throw err;

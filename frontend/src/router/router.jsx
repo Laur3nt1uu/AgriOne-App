@@ -63,14 +63,12 @@ const CalendarPage = lazy(loadCalendarPage);
 const PlanPage = lazy(loadPlanPage);
 const NotFoundPage = lazy(loadNotFoundPage);
 
-// Resource pages
 const DocumentationPage = lazy(loadDocumentationPage);
 const BlogPage = lazy(loadBlogPage);
 const HelpCenterPage = lazy(loadHelpCenterPage);
 const CommunityPage = lazy(loadCommunityPage);
 const UnsubscribePage = lazy(loadUnsubscribePage);
 
-// Legal pages
 const PrivacyPolicyPage = lazy(loadPrivacyPolicyPage);
 const TermsPage = lazy(loadTermsPage);
 const GdprPage = lazy(loadGdprPage);
@@ -84,13 +82,11 @@ function suspense(el) {
 }
 
 export const router = createBrowserRouter([
-  // Landing Page (Public Marketing)
   {
     path: "/",
     element: suspense(<LandingPage />),
   },
 
-  // Auth Routes (Public Authentication)
   {
     path: "/auth",
     element: <AuthRouteLayout />,
@@ -105,7 +101,6 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Resource Pages (Public)
   {
     path: "/docs",
     element: suspense(<DocumentationPage />),
@@ -127,7 +122,6 @@ export const router = createBrowserRouter([
     element: suspense(<UnsubscribePage />),
   },
 
-  // Legal Pages (Public)
   {
     path: "/privacy",
     element: suspense(<PrivacyPolicyPage />),
@@ -141,7 +135,6 @@ export const router = createBrowserRouter([
     element: suspense(<GdprPage />),
   },
 
-  // App Routes (Authenticated Application)
   {
     path: "/app",
     element: (
@@ -179,7 +172,6 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 404 Catch-all
   {
     path: "*",
     element: suspense(<NotFoundPage />),

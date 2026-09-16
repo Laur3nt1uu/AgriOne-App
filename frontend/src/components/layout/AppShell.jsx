@@ -108,8 +108,8 @@ export default function AppShell() {
         <div className="flex-1 flex flex-col overflow-hidden relative z-10">
           <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
-          <main ref={mainRef} className="flex-1 overflow-y-auto pb-24 md:pb-8">
-            <div className="p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 max-w-[1600px] mx-auto w-full">
+          <main ref={mainRef} className="flex-1 overflow-y-auto pb-24 md:pb-2">
+            <div className="p-3 sm:p-4 md:p-5 lg:p-6 xl:p-7 max-w-[1600px] mx-auto w-full">
               <Motion.div
                 key={loc.pathname}
                 style={{ willChange: "opacity" }}

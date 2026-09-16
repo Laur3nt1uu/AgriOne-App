@@ -30,10 +30,8 @@ export default function LandingPage() {
 
   return (
     <LandingLayout>
-      {/* Navigation */}
       <LandingNavbar />
 
-      {/* Main Content */}
       <main className="flex-1">
         <HeroSection />
         <FeaturesSection />
@@ -47,10 +45,8 @@ export default function LandingPage() {
         <NewsletterSection />
       </main>
 
-      {/* Footer */}
       <LandingFooter />
 
-      {/* AI Chat Widget */}
       <LandingChatWidget />
     </LandingLayout>
   );

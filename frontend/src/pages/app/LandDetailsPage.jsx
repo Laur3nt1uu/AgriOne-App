@@ -3,6 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/endpoints";
 import { toastError, toastSuccess } from "../../utils/toast";
 import GooglePolygonViewMap from "../../components/maps/GooglePolygonViewMap";
+import GooglePolygonDrawMap from "../../components/maps/GooglePolygonDrawMap";
+import {
+  centroidFromLatLngPairs,
+  polygonAreaHa,
+  toGeoJsonPolygonFromLatLngPairs,
+  validateLatLngPairs,
+} from "../../utils/geometry";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { StatusBadge } from "../../components/agri/StatusBadge";
@@ -87,6 +94,11 @@ export default function LandDetailsPage() {
   const [calHum, setCalHum] = useState("0");
   const [calSaving, setCalSaving] = useState(false);
 
+  // polygon editing
+  const [editingPolygon, setEditingPolygon] = useState(false);
+  const [editPolygon, setEditPolygon] = useState(null); // [[lat,lng], ...] | null
+  const [polygonSaving, setPolygonSaving] = useState(false);
+
   const polygonPairs = useMemo(() => {
     const poly = land?.polygon;
     if (Array.isArray(poly) && poly.length) {
@@ -97,8 +109,11 @@ export default function LandDetailsPage() {
 
     const coords = land?.geometry?.coordinates?.[0];
     if (Array.isArray(coords) && coords.length) {
-      // GeoJSON: [lng,lat]
-      return coords.map(([lng, lat]) => [Number(lat), Number(lng)]);
+      // GeoJSON: [lng,lat], ring closed (last point repeats the first) — drop the closing point
+      const pts = coords.map(([lng, lat]) => [Number(lat), Number(lng)]);
+      const [f, l] = [pts[0], pts[pts.length - 1]];
+      if (pts.length > 3 && f[0] === l[0] && f[1] === l[1]) pts.pop();
+      return pts;
     }
     return [];
   }, [land]);
@@ -284,6 +299,55 @@ export default function LandDetailsPage() {
     if (!land?.id || deleting) return;
     setDeleteOpen(true);
   }
+
+  function startPolygonEdit() {
+    if (!land?.id) return;
+    setEditPolygon(polygonPairs.length ? polygonPairs : null);
+    setEditingPolygon(true);
+  }
+
+  function cancelPolygonEdit() {
+    if (polygonSaving) return;
+    setEditingPolygon(false);
+    setEditPolygon(null);
+  }
+
+  function resetPolygonEdit() {
+    // back to the saved polygon; a new array reference forces the map to re-apply it
+    setEditPolygon(polygonPairs.length ? polygonPairs.map((p) => [p[0], p[1]]) : null);
+  }
+
+  async function savePolygon() {
+    if (!land?.id || polygonSaving) return;
+
+    const v = validateLatLngPairs(editPolygon, { maxPoints: 2000 });
+    if (!v.ok) {
+      toastError(null, v.message || "Desenează poligonul terenului pe hartă.");
+      return;
+    }
+
+    const c = centroidFromLatLngPairs(editPolygon);
+    const payload = {
+      geometry: toGeoJsonPolygonFromLatLngPairs(editPolygon),
+      centroid: c ? { lat: c.lat, lng: c.lng } : undefined,
+      areaHa: Number(polygonAreaHa(editPolygon).toFixed(2)),
+    };
+
+    setPolygonSaving(true);
+    try {
+      const updated = await api.lands.update(land.id, payload);
+      setLand((prev) => ({ ...(prev || {}), ...(updated || {}), ...payload }));
+      setEditingPolygon(false);
+      setEditPolygon(null);
+      toastSuccess("Poligonul terenului a fost actualizat.");
+    } catch (e) {
+      toastError(e, "Nu pot salva poligonul.");
+    } finally {
+      setPolygonSaving(false);
+    }
+  }
+
+  const editAreaHa = editPolygon?.length >= 3 ? polygonAreaHa(editPolygon) : 0;
 
   async function submitPair(e) {
     e?.preventDefault?.();
@@ -515,6 +579,10 @@ export default function LandDetailsPage() {
               </Button>
             </>
           )}
+
+          <Button onClick={startPolygonEdit} variant="ghost" disabled={editingPolygon} title="Modifică conturul terenului pe hartă">
+            Editează poligonul
+          </Button>
 
           <Button onClick={() => nav(`/app/sensors?landId=${land.id}`)} variant="primary">
             Vezi istoricul
@@ -831,14 +899,51 @@ export default function LandDetailsPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-4">
           {/* map */}
-          <div className="card p-3 h-[560px] md:h-[720px] agri-pattern">
-            <GooglePolygonViewMap
-              center={center}
-              zoom={14}
-              polygon={polygonPairs}
-              marker={coords ? { lat: coords.lat, lng: coords.lng, title: land.name } : null}
-              height="100%"
-            />
+          <div className="card p-3 h-[560px] md:h-[720px] agri-pattern flex flex-col gap-3">
+            {editingPolygon ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                  <div className="text-sm">
+                    <span className="font-bold">Editezi poligonul</span>
+                    <span className="muted">
+                      {" "}
+                      — trage vârfurile sau punctele de mijloc; „Șterge” + unealta poligon pentru a redesena.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge>
+                      {editPolygon?.length || 0} puncte • {editAreaHa ? editAreaHa.toFixed(2) : "0.00"} ha
+                    </Badge>
+                    <Button onClick={resetPolygonEdit} variant="ghost" disabled={polygonSaving} title="Revino la conturul salvat">
+                      Resetează
+                    </Button>
+                    <Button onClick={cancelPolygonEdit} variant="ghost" disabled={polygonSaving}>
+                      Anulează
+                    </Button>
+                    <Button onClick={savePolygon} variant="primary" disabled={polygonSaving || !editPolygon || editPolygon.length < 3}>
+                      {polygonSaving ? "Se salvează..." : "Salvează poligonul"}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0">
+                  <GooglePolygonDrawMap
+                    center={center}
+                    zoom={15}
+                    value={editPolygon}
+                    onChange={setEditPolygon}
+                    height="100%"
+                  />
+                </div>
+              </>
+            ) : (
+              <GooglePolygonViewMap
+                center={center}
+                zoom={14}
+                polygon={polygonPairs}
+                marker={coords ? { lat: coords.lat, lng: coords.lng, title: land.name } : null}
+                height="100%"
+              />
+            )}
           </div>
 
           {/* widgets */}

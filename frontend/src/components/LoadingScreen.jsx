@@ -28,7 +28,6 @@ export default function LoadingScreen({ onComplete }) {
           "rgb(var(--background) / 1)",
       }}
     >
-      {/* Animated orb */}
       <Motion.div
         className="absolute w-[500px] h-[500px] rounded-full blur-3xl"
         style={{
@@ -77,7 +76,6 @@ export default function LoadingScreen({ onComplete }) {
           Agricultură inteligentă
         </Motion.div>
 
-        {/* Pulsing dots */}
         <div className="flex gap-2 mt-4">
           {[0, 1, 2].map((i) => (
             <Motion.div

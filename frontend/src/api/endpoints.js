@@ -16,7 +16,6 @@ export const getErrorMessage = (err, fallback = "A apărut o eroare.") => {
   const code = err?.response?.data?.code;
   const details = err?.response?.data?.details;
 
-  // Zod flatten() shape: { formErrors: [], fieldErrors: { field: [messages...] } }
   if (status === 400 && details?.fieldErrors && typeof details.fieldErrors === "object") {
     for (const key of Object.keys(details.fieldErrors)) {
       const arr = details.fieldErrors?.[key];
@@ -103,7 +102,6 @@ export const api = {
 
   sensors: {
     list: () => apiClient.get("/api/sensors").then(r => r.data?.sensors || r.data?.items || r.data),
-    // pairing: sensorCode + landId
     pair: (data) => apiClient.post("/api/sensors/pair", data).then(r => r.data?.sensor || r.data),
     unpair: (data) => apiClient.post("/api/sensors/unpair", data).then(r => r.data?.sensor || r.data),
     calibrate: (sensorCode, data) =>
@@ -111,14 +109,16 @@ export const api = {
   },
 
   iot: {
-    // pairing: boardCode + landId (Arduino Uno)
     pairBoard: (data) => apiClient.post("/api/iot/pair", data).then((r) => r.data?.board || r.data),
     unpairBoard: (data) => apiClient.post("/api/iot/unpair", data).then((r) => r.data?.board || r.data),
   },
 
   readings: {
-    byLand: (landId, range = "24h") =>
-      apiClient.get(`/api/readings/land/${landId}`, { params: { range } }).then(r => r.data),
+    // params: { range: "24h" | "7d" } or { range: "custom", from: "YYYY-MM-DD", to: "YYYY-MM-DD" }
+    byLand: (landId, params = "24h") =>
+      apiClient
+        .get(`/api/readings/land/${landId}`, { params: typeof params === "string" ? { range: params } : params })
+        .then(r => r.data),
   },
 
   economics: {
@@ -136,7 +136,6 @@ export const api = {
   alerts: {
     list: (params) => apiClient.get("/api/alerts", { params }).then(r => r.data?.alerts || r.data?.items || r.data),
     remove: (id) => apiClient.delete(`/api/alerts/${id}`).then(() => true),
-    // Alert rules management
     getRules: (landId) => apiClient.get("/api/alerts/rules", { params: landId ? { landId } : undefined }).then(r => r.data?.rules || r.data),
     upsertRule: (data) => apiClient.post("/api/alerts/rules", data).then(r => r.data?.rule || r.data),
   },
@@ -146,7 +145,6 @@ export const api = {
       apiClient.get(`/api/exports/land/${landId}/pdf`, { params, responseType: "blob" }).then(r => r.data),
     economicsReport: (params = undefined) =>
       apiClient.get("/api/exports/economics/pdf", { params, responseType: "blob" }).then((r) => r.data),
-    // CSV exports
     readingsCsv: (landId, params = undefined) =>
       apiClient.get(`/api/exports/land/${landId}/readings.csv`, { params, responseType: "blob" }).then(r => r.data),
   },

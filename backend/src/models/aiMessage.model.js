@@ -1,9 +1,5 @@
 const { DataTypes } = require("sequelize");
 
-/**
- * AI Message Model
- * Stores individual messages in AI conversations
- */
 module.exports = (sequelize) =>
   sequelize.define(
     "AiMessage",

@@ -13,7 +13,6 @@ export const useStripePayment = () => {
       const response = await api.payments.createSession({ plan });
 
       if (response.url) {
-        // In a real implementation, redirect to Stripe Checkout
         window.open(response.url, '_blank');
         toastSuccess('Redirecting to payment...');
       }
@@ -55,7 +54,6 @@ export const useStripePayment = () => {
         toastSuccess(`Successfully upgraded to ${plan} plan! This is a demo payment.`);
         navigate('/app/plan');
 
-        // Refresh the page to update the user data
         setTimeout(() => {
           window.location.reload();
         }, 1000);

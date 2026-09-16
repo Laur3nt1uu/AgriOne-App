@@ -6,7 +6,7 @@ import ReadingsChart from "../../components/charts/ReadingsChart";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { SensorsSkeleton } from "../../ui/skeleton";
-import { Cpu, Droplets, Download, FileSpreadsheet, Thermometer, RefreshCw, Wifi, WifiOff, Sprout } from "lucide-react";
+import { Cpu, Droplets, Download, FileSpreadsheet, History, Thermometer, RefreshCw, Wifi, WifiOff, Sprout } from "lucide-react";
 import { authStore } from "../../auth/auth.store";
 import { motion as Motion } from "framer-motion";
 import { StatusBadge } from "../../components/agri/StatusBadge";
@@ -44,6 +44,12 @@ function mockSeries(hours = 24) {
   return points;
 }
 
+// "2026-05-04" → "04.05.2026"
+function fmtDay(ymd) {
+  const [y, m, d] = String(ymd || "").split("-");
+  return y && m && d ? `${d}.${m}.${y}` : ymd || "";
+}
+
 function normalizeReadings(rows) {
   return rows.map((r) => ({
     ts: r.recordedAt || r.ts || r.createdAt || r.timestamp || new Date().toISOString(),
@@ -65,8 +71,18 @@ export default function SensorsPage() {
   const [busy, setBusy] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  const [range, setRange] = useState("24h"); // 24h / 7d
+  const [range, setRange] = useState("24h"); // 24h / 7d / history
   const [series, setSeries] = useState([]);
+
+  // history mode: explicit window (YYYY-MM-DD); dataWindow = span of all stored readings
+  const [histFrom, setHistFrom] = useState("");
+  const [histTo, setHistTo] = useState("");
+  const [dataWindow, setDataWindow] = useState(null);
+
+  const readingsParams = useMemo(
+    () => (range === "history" ? { range: "custom", from: histFrom || undefined, to: histTo || undefined } : { range }),
+    [range, histFrom, histTo]
+  );
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -75,25 +91,45 @@ export default function SensorsPage() {
       const arr = Array.isArray(data) ? data : (data?.items || []);
       setLands(arr);
 
-      // readings: prefer backend, fallback mock
       if (landId) {
+        // history without a window yet: wait for the dates (set from dataWindow) instead of fetching everything
+        if (range === "history" && !histFrom && !histTo) {
+          setSeries([]);
+          return;
+        }
         try {
-          const r = await api.readings.byLand(landId, range);
+          const r = await api.readings.byLand(landId, readingsParams);
           const rows = Array.isArray(r) ? r : (r?.items || []);
-          if (rows.length) setSeries(normalizeReadings(rows));
-          else setSeries(range === "24h" ? mockSeries(24) : mockSeries(24 * 7));
+          if (r?.dataWindow !== undefined) setDataWindow(r.dataWindow);
+          // Real readings only — no synthetic data for a real land
+          setSeries(rows.length ? normalizeReadings(rows) : []);
         } catch {
-          setSeries(range === "24h" ? mockSeries(24) : mockSeries(24 * 7));
+          setSeries([]);
         }
       } else {
-        setSeries(range === "24h" ? mockSeries(24) : mockSeries(24 * 7));
+        // no land selected: illustrative preview
+        setSeries(range === "7d" ? mockSeries(24 * 7) : mockSeries(24));
       }
     } catch (e) {
       toastError(e, "Nu pot încărca senzorii.");
     } finally {
       setBusy(false);
     }
-  }, [landId, range]);
+  }, [landId, range, histFrom, histTo, readingsParams]);
+
+  // Entering history mode: default the window to where the data actually is (last 30 days of it, max)
+  useEffect(() => {
+    if (range !== "history" || histFrom || histTo) return;
+    const last = dataWindow?.last ? new Date(dataWindow.last) : new Date();
+    const first = dataWindow?.first ? new Date(dataWindow.first) : null;
+    const start = new Date(last.getTime() - 30 * 86400e3);
+    const from = first && first > start ? first : start;
+    setHistFrom(from.toISOString().slice(0, 10));
+    setHistTo(last.toISOString().slice(0, 10));
+  }, [range, histFrom, histTo, dataWindow]);
+
+  const rangeLabel =
+    range === "24h" ? "24 ore" : range === "7d" ? "7 zile" : histFrom && histTo ? `${fmtDay(histFrom)} – ${fmtDay(histTo)}` : "Istoric";
 
   useEffect(() => { load(); }, [load]);
 
@@ -102,11 +138,12 @@ export default function SensorsPage() {
     if (!landId || exporting) return;
     setExporting(true);
     try {
-      const blob = await api.exports.readingsCsv(landId, { range });
+      const blob = await api.exports.readingsCsv(landId, readingsParams);
       const url = window.URL.createObjectURL(new Blob([blob], { type: "text/csv" }));
       const a = document.createElement("a");
       a.href = url;
-      a.download = `AgriOne_Readings_${selectedLand?.name || landId}_${range}.csv`;
+      const label = range === "history" ? `${histFrom}_${histTo}` : range;
+      a.download = `AgriOne_Readings_${selectedLand?.name || landId}_${label}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -216,13 +253,57 @@ export default function SensorsPage() {
 
           {/* Range selector + Live status */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button onClick={() => setRange("24h")} variant="tab" className={range === "24h" ? "is-active" : ""}>
                 24 ore
               </Button>
               <Button onClick={() => setRange("7d")} variant="tab" className={range === "7d" ? "is-active" : ""}>
                 7 zile
               </Button>
+              <Button
+                onClick={() => setRange("history")}
+                variant="tab"
+                className={range === "history" ? "is-active" : ""}
+                title={dataWindow ? `Date disponibile: ${fmtDay(dataWindow.first.slice(0, 10))} – ${fmtDay(dataWindow.last.slice(0, 10))}` : "Alege un interval de date"}
+              >
+                <History size={14} className="mr-1" />
+                Istoric
+              </Button>
+
+              {range === "history" && (
+                <div className="flex items-center gap-2 text-sm">
+                  <input
+                    type="date"
+                    className="input h-9 py-1 w-[150px]"
+                    value={histFrom}
+                    max={histTo || undefined}
+                    onChange={(e) => setHistFrom(e.target.value)}
+                    aria-label="De la"
+                  />
+                  <span className="muted">→</span>
+                  <input
+                    type="date"
+                    className="input h-9 py-1 w-[150px]"
+                    value={histTo}
+                    min={histFrom || undefined}
+                    onChange={(e) => setHistTo(e.target.value)}
+                    aria-label="Până la"
+                  />
+                  {dataWindow && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Tot intervalul cu date"
+                      onClick={() => {
+                        setHistFrom(dataWindow.first.slice(0, 10));
+                        setHistTo(dataWindow.last.slice(0, 10));
+                      }}
+                    >
+                      Toate datele
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
             {selectedLand && (
@@ -249,7 +330,29 @@ export default function SensorsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
           {/* Chart Area */}
           <div className="space-y-4">
-            <ReadingsChart data={series} />
+            {selectedLand && !series.length ? (
+              <div className="card p-8 text-center">
+                <WifiOff size={28} className="mx-auto text-muted-foreground" />
+                <div className="mt-3 font-bold">Nicio citire în perioada selectată ({rangeLabel})</div>
+                {dataWindow ? (
+                  <div className="muted text-sm mt-1">
+                    Senzorul are date înregistrate între {fmtDay(dataWindow.first.slice(0, 10))} și {fmtDay(dataWindow.last.slice(0, 10))}.
+                    {range !== "history" && (
+                      <>
+                        {" "}
+                        <button type="button" className="text-primary font-semibold hover:underline" onClick={() => setRange("history")}>
+                          Vezi istoricul →
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="muted text-sm mt-1">Asociază o placă Arduino terenului pentru a primi citiri.</div>
+                )}
+              </div>
+            ) : (
+              <ReadingsChart data={series} />
+            )}
 
             {!selectedLand && (
               <Motion.div
@@ -332,7 +435,7 @@ export default function SensorsPage() {
 
             {/* Detailed Stats */}
             <div className="card p-5">
-              <div className="text-sm font-bold mb-3">Statistici ({range === "24h" ? "24 ore" : "7 zile"})</div>
+              <div className="text-sm font-bold mb-3">Statistici ({rangeLabel})</div>
               {!stats ? (
                 <div className="muted">Nu există date.</div>
               ) : (
@@ -451,7 +554,7 @@ export default function SensorsPage() {
                     disabled={exporting}
                   >
                     <Download size={14} className="mr-2" />
-                    {exporting ? "Se exportă..." : `Descarcă CSV (${range})`}
+                    {exporting ? "Se exportă..." : `Descarcă CSV (${rangeLabel})`}
                   </Button>
                   <div className="text-xs muted">
                     Exportă toate citirile din perioada selectată în format CSV pentru analiză în Excel.

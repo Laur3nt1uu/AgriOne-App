@@ -1,5 +1,3 @@
-// Google OAuth Service using Google Identity Services (GIS)
-// Uses the rendered button approach which is more reliable than prompt()
 class GoogleOAuthService {
   constructor() {
     this.clientId = null;
@@ -8,7 +6,6 @@ class GoogleOAuthService {
     this._loadPromise = null;
   }
 
-  // Load the GIS script (cached)
   _loadScript() {
     if (this._loadPromise) return this._loadPromise;
     if (window.google?.accounts?.id) {
@@ -28,7 +25,6 @@ class GoogleOAuthService {
     return this._loadPromise;
   }
 
-  // Initialize Google Identity Services
   async initialize(clientId) {
     if (!clientId || clientId === 'your-google-client-id') {
       throw new Error('Google Client ID not configured. Set VITE_GOOGLE_CLIENT_ID in .env');
@@ -38,8 +34,69 @@ class GoogleOAuthService {
     this.isInitialized = true;
   }
 
-  // Sign in with Google using a temporary rendered button
-  // This is more reliable than prompt() which is often blocked by browsers
+  /**
+   * OAuth2 implicit flow via a popup opened directly from the user's click.
+   * This is Google's supported path for custom-styled buttons: unlike the rendered
+   * "Sign in with Google" iframe button, it does not depend on FedCM or on synthetic
+   * clicks and works the same in every browser.
+   * Must be called synchronously from a user gesture (click) or the popup gets blocked.
+   * Resolves with { accessToken, user } where user comes from Google's userinfo endpoint.
+   */
+  requestAccessToken() {
+    return new Promise((resolve, reject) => {
+      if (!this.isInitialized || !window.google?.accounts?.oauth2) {
+        reject(new Error('Google Identity Services not initialized'));
+        return;
+      }
+
+      let tokenClient;
+      try {
+        tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: this.clientId,
+          scope: 'openid email profile',
+          callback: async (response) => {
+            if (response?.error) {
+              reject(new Error(response.error_description || response.error));
+              return;
+            }
+            if (!response?.access_token) {
+              reject(new Error('No access token received from Google'));
+              return;
+            }
+            try {
+              const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${response.access_token}` },
+              });
+              if (!res.ok) throw new Error(`Google userinfo failed (${res.status})`);
+              const profile = await res.json();
+              resolve({
+                accessToken: response.access_token,
+                user: {
+                  id: profile.sub,
+                  email: profile.email,
+                  name: profile.name,
+                  picture: profile.picture,
+                  provider: 'google',
+                },
+              });
+            } catch (error) {
+              reject(error);
+            }
+          },
+          error_callback: (err) => {
+            // popup_closed / popup_failed_to_open / unknown
+            reject(new Error(err?.type || 'Google sign-in was cancelled'));
+          },
+        });
+      } catch (error) {
+        reject(error);
+        return;
+      }
+
+      tokenClient.requestAccessToken();
+    });
+  }
+
   signIn() {
     return new Promise((resolve, reject) => {
       if (!this.isInitialized || !window.google?.accounts?.id) {
@@ -55,7 +112,6 @@ class GoogleOAuthService {
               reject(new Error('No credential received from Google'));
               return;
             }
-            // Decode JWT payload to get user info
             const base64 = response.credential.split('.')[1];
             const json = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
             const payload = JSON.parse(json);
@@ -79,19 +135,15 @@ class GoogleOAuthService {
         ux_mode: 'popup',
       });
 
-      // Try prompt first, fall back gracefully
       window.google.accounts.id.prompt((notification) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // prompt() was blocked - this is common. Not an error for rendered buttons.
-          // The rendered button in GoogleSignInButton component will still work.
           console.info('Google One Tap not displayed, use the sign-in button instead.');
         }
       });
     });
   }
 
-  // Render Google Sign-In button into a container element
-  renderButton(container, callback) {
+  renderButton(container, callback, options = {}) {
     if (!this.isInitialized || !window.google?.accounts?.id) return;
 
     window.google.accounts.id.initialize({
@@ -129,11 +181,10 @@ class GoogleOAuthService {
       type: 'standard',
       text: 'signin_with',
       logo_alignment: 'left',
-      width: 400,
+      width: options.width || 400,
     });
   }
 
-  // Sign out
   signOut() {
     if (window.google?.accounts) {
       window.google.accounts.id.disableAutoSelect();

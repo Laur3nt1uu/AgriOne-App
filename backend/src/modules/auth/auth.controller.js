@@ -31,7 +31,10 @@ const login = asyncHandler(async (req, res) => {
 const googleLogin = asyncHandler(async (req, res) => {
   const parsed = googleLoginSchema.safeParse(req.body);
   if (!parsed.success) throw new ApiError(400, "Validation error", parsed.error.flatten(), "VALIDATION_ERROR");
-  const result = await authService.loginWithGoogle(parsed.data.credential, parsed.data.user);
+  const result = await authService.loginWithGoogle(
+    { credential: parsed.data.credential, accessToken: parsed.data.accessToken },
+    parsed.data.user
+  );
   res.json(result);
 });
 

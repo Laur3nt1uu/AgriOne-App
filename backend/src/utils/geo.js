@@ -1,15 +1,8 @@
-/**
- * Geo utilities for verifying sensor location against land geometry.
- * Self-contained — no external dependencies. Pure functions, easy to unit-test.
- */
 
 const EARTH_RADIUS_M = 6371000;
 
 const toRad = (deg) => (deg * Math.PI) / 180;
 
-/**
- * Haversine distance between two lat/lng points, in meters.
- */
 function haversineMeters(lat1, lng1, lat2, lng2) {
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
@@ -19,10 +12,6 @@ function haversineMeters(lat1, lng1, lat2, lng2) {
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(a));
 }
 
-/**
- * Ray-casting point-in-polygon. polygon is array of [lng, lat] pairs.
- * Closed or open ring — both work.
- */
 function pointInPolygon(lng, lat, polygon) {
   if (!Array.isArray(polygon) || polygon.length < 3) return false;
   let inside = false;
@@ -38,14 +27,6 @@ function pointInPolygon(lng, lat, polygon) {
   return inside;
 }
 
-/**
- * Extract the outer ring of a polygon from a GeoJSON-like geometry.
- * Supports common shapes:
- *   - GeoJSON Polygon: { type:"Polygon", coordinates:[[[lng,lat],...]] }
- *   - GeoJSON Feature wrapping a Polygon
- *   - Plain array of [lng,lat] points
- *   - Leaflet "latlngs" shape: array of {lat,lng} objects
- */
 function extractRing(geometry) {
   if (!geometry) return null;
 
@@ -67,12 +48,6 @@ function extractRing(geometry) {
   return null;
 }
 
-/**
- * Decide if (lat,lng) is inside a Land's footprint.
- * Tries polygon first; falls back to centroid+radius derived from areaHa.
- *
- * Returns { inside: bool, method: "polygon"|"radius"|"none", distanceM?: number }
- */
 function isPointInLand(lat, lng, land, { bufferMeters = 20 } = {}) {
   if (typeof lat !== "number" || typeof lng !== "number") {
     return { inside: false, method: "none" };
@@ -89,7 +64,6 @@ function isPointInLand(lat, lng, land, { bufferMeters = 20 } = {}) {
     typeof land?.centroidLng === "number" &&
     typeof land?.areaHa === "number"
   ) {
-    // Treat the land as a disk of equivalent area; add small buffer for GPS noise.
     const areaM2 = land.areaHa * 10000;
     const radius = Math.sqrt(areaM2 / Math.PI) + bufferMeters;
     const distanceM = haversineMeters(lat, lng, land.centroidLat, land.centroidLng);

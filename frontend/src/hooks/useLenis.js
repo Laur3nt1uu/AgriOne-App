@@ -1,11 +1,6 @@
 import { useEffect, useRef } from "react";
 import Lenis from "lenis";
 
-/**
- * Global Lenis smooth-scroll hook.
- * Call once at layout level (LandingLayout).
- * Returns the Lenis instance ref for imperative control.
- */
 export default function useLenis() {
   const lenisRef = useRef(null);
 
@@ -21,7 +16,6 @@ export default function useLenis() {
 
     lenisRef.current = lenis;
 
-    // Sync Lenis with native anchor scrolls (smooth-scroll links)
     function onHashClick(e) {
       const href = e.target.closest("a[href^='#'], button[data-scroll-to]");
       if (!href) return;
@@ -34,7 +28,6 @@ export default function useLenis() {
     }
     document.addEventListener("click", onHashClick, { capture: true });
 
-    // rAF loop
     function raf(time) {
       lenis.raf(time);
       requestAnimationFrame(raf);

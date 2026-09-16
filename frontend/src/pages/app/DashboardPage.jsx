@@ -103,6 +103,13 @@ function MiniChartTooltip({ active, payload, label }) {
 }
 
 /* ── Normalize reading from API shape ── */
+// 44620 → "44.620" (whole lei; the KPI suffix adds " RON")
+function fmtRon(v) {
+  const n = Number(v);
+  if (v == null || v === "—" || !Number.isFinite(n)) return "—";
+  return Math.round(n).toLocaleString("ro-RO");
+}
+
 function normalizeReading(r) {
   return {
     ts: r.recordedAt || r.ts || r.createdAt || new Date().toISOString(),
@@ -127,7 +134,9 @@ export default function DashboardPage() {
   const [overview, setOverview] = useState(null);
 
   const [readings, setReadings] = useState([]);
+  const [readingsBusy, setReadingsBusy] = useState(true);
   const [readingsLandName, setReadingsLandName] = useState(null);
+  const [readingsLabel, setReadingsLabel] = useState("");
 
   const [adminStats, setAdminStats] = useState(null);
 
@@ -365,7 +374,10 @@ export default function DashboardPage() {
         const arr = Array.isArray(lands) ? lands : (lands?.items || []);
         const land = arr.find((x) => x?.centroidLat != null && x?.centroidLng != null) || null;
         setWeatherLand(land);
-        if (!land) return;
+        if (!land) {
+          setReadingsBusy(false);
+          return;
+        }
 
         const w = await api.weather.byCoords(land.centroidLat, land.centroidLng);
         setWeather(w);
@@ -373,14 +385,34 @@ export default function DashboardPage() {
         const loc = await api.weather.reverseGeocode(land.centroidLat, land.centroidLng).catch(() => null);
         setWeatherPlace(loc?.name || null);
 
-        // Fetch sensor readings for chart
+        // Fetch sensor readings for the chart: first land with data in the last 7 days;
+        // otherwise the last 7 days of stored data (e.g. a past field campaign).
         try {
-          const rd = await api.readings.byLand(land.id, "7d");
-          const items = Array.isArray(rd?.items) ? rd.items : (Array.isArray(rd) ? rd : []);
-          setReadings(items.map(normalizeReading));
-          setReadingsLandName(land.name || null);
+          let picked = null;
+          for (const l of arr) {
+            const rd = await api.readings.byLand(l.id, "7d").catch(() => null);
+            const items = Array.isArray(rd?.items) ? rd.items : [];
+            if (items.length) { picked = { land: l, items, label: "ultimele 7 zile" }; break; }
+            if (!picked && rd?.dataWindow?.last) {
+              const last = new Date(rd.dataWindow.last);
+              const from = new Date(last.getTime() - 7 * 86400e3);
+              const hist = await api.readings
+                .byLand(l.id, { range: "custom", from: from.toISOString().slice(0, 10), to: last.toISOString().slice(0, 10) })
+                .catch(() => null);
+              const hItems = Array.isArray(hist?.items) ? hist.items : [];
+              if (hItems.length) {
+                const fmt = (d) => d.toLocaleDateString("ro-RO", { day: "2-digit", month: "short" });
+                picked = { land: l, items: hItems, label: `${fmt(from)} – ${fmt(last)}` };
+              }
+            }
+          }
+          setReadings(picked ? picked.items.map(normalizeReading) : []);
+          setReadingsLandName(picked?.land?.name || null);
+          setReadingsLabel(picked?.label || "");
         } catch {
           setReadings([]);
+        } finally {
+          setReadingsBusy(false);
         }
       } catch {
         setWeather(null);
@@ -416,7 +448,7 @@ export default function DashboardPage() {
     { label: "Senzori activi", value: pick(overview, ["activeSensors","sensorsOnline"], "—"), Icon: Cpu, sub: `din ${pick(overview, ["sensorsCount","totalSensors"], "?")} total` },
     { label: "Temp. medie (24h)", value: pick(overview, ["avgTemp","avgTemperature","avgTemperature24h"], "—"), Icon: Thermometer, sub: "Ultimele 24 de ore", suffix: "°C" },
     { label: "Umid. medie (24h)", value: pick(overview, ["avgHumidity","avgHum","avgHumidity24h"], "—"), Icon: Droplets, sub: "Ultimele 24 de ore", suffix: "%" },
-    { label: "Profit total", value: pick(overview, ["totalProfit","profit","profitTotal"], "—"), Icon: TrendingUp, sub: "Venituri − cheltuieli", suffix: " RON" },
+    { label: "Profit total", value: fmtRon(pick(overview, ["totalProfit","profit","profitTotal"], "—")), Icon: TrendingUp, sub: "Venituri − cheltuieli", suffix: " RON" },
     { label: "Alerte (7 zile)", value: pick(overview, ["activeAlerts","alertsActive","recentAlerts"], "—"), Icon: BellRing, sub: "Ultimele 7 zile" },
   ];
 
@@ -468,18 +500,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-4 animate-fadeIn">
       <Card className="relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-warn/10" />
-        <div className="relative flex flex-col gap-4 p-4 sm:p-6 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <div className="text-xl font-semibold tracking-tight">
+        <div className="relative flex flex-col gap-3 p-4 sm:px-5 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+            <div className="text-lg font-semibold tracking-tight whitespace-nowrap">
               {user?.name ? `Bun venit, ${user.name.split(" ")[0]}!` : "Dashboard"}
             </div>
-            <div className="text-muted-foreground text-sm mt-1"><LiveClock /></div>
+            <div className="text-muted-foreground text-sm whitespace-nowrap"><LiveClock /></div>
             {globalLocationLabel ? (
-              <div className="text-muted-foreground text-xs mt-2 flex items-center gap-2">
-                <MapPin size={14} className="text-muted-foreground" />
+              <div className="text-muted-foreground text-xs flex items-center gap-1.5 min-w-0">
+                <MapPin size={13} className="text-muted-foreground shrink-0" />
                 <span className="truncate">
                   {globalLocationLabel}
                   {globalPlace && (!String(globalLocationLabel).includes(globalPlace)) ? ` • ${globalPlace}` : ""}
@@ -489,11 +521,12 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex gap-2 flex-wrap shrink-0">
-            <Button variant="secondary" onClick={() => loadGlobalRec(false)} disabled={globalBusy} className="text-sm">
+            <Button variant="secondary" size="sm" onClick={() => loadGlobalRec(false)} disabled={globalBusy} className="text-sm">
               Actualizează
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={useDeviceLocation}
               disabled={globalBusy}
               title="Folosește coordonatele dispozitivului"
@@ -503,6 +536,7 @@ export default function DashboardPage() {
             </Button>
             <Button
               variant="ghost"
+              size="sm"
               onClick={openPreferences}
               disabled={globalBusy}
               title="Setează locația globală salvată"
@@ -514,7 +548,29 @@ export default function DashboardPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] gap-4 lg:gap-6">
+      <Motion.div
+        className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6 gap-3 auto-rows-fr"
+        variants={stagger}
+        initial="hidden"
+        animate="show"
+      >
+        {kpiCards.map(({ label, value, Icon: KpiIcon, sub, suffix }, index) => {
+          const display = value != null && value !== "—" && suffix ? `${value}${suffix}` : String(value);
+          return (
+            <Motion.div key={label} variants={fadeUp} className="h-full min-w-0">
+              <KPICard
+                title={label}
+                value={display}
+                subtitle={sub}
+                icon={createElement(KpiIcon, { size: 20 })}
+                variant={index === 5 && String(value) !== "—" && Number(value) > 0 ? "warning" : "default"}
+              />
+            </Motion.div>
+          );
+        })}
+      </Motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] gap-4">
         <div className="space-y-4">
           {isAdmin ? (
             <Card className="p-5 gap-0">
@@ -555,37 +611,38 @@ export default function DashboardPage() {
             </Card>
           ) : null}
 
-          <Motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4"
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-          >
-            {kpiCards.map(({ label, value, Icon: KpiIcon, sub, suffix }, index) => {
-              const display = value != null && value !== "—" && suffix ? `${value}${suffix}` : String(value);
-              return (
-                <Motion.div key={label} variants={fadeUp}>
-                  <KPICard
-                    title={label}
-                    value={display}
-                    subtitle={sub}
-                    icon={createElement(KpiIcon, { size: 24 })}
-                    variant={index === 5 && String(value) !== "—" && Number(value) > 0 ? "warning" : "default"}
-                  />
-                </Motion.div>
-              );
-            })}
-          </Motion.div>
-
-          {/* ── Sensor readings chart ── */}
-          {readings.length > 0 && (
-            <Motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
+          {/* ── Sensor readings chart (space reserved while loading so the layout does not jump) ── */}
+          {readings.length === 0 ? (
+            <Card className="p-5 relative overflow-hidden">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className="text-sm font-semibold">Citiri senzori</div>
+                  <div className="text-muted-foreground text-xs mt-1">
+                    {readingsBusy ? "Se încarcă citirile…" : "Nu există citiri înregistrate pentru terenurile tale."}
+                  </div>
+                </div>
+                <Button variant="ghost" onClick={() => nav("/app/sensors")} className="text-xs gap-1">
+                  Detalii <ArrowRight size={14} />
+                </Button>
+              </div>
+              <div className="h-[150px] sm:h-[170px] md:h-[180px] rounded-xl border border-dashed border-border/20 grid place-items-center">
+                {readingsBusy ? (
+                  <RefreshCw size={18} className="text-muted-foreground/50 animate-spin" />
+                ) : (
+                  <div className="text-muted-foreground text-sm text-center px-6">
+                    Asociază o placă Arduino unui teren pentru a vedea graficul aici.
+                  </div>
+                )}
+              </div>
+            </Card>
+          ) : (
+            <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
               <Card className="p-5 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
                 <div className="relative z-10">
-                  <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                      <div className="text-sm font-semibold">Citiri senzori (7 zile)</div>
+                      <div className="text-sm font-semibold">Citiri senzori{readingsLabel ? ` (${readingsLabel})` : ""}</div>
                       <div className="text-muted-foreground text-xs mt-1">
                         {readingsLandName ? `Teren: ${readingsLandName}` : "Ultimele citiri disponibile"}
                         {" • "}{readings.length} puncte
@@ -595,7 +652,7 @@ export default function DashboardPage() {
                       Detalii <ArrowRight size={14} />
                     </Button>
                   </div>
-                  <div className="h-[180px] sm:h-[220px] md:h-[260px]">
+                  <div className="h-[150px] sm:h-[170px] md:h-[180px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={readings} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                         <defs>
@@ -615,6 +672,7 @@ export default function DashboardPage() {
                           stroke="var(--color-muted-foreground, #9ca3af)"
                           tick={{ fontSize: 11 }}
                           strokeOpacity={0.4}
+                          minTickGap={56}
                         />
                         <YAxis stroke="var(--color-muted-foreground, #9ca3af)" tick={{ fontSize: 11 }} strokeOpacity={0.4} />
                         <RTooltip content={<MiniChartTooltip />} />
@@ -632,35 +690,28 @@ export default function DashboardPage() {
             </Motion.div>
           )}
 
-          <Card className="p-5 gap-0">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold">Acțiuni rapide</div>
-                <div className="text-muted-foreground text-sm">Folosește meniul pentru navigare</div>
-              </div>
-              <div className="h-9 w-9 rounded-xl border border-border/15 bg-background/50 grid place-items-center">
-                <TrendingUp size={18} className="text-muted-foreground" />
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Quick actions — slim strip, the sidebar already carries full navigation */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-label="Acțiuni rapide">
               {[{ title: "Terenuri", desc: "Gestionează parcele și hartă", Icon: Leaf, to: "/app/lands" }, { title: "Senzori", desc: "Istoric citiri și status", Icon: Cpu, to: "/app/sensors" }, { title: "Economie", desc: "Venituri / cheltuieli", Icon: TrendingUp, to: "/app/economics" }].map(({ title, desc, Icon: QuickIcon, to }) => (
                 <div
                   key={title}
                   onClick={() => nav(to)}
-                  className="rounded-xl border border-border/15 bg-background/40 p-4 flex items-center gap-3 cursor-pointer hover:bg-background/60 hover:border-primary/20 transition-all group"
+                  role="link"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") nav(to); }}
+                  className="card px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:border-primary/30 transition-all group"
                 >
-                  <div className="h-10 w-10 rounded-xl border border-border/15 bg-background/60 grid place-items-center">
-                    {createElement(QuickIcon, { size: 18, className: "text-muted-foreground" })}
+                  <div className="h-9 w-9 rounded-xl border border-border/15 bg-background/60 grid place-items-center shrink-0 group-hover:border-primary/30">
+                    {createElement(QuickIcon, { size: 18, className: "text-muted-foreground group-hover:text-primary transition-colors" })}
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold truncate">{title}</div>
                     <div className="text-muted-foreground text-xs truncate">{desc}</div>
                   </div>
+                  <ArrowRight size={14} className="ml-auto text-muted-foreground/60 group-hover:text-primary shrink-0" />
                 </div>
               ))}
-            </div>
-          </Card>
+          </div>
 
           <Card className="p-5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
@@ -668,18 +719,18 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold">Alerte recente</div>
-                <div className="text-muted-foreground text-sm">Ultimele alerte generate de reguli.</div>
+                <div className="text-muted-foreground text-xs">Ultimele alerte generate de reguli.</div>
               </div>
-              <Button variant="ghost" onClick={() => loadRecentAlerts(false)} disabled={recentAlertsBusy}>
-                Actualizează
+              <Button variant="ghost" size="sm" onClick={() => loadRecentAlerts(false)} disabled={recentAlertsBusy} title="Actualizează">
+                <RefreshCw size={14} className={recentAlertsBusy ? "animate-spin" : ""} />
               </Button>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-3 space-y-2">
               {recentAlertsBusy ? (
                 <div className="text-muted-foreground text-sm">Se încarcă…</div>
               ) : recentAlerts.length ? (
-                recentAlerts.slice(0, 6).map((a, index) => {
+                recentAlerts.slice(0, 3).map((a, index) => {
                   const id = pick(a, ["id", "uuid"], "");
                   const sev = (pick(a, ["severity", "level"], "WARNING") || "WARNING").toUpperCase();
                   const title = pick(a, ["title", "message"], "Alert");
@@ -705,7 +756,7 @@ export default function DashboardPage() {
                         transition: { duration: 0.2 },
                       }}
                       onClick={() => nav("/app/alerts")}
-                      className={`rounded-xl border p-4 flex items-start justify-between gap-3 cursor-pointer relative overflow-hidden group ${
+                      className={`rounded-xl border p-3 flex items-start justify-between gap-3 cursor-pointer relative overflow-hidden group ${
                         sev === "CRITICAL"
                           ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30"
                           : "bg-gradient-to-br from-warn/10 to-warn/5 border-warn/30"
@@ -722,7 +773,7 @@ export default function DashboardPage() {
                             </Badge>
                           ) : null}
                         </div>
-                        <div className="mt-2 font-semibold truncate">{title}</div>
+                        <div className="mt-1 text-sm font-semibold truncate">{title}</div>
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0 relative z-10">
@@ -740,8 +791,8 @@ export default function DashboardPage() {
             </div>
 
             {recentAlerts.length > 0 && (
-              <div className="mt-4 flex justify-end">
-                <Button variant="ghost" onClick={() => nav("/app/alerts")} className="text-xs gap-1">
+              <div className="mt-2 flex justify-end">
+                <Button variant="ghost" size="sm" onClick={() => nav("/app/alerts")} className="text-xs gap-1">
                   Vezi toate alertele <ArrowRight size={14} />
                 </Button>
               </div>
@@ -751,7 +802,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-4">
-          <Card className="relative overflow-hidden p-6">
+          <Card className="relative overflow-hidden p-5">
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -759,16 +810,18 @@ export default function DashboardPage() {
                 <div className="text-muted-foreground text-sm mt-1">
                   {weatherLand ? `Teren: ${weatherLand.name}` : "Nu există terenuri cu coordonate."}
                 </div>
-                {weatherPlace ? <div className="text-muted-foreground text-xs mt-2">Locație: {weatherPlace}</div> : null}
+                {weatherPlace ? <div className="text-muted-foreground text-xs mt-1 truncate">Locație: {weatherPlace}</div> : null}
               </div>
               <Button
                 variant="ghost"
+                size="sm"
                 onClick={refreshLandWeather}
                 disabled={!weatherLand || weatherRefreshing}
-                className="gap-1.5"
+                className="gap-1.5 shrink-0"
+                title="Actualizează"
               >
                 <RefreshCw size={14} className={weatherRefreshing ? "animate-spin" : ""} />
-                {weatherRefreshing ? "Se încarcă…" : "Actualizează"}
+                <span className="hidden xl:inline">{weatherRefreshing ? "Se încarcă…" : "Actualizează"}</span>
               </Button>
             </div>
 
@@ -779,26 +832,26 @@ export default function DashboardPage() {
             ) : !weather?.current ? (
               <div className="text-muted-foreground mt-4">Vreme indisponibilă momentan.</div>
             ) : (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-xl border border-border/15 bg-background/40 p-4">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-xl border border-border/15 bg-background/40 p-3">
                   <div className="flex items-center justify-between gap-3">
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-muted-foreground text-xs">Acum</div>
-                      <div className="text-3xl font-semibold mt-1">{Number(weather.current.tempC).toFixed(1)}°C</div>
+                      <div className="text-3xl font-semibold mt-1 whitespace-nowrap tabular-nums">{Number(weather.current.tempC).toFixed(1)}°C</div>
                       <div className="text-muted-foreground text-xs mt-1">
                         {landWeatherVisual.label}
                         {weather.current.description ? ` • ${weather.current.description}` : ""}
                       </div>
                     </div>
-                    <div className="h-10 w-10 rounded-xl border border-border/15 bg-background/60 grid place-items-center">
+                    <div className="h-10 w-10 rounded-xl border border-border/15 bg-background/60 grid place-items-center shrink-0">
                       <LandWeatherIcon size={22} className={landWeatherVisual.accentClass} />
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Thermometer size={14} className="text-muted-foreground" /> Temperatură
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+                        <Thermometer size={14} className="text-muted-foreground shrink-0" /> Temp.
                       </div>
                       <div className="mt-2 h-2 rounded-full bg-border/25 overflow-hidden">
                         <div
@@ -807,9 +860,9 @@ export default function DashboardPage() {
                         />
                       </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Droplets size={14} className="text-muted-foreground" /> Umiditate
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+                        <Droplets size={14} className="text-muted-foreground shrink-0" /> Umid.
                       </div>
                       <div className="mt-2 h-2 rounded-full bg-border/25 overflow-hidden">
                         <div
@@ -821,33 +874,33 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/15 bg-background/40 p-4">
+                <div className="rounded-xl border border-border/15 bg-background/40 p-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Wind size={14} className="text-muted-foreground" /> Vânt
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Wind size={14} className="text-muted-foreground shrink-0" /> Vânt
                       </div>
-                      <div className="text-2xl font-semibold mt-2">
+                      <div className="text-xl font-semibold mt-1 whitespace-nowrap tabular-nums">
                         {weather.current.windMs != null ? `${Math.round(Number(weather.current.windMs) * 3.6)} km/h` : "—"}
                       </div>
-                      <div className="text-muted-foreground text-xs mt-1">(≈ {weather.current.windMs != null ? `${Number(weather.current.windMs).toFixed(1)} m/s` : "—"})</div>
+                      <div className="text-muted-foreground text-xs mt-0.5 whitespace-nowrap">≈ {weather.current.windMs != null ? `${Number(weather.current.windMs).toFixed(1)} m/s` : "—"}</div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <CloudSun size={14} className="text-muted-foreground" /> Nori
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <CloudSun size={14} className="text-muted-foreground shrink-0" /> Nori
                       </div>
-                      <div className="text-2xl font-semibold mt-2">{weather.current.cloudsPct ?? "—"}%</div>
-                      <div className="text-muted-foreground text-xs mt-1">Nebulozitate</div>
+                      <div className="text-xl font-semibold mt-1 whitespace-nowrap tabular-nums">{weather.current.cloudsPct ?? "—"}%</div>
+                      <div className="text-muted-foreground text-xs mt-0.5">Nebulozitate</div>
                     </div>
                   </div>
 
                   {weather?.forecast ? (
-                    <div className="mt-4 flex gap-2 flex-wrap">
+                    <div className="mt-3 flex gap-1.5 flex-wrap">
                       {weather.forecast.nextHoursMinTempC != null ? (
-                        <Badge>Min ~12h: {Number(weather.forecast.nextHoursMinTempC).toFixed(1)}°C</Badge>
+                        <Badge className="whitespace-nowrap">Min 12h: {Number(weather.forecast.nextHoursMinTempC).toFixed(1)}°C</Badge>
                       ) : null}
                       {weather.forecast.nextHoursRainMm != null ? (
-                        <Badge>Ploaie ~12h: {Number(weather.forecast.nextHoursRainMm).toFixed(1)} mm</Badge>
+                        <Badge className="whitespace-nowrap">Ploaie 12h: {Number(weather.forecast.nextHoursRainMm).toFixed(1)} mm</Badge>
                       ) : null}
                     </div>
                   ) : null}
@@ -856,19 +909,19 @@ export default function DashboardPage() {
             )}
           </Card>
 
-          <Card className="relative overflow-hidden p-6">
+          <Card className="relative overflow-hidden p-5">
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold">Meteo (global) • recomandări azi</div>
-                <div className="text-muted-foreground text-sm mt-1">Rezumat rapid pe baza vremii (independent de senzor).</div>
-                {globalLocationLabel ? <div className="text-muted-foreground text-xs mt-2">{globalLocationLabel}</div> : null}
+                <div className="text-muted-foreground text-xs mt-1">Rezumat pe baza vremii, independent de senzor.</div>
+                {globalLocationLabel ? <div className="text-muted-foreground text-xs mt-1 truncate">{globalLocationLabel}</div> : null}
                 {globalPlace && (!globalLocationLabel || !String(globalLocationLabel).includes(globalPlace)) ? (
                   <div className="text-muted-foreground text-xs mt-1">Locație: {globalPlace}</div>
                 ) : null}
               </div>
-              <Button variant="ghost" onClick={() => loadGlobalRec(false)} disabled={globalBusy}>
-                Actualizează
+              <Button variant="ghost" size="sm" onClick={() => loadGlobalRec(false)} disabled={globalBusy} className="shrink-0" title="Actualizează">
+                <RefreshCw size={14} className={globalBusy ? "animate-spin" : ""} />
               </Button>
             </div>
 
@@ -878,8 +931,8 @@ export default function DashboardPage() {
               <div className="mt-4 text-muted-foreground">Vreme indisponibilă momentan.</div>
             ) : (
               <>
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <div className="flex gap-2 flex-wrap">
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <div className="flex gap-1.5 flex-wrap">
                     <Badge>Temp: {globalWeather.current.tempC ?? "—"}°C</Badge>
                     <Badge>Umid: {globalWeather.current.humidityPct ?? "—"}%</Badge>
                     <Badge>
@@ -898,8 +951,8 @@ export default function DashboardPage() {
                 </div>
 
                 {globalActions.length ? (
-                  <div className="mt-3 flex gap-2 flex-wrap">
-                    {globalActions.slice(0, 6).map((a, idx) => (
+                  <div className="mt-2 flex gap-1.5 flex-wrap">
+                    {globalActions.slice(0, 4).map((a, idx) => (
                       <Badge key={`${a.type || "A"}-${idx}`}>
                         P{a.priority ?? "-"}: {a.title}
                       </Badge>

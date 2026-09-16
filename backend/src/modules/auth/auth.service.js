@@ -70,6 +70,45 @@ function decodeJwtPayload(jwtToken) {
   }
 }
 
+/**
+ * Verify a Google OAuth2 access token (implicit-flow popup used by custom sign-in buttons).
+ * tokeninfo confirms the token is live and was issued to our client; userinfo supplies the profile.
+ * Returns a payload shaped like an ID token ({ sub, email, email_verified, name, picture }).
+ */
+async function verifyGoogleAccessToken(accessToken) {
+  const clientId = env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+
+  let info;
+  try {
+    info = await googleClient.getTokenInfo(accessToken);
+  } catch (err) {
+    console.error("Google access token verification failed:", err.message);
+    throw new ApiError(401, "Invalid Google credential", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");
+  }
+
+  if (clientId && clientId !== "your-google-client-id" && info.aud !== clientId) {
+    throw new ApiError(401, "Google token issued for another client", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");
+  }
+
+  let profile = {};
+  try {
+    const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (res.ok) profile = await res.json();
+  } catch (err) {
+    console.warn("Google userinfo lookup failed:", err.message);
+  }
+
+  return {
+    sub: info.sub || profile.sub,
+    email: info.email || profile.email,
+    email_verified: info.email_verified ?? profile.email_verified,
+    name: profile.name,
+    picture: profile.picture,
+  };
+}
+
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
@@ -189,10 +228,12 @@ async function login(email, password) {
   return { user: { id: user.id, email: user.email, username: user.username, name: user.name, role: user.role, plan: user.plan }, accessToken, refreshToken };
 }
 
-async function loginWithGoogle(credential, profile = {}) {
+async function loginWithGoogle({ credential, accessToken: googleAccessToken } = {}, profile = {}) {
   let payload = null;
   try {
-    payload = await verifyGoogleToken(credential);
+    payload = googleAccessToken
+      ? await verifyGoogleAccessToken(googleAccessToken)
+      : await verifyGoogleToken(credential);
   } catch (err) {
     if (err instanceof ApiError) throw err;
     throw new ApiError(401, "Google credential invalid", null, "AUTH_GOOGLE_INVALID_CREDENTIAL");

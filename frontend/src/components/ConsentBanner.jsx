@@ -24,7 +24,7 @@ const translations = {
   },
 };
 
-export default function CookieConsent() {
+export default function ConsentBanner() {
   const { language } = useLanguage();
   const t = translations[language] || translations.en;
   const [visible, setVisible] = useState(false);
@@ -42,7 +42,6 @@ export default function CookieConsent() {
     try {
       localStorage.setItem(COOKIE_KEY, JSON.stringify({ type, date: new Date().toISOString() }));
     } catch {
-      // localStorage unavailable
     }
     setVisible(false);
   };
@@ -59,7 +58,6 @@ export default function CookieConsent() {
         >
           <div className="max-w-4xl mx-auto">
             <div className="relative bg-card/95 backdrop-blur-xl border border-border/40 rounded-2xl shadow-2xl p-5 sm:p-6">
-              {/* Close button */}
               <button
                 onClick={() => handleAccept("essential")}
                 className="absolute top-3 right-3 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
@@ -69,12 +67,10 @@ export default function CookieConsent() {
               </button>
 
               <div className="flex flex-col sm:flex-row items-start gap-4">
-                {/* Icon */}
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Cookie size={20} className="text-primary" />
                 </div>
 
-                {/* Text */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground mb-1 pr-6 sm:pr-0">
                     {t.title}
@@ -83,7 +79,6 @@ export default function CookieConsent() {
                     {t.description}
                   </p>
 
-                  {/* Actions */}
                   <div className="flex flex-wrap items-center gap-3">
                     <button
                       onClick={() => handleAccept("all")}

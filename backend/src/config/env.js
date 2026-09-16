@@ -42,14 +42,11 @@ module.exports = {
   OPENWEATHER_BASE: process.env.OPENWEATHER_BASE || "https://api.openweathermap.org/data/2.5",
   OPENWEATHER_UNITS: process.env.OPENWEATHER_UNITS || "metric",
 
-  // Fallback location for global weather/recommendations (Romania center by default)
   WEATHER_DEFAULT_LAT: process.env.WEATHER_DEFAULT_LAT ? Number(process.env.WEATHER_DEFAULT_LAT) : 45.9432,
   WEATHER_DEFAULT_LNG: process.env.WEATHER_DEFAULT_LNG ? Number(process.env.WEATHER_DEFAULT_LNG) : 24.9668,
 
-  // Google OAuth
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
   GOOGLE_ALLOW_UNVERIFIED_TOKENS: boolean("GOOGLE_ALLOW_UNVERIFIED_TOKENS", !isProduction),
 
-  // Demo payment mode is useful for the university presentation, but disabled by default in production.
   PAYMENTS_DEMO_MODE: boolean("PAYMENTS_DEMO_MODE", !isProduction),
 };

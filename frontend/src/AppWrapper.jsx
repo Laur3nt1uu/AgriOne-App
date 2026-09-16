@@ -4,14 +4,12 @@ import { router } from "./router/router";
 import { prefetchCommonAppRoutes } from "./router/chunks";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { LanguageProvider } from "./i18n/LanguageProvider";
-import CookieConsent from "./components/CookieConsent";
+import ConsentBanner from "./components/ConsentBanner";
 
-// Lazy load PWA provider to avoid issues in development
 const PWAProvider = lazy(() =>
   import("./components/pwa/PWAProvider").then((mod) => ({
     default: mod.PWAProvider,
   })).catch(() => ({
-    // Fallback if PWA module fails to load
     default: ({ children }) => children,
   }))
 );
@@ -32,7 +30,7 @@ export default function AppWrapper() {
         <Suspense fallback={null}>
           <PWAProvider>
             <RouterProvider router={router} />
-            <CookieConsent />
+            <ConsentBanner />
           </PWAProvider>
         </Suspense>
       </LanguageProvider>

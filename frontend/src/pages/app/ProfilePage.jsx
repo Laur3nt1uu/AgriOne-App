@@ -279,6 +279,7 @@ export default function ProfilePage() {
         <PremiumFeatureGate
           feature="sms_alerts"
           customMessage="Alertele SMS sunt disponibile în planul Pro pentru notificări instant pe telefon."
+          className="mt-3"
         >
           <div className="mt-3 card-soft p-4 flex items-center justify-between gap-3 transition-shadow hover:shadow-[0_8px_24px_rgba(16,185,129,0.1)]">
             <div>

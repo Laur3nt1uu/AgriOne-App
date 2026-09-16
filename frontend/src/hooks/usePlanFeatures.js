@@ -1,6 +1,5 @@
 import { authStore } from '../auth/auth.store';
 
-// Plan definitions with feature access
 export const PLAN_FEATURES = {
   STARTER: {
     maxLands: 2,
@@ -29,7 +28,6 @@ export const PLAN_FEATURES = {
       'basic_financial_tracking',
       'basic_weather',
       'basic_recommendations',
-      // Pro exclusive features
       'advanced_analytics',
       'sms_alerts',
       'pdf_exports',
@@ -48,7 +46,6 @@ export const PLAN_FEATURES = {
     maxSensors: Infinity,
     aiMessagesPerDay: Infinity,
     features: [
-      // All Pro features plus
       'basic_dashboard',
       'land_management',
       'sensor_pairing',
@@ -67,7 +64,6 @@ export const PLAN_FEATURES = {
       'priority_support',
       'ai_assistant',
       'ai_vision',
-      // Enterprise exclusive
       'api_access_full',
       'white_labeling',
       'advanced_integrations',

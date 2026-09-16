@@ -1,4 +1,3 @@
-// Auth0 token getter - will be set by AuthTokenProvider
 let getAccessTokenFn = null;
 
 export function setTokenGetter(fn) {

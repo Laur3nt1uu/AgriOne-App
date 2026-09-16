@@ -17,11 +17,12 @@ const landPdf = [
 const readingsCsv = [
   requireAuth,
   asyncHandler(async (req, res) => {
-    const range = req.query.range || "24h";
-    const { land, csv } = await service.getReadingsCsv(req.user, req.params.landId, range);
+    const { range = "24h", from, to } = req.query;
+    const { land, csv } = await service.getReadingsCsv(req.user, req.params.landId, { range, from, to });
+    const label = from || to ? `${from || "start"}_${to || "end"}` : range;
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader("Content-Disposition", `attachment; filename="readings-${land.id}-${range}.csv"`);
+    res.setHeader("Content-Disposition", `attachment; filename="readings-${land.id}-${label}.csv"`);
     res.send(csv);
   }),
 ];
