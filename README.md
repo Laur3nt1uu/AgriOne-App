@@ -193,8 +193,6 @@ This architecture creates a foundation for connecting physical agricultural envi
 
 Explore the deployed application:
 
-**[AgriOne – Live Demo](https://agri-one-app.vercel.app/)**
-
 **[View Source Code on GitHub](https://github.com/Laur3nt1uu/AgriOne-App)**
 
 ## 🔮 Future Development
