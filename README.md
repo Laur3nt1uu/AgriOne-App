@@ -5,7 +5,6 @@
 </p>
 
 <p align="center">
-  <a href="https://agri-one-app.vercel.app/">Live Demo</a> •
   <a href="https://github.com/Laur3nt1uu/AgriOne-App">GitHub Repository</a>
 </p>
 
